@@ -11,8 +11,10 @@
  *
  * Ueberweidung: Wird eine Zelle immer wieder kahl gefressen, sinkt ihr
  * Pflanzenzustand (health, 0..1). Abgestorbene Pflanzen tragen weniger:
- * K = Kapazitaet * (DEAD + (1 - DEAD) * health). Ohne Fraß erholt sich der
- * Zustand ueber Jahre. Ganz verschwinden kann eine Pflanzenschicht nicht.
+ * K = Kapazitaet * (DEAD + (1 - DEAD) * health). Erholen kann sich eine
+ * Zelle erst nach einer Schonzeit ohne Ueberweidung (damage.rest Tage), und
+ * dann umso langsamer, je kaputter sie ist: Kahler Boden muss erst wieder
+ * besiedelt werden. Ganz verschwinden kann eine Pflanzenschicht nicht.
  */
 (function (global) {
   'use strict';
@@ -33,12 +35,16 @@
     this.value = {};
     this.health = {};     // Pflanzenzustand je Schicht mit Ueberweidung
     this.bitten = {};     // heute gefressen (fuer die Ueberweidung)
+    this.rest = {};       // Tage seit der letzten Ueberweidung
     for (var k = 0; k < BT.FOOD_ORDER.length; k++) {
       var key = BT.FOOD_ORDER[k];
       this.capacity[key] = new Float32Array(n);
       this.value[key] = new Float32Array(n);
       this.bitten[key] = new Float32Array(n);
-      if (BT.FOOD[key].damage) this.health[key] = new Float32Array(n).fill(1);
+      if (BT.FOOD[key].damage) {
+        this.health[key] = new Float32Array(n).fill(1);
+        this.rest[key] = new Uint16Array(n).fill(65535);
+      }
     }
     this.rebuildCapacity();
     // Start: alles voll ausgewachsen
@@ -108,14 +114,19 @@
       var key = BT.FOOD_ORDER[k];
       var def = BT.FOOD[key];
       var v = this.value[key], cap = this.capacity[key], bit = this.bitten[key];
-      var dmg = def.damage, h = this.health[key];
+      var dmg = def.damage, h = this.health[key], rest = this.rest[key];
       if (dmg) {
         var rec = dmg.recover * def.season[season];
         for (var i = 0; i < v.length; i++) {
           if (cap[i] <= 0) continue;
           var Kh = cap[i] * (DEAD + (1 - DEAD) * h[i]);
-          if (bit[i] > 0 && v[i] < dmg.below * Kh) h[i] = Math.max(0, h[i] - dmg.loss);
-          else if (h[i] < 1) h[i] = Math.min(1, h[i] + rec);
+          if (bit[i] > 0 && v[i] < dmg.below * Kh) {
+            h[i] = Math.max(0, h[i] - dmg.loss);
+            rest[i] = 0;
+          } else {
+            if (rest[i] < 65535) rest[i]++;
+            if (h[i] < 1 && rest[i] >= dmg.rest) h[i] = Math.min(1, h[i] + rec * (0.2 + 0.8 * h[i]));
+          }
         }
       }
       bit.fill(0);

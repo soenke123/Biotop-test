@@ -32,8 +32,9 @@
    *           Fruechte und Insekten mehr als Gras) - Trinken bleibt trotzdem noetig
    * damage:   Ueberweidung. Wird eine Weidezelle immer wieder unter `below` (Anteil der
    *           Kapazitaet) abgefressen, sinkt ihr Pflanzenzustand um `loss` je Tag: die
-   *           Pflanzen sterben ab, es waechst weniger nach. Ohne Ueberweidung erholt sich
-   *           der Zustand um `recover` je Tag (mal Jahreszeit).
+   *           Pflanzen sterben ab, es waechst weniger nach. Erst nach `rest` Tagen ohne
+   *           Ueberweidung erholt sich der Zustand, um `recover` je Tag (mal Jahreszeit,
+   *           mal 0,2 + 0,8 * Zustand: kahler Boden braucht am laengsten).
    * healthOf: diese Schicht haengt am Zustand einer anderen (Fruechte an den Bueschen)
    */
   BT.FOOD = {
@@ -42,7 +43,7 @@
       water: 0.04,
       growth: 0.13, seed: 0.05,
       season: [1.5, 1.0, 0.7, 0.3],
-      damage: { below: 0.2, loss: 0.03, recover: 0.006 },
+      damage: { below: 0.2, loss: 0.03, recover: 0.006, rest: 30 },
       capacity: cap({ TUSSOCK: 5.5, SCRUB: 2.75, SWAMP: 3.3, BEACH: 0.83, FERN: 0.83, MOSS: 0.55, THERMAL: 0.83, ROCK: 0.55 })
     },
     laub: {
@@ -50,7 +51,7 @@
       water: 0.06,
       growth: 0.1, seed: 0.05,
       season: [1.4, 1.0, 0.6, 0.25],
-      damage: { below: 0.2, loss: 0.015, recover: 0.003 },
+      damage: { below: 0.2, loss: 0.015, recover: 0.003, rest: 30 },
       capacity: cap({ FERN: 4.4, MOSS: 3.3, SCRUB: 3.85, SWAMP: 1.1, TUSSOCK: 0.55 })
     },
     frucht: {
