@@ -43,7 +43,7 @@
       water: 0.04,
       growth: 0.13, seed: 0.05,
       season: [1.5, 1.0, 0.7, 0.3],
-      damage: { below: 0.2, loss: 0.03, recover: 0.006, rest: 30 },
+      damage: { below: 0.1, loss: 0.03, recover: 0.009, rest: 30 },
       capacity: cap({ TUSSOCK: 5.5, SCRUB: 2.75, SWAMP: 3.3, BEACH: 0.83, FERN: 0.83, MOSS: 0.55, THERMAL: 0.83, ROCK: 0.55 })
     },
     laub: {

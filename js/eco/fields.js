@@ -117,11 +117,15 @@
       var dmg = def.damage, h = this.health[key], rest = this.rest[key];
       if (dmg) {
         var rec = dmg.recover * def.season[season];
+        // Schaden nur, wenn in der Wachstumszeit kahl gefressen wird - im
+        // Winter ruhen die Pflanzen, Abweiden schadet dann kaum
+        var loss = dmg.loss * Math.min(1, def.season[season]);
+        var winterLow = def.season[season] < 0.5;
         for (var i = 0; i < v.length; i++) {
           if (cap[i] <= 0) continue;
           var Kh = cap[i] * (DEAD + (1 - DEAD) * h[i]);
-          if (bit[i] > 0 && v[i] < dmg.below * Kh) {
-            h[i] = Math.max(0, h[i] - dmg.loss);
+          if (bit[i] > 0 && v[i] < dmg.below * Kh && !winterLow) {
+            h[i] = Math.max(0, h[i] - loss);
             rest[i] = 0;
           } else {
             if (rest[i] < 65535) rest[i]++;
