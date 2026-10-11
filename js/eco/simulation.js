@@ -313,6 +313,7 @@
     var spec = g.spec;
     var b = spec.breed;
     var n = this.rng.intIn(b.litter);
+    if (spec.role === 'predator') n = Math.min(n, spec.group.max - g.members.length);
     for (var k = 0; k < n; k++) {
       var c = this.makeAnimal(spec, mother.x, mother.y, 0, this.rng.chance(0.5) ? 'f' : 'm', spec.newbornEnergy);
       this.addToGroup(g, c);
@@ -324,6 +325,9 @@
   Simulation.prototype.breed = function (g, cal) {
     var spec = g.spec, b = spec.breed;
     if (cal.season !== b.season || cal.dayOfSeason !== b.day) return;
+    // Raeuber ziehen nur im eigenen Revier Junge gross, und ein volles Rudel
+    // (Paar mit Jungem) keine weiteren
+    if (spec.role === 'predator' && (!g.home || g.members.length >= spec.group.max)) return;
     var males = adults(g, 'm');
     if (!males) return;
     var mothers = g.members.filter(function (a) {
@@ -493,7 +497,7 @@
   Simulation.prototype.preyAvailability = function (id) {
     var row = this.stats.latest();
     var n = row ? row.count[id] : 0;
-    var h = Math.max(10, this.startCounts[id] * 0.35);
+    var h = Math.max(10, this.startCounts[id] * 0.8);
     return n * n / (n * n + h * h);
   };
 

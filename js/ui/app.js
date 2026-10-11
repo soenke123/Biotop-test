@@ -21,6 +21,12 @@
   var seedInput = $('seed'), sizeSelect = $('size');
   var tooltip = $('tooltip'), legend = $('legend'), legendBtn = $('toggleLegend');
   var status = $('status');
+  var seasonBadge = $('season'), hlBadge = $('highlight');
+  var SEASON_ICON = ['🌸', '☀️', '🍂', '❄️'];
+  var highlight = null;   // Art-ID, deren Tiere auf der Karte markiert sind
+  // Karte: Weidezustand (Standard), reine Landschaft oder eine Nahrungsschicht
+  var mapMode = $('mapMode');
+  function showPlants() { return mapMode.value === 'weide'; }
   var playBtn = $('play'), speedInput = $('speed'), speedLabel = $('speedLabel'), clock = $('clock');
 
   var world = null, sim = null, camera = null;
@@ -217,6 +223,45 @@
     }
   }
 
+  /** Position im Jahr in Jahreszeiten (0..4), stufenlos zwischen den Ticks. */
+  function seasonPos(alpha) {
+    var T = BT.Time;
+    var days = sim.day % T.DAYS_PER_YEAR + ((sim.tick % T.TICKS_PER_DAY) + (alpha < 1 ? alpha : 0)) / T.TICKS_PER_DAY;
+    return days / T.DAYS_PER_SEASON;
+  }
+
+  function updateSeasonBadge() {
+    var c = BT.Time.calendar(sim.day);
+    seasonBadge.textContent = SEASON_ICON[c.season] + ' ' + c.seasonName;
+    seasonBadge.dataset.season = c.season;
+  }
+
+  // ---------------------------------------------------------------- Hervorheben einer Art
+  /** Klick auf eine Kachel: alle Tiere dieser Art auf der Karte markieren (nochmal: aus). */
+  function setHighlight(id) {
+    highlight = id && id !== highlight ? id : null;
+    var tiles = doc.querySelectorAll('#tiles .tile');
+    for (var i = 0; i < tiles.length; i++) {
+      var on = tiles[i].dataset.id === highlight;
+      tiles[i].classList.toggle('active', on);
+      tiles[i].setAttribute('aria-pressed', String(on));
+    }
+    if (highlight) {
+      var s = BT.SPECIES[highlight];
+      hlBadge.innerHTML = '<i style="background:' + SERIES_COLOR[highlight] + '"></i>' + s.plural +
+        ' hervorgehoben <span id="hlCount"></span> <button type="button" aria-label="Hervorhebung aufheben">✕</button>';
+      updateHighlightCount();
+    }
+    hlBadge.hidden = !highlight;
+    dirty = true;
+  }
+
+  function updateHighlightCount() {
+    var el = $('hlCount');
+    if (!el || !sim || !highlight) return;
+    el.textContent = '(' + sim.stats.latest().count[highlight] + ')';
+  }
+
   function frame(now) {
     if (running && sim && !skipping) {
       if (lastFrame) {
@@ -239,9 +284,12 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       drawTerrain();
       var alpha = running && ticksPerSecond() <= 90 ? Math.min(1, tickAcc) : 1;
-      setWorldTransform(ctx);
-      BT.FoodOverlay.draw(ctx, sim, $('mapMode').value);
-      BT.AgentRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale, alpha);
+      if (sim) BT.SeasonRenderer.draw(ctx, world, seasonPos(alpha));
+      // nach den Jahreszeiten, sonst faerbt der Fruehling den kahlen Boden gruen
+      if (sim && showPlants()) BT.PlantRenderer.draw(ctx, world, sim);
+      else if (sim) BT.FoodOverlay.draw(ctx, sim, mapMode.value);
+      BT.AgentRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale, alpha,
+        { highlight: highlight, highlightColor: highlight && SERIES_COLOR[highlight] });
     }
     global.requestAnimationFrame(frame);
   }
@@ -259,7 +307,8 @@
     var tiles = $('tiles');
     tiles.innerHTML = BT.SPECIES_ORDER.map(function (id) {
       var s = BT.SPECIES[id];
-      return '<div class="tile"><img src="' + s.sprite + '" alt=""><div><div class="tile-name">' +
+      return '<div class="tile" role="button" tabindex="0" aria-pressed="false" data-id="' + id + '" title="Alle ' + s.plural + ' auf der Karte zeigen">' +
+        '<img src="' + s.sprite + '" alt=""><div><div class="tile-name">' +
         '<i style="background:' + SERIES_COLOR[id] + '"></i>' + s.plural + '</div>' +
         '<div class="tile-count" id="count-' + id + '">–</div><div class="tile-sub" id="sub-' + id + '"></div></div></div>';
     }).join('');
@@ -276,6 +325,12 @@
         title: 'Nahrung (Anteil am Höchststand)', percent: true,
         series: ['gras', 'frucht', 'laub', 'insekten'].map(function (k) {
           return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.food[k]; } };
+        })
+      }),
+      new BT.LineChart(box, {
+        title: 'Zustand der Pflanzen (100 % = gesund, sinkt bei Überweidung)', percent: true,
+        series: ['gras', 'laub'].map(function (k) {
+          return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.health ? r.health[k] : 1; } };
         })
       })
     ];
@@ -294,6 +349,7 @@
     var now = global.performance.now();
     clock.textContent = BT.Time.label(sim.day);
     $('weather').textContent = BT.Weather.describe(sim.weatherNow);
+    updateSeasonBadge();
     if (!force && now - lastPanelUpdate < 250) return;
     lastPanelUpdate = now;
     var row = sim.stats.latest();
@@ -306,6 +362,7 @@
     });
     for (var i = 0; i < charts.length; i++) charts[i].update(sim.stats.history);
     updateDeaths();
+    updateHighlightCount();
   }
 
   function updateDeaths() {
@@ -331,12 +388,19 @@
       html += '<div class="row"><span class="swatch" style="background:' + P[info.key].base + '"></span>' +
         info.name + '<span class="pct">' + pct.toFixed(1) + ' %</span></div>';
     }
+    if (showPlants()) {
+      var rgb = function (c) { return 'rgb(' + c.join(',') + ')'; };
+      html += '<h2>Weidezustand</h2>' +
+        '<div class="row"><span class="swatch" style="background:' + rgb(BT.PlantRenderer.DRY) + '"></span>abgefressen</div>' +
+        '<div class="row"><span class="swatch" style="background:' + rgb(BT.PlantRenderer.BARE) + '"></span>überweidet, Pflanzen abgestorben</div>';
+    }
     legend.innerHTML = html;
   }
 
   // ---------------------------------------------------------------- Eingabe Karte
   var pointers = new Map();
   var pinchDist = 0;
+  var clickStart = null;   // Zeigerposition beim Druecken: kaum bewegt = Klick
 
   function localPos(e) {
     var rect = canvas.getBoundingClientRect();
@@ -346,6 +410,7 @@
   canvas.addEventListener('pointerdown', function (e) {
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, localPos(e));
+    clickStart = pointers.size === 1 ? localPos(e) : null;
     canvas.classList.add('dragging');
     if (pointers.size === 2) {
       var p = Array.from(pointers.values());
@@ -374,6 +439,16 @@
   });
 
   function endPointer(e) {
+    // Klick auf ein Tier hebt seine Art hervor
+    if (e.type === 'pointerup' && clickStart && pointers.size === 1 && sim && camera) {
+      var pos = localPos(e);
+      if (Math.abs(pos.x - clickStart.x) + Math.abs(pos.y - clickStart.y) < 5) {
+        var w = camera.screenToWorld(pos.x, pos.y);
+        var a = BT.AgentRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale));
+        if (a) setHighlight(a.spec.id);
+      }
+    }
+    clickStart = null;
     pointers.delete(e.pointerId);
     if (!pointers.size) canvas.classList.remove('dragging');
     pinchDist = 0;
@@ -422,13 +497,25 @@
       if (BT.BIOME_INFO[b].land && sim) {
         var f = sim.fields, i = f.index(w.x, w.y);
         text += ' · Gras ' + pctOf(f, 'gras', i) + ' · Laub ' + pctOf(f, 'laub', i) +
-          ' · Früchte ' + pctOf(f, 'frucht', i) + ' · Insekten ' + pctOf(f, 'insekten', i);
+          ' · Früchte ' + pctOf(f, 'frucht', i) + ' · Insekten ' + pctOf(f, 'insekten', i) +
+          healthOf(f, i);
       }
     }
     tooltip.textContent = text;
     tooltip.style.left = pos.x + 'px';
     tooltip.style.top = pos.y + 'px';
     tooltip.hidden = false;
+  }
+
+  /** Pflanzenzustand der Zelle, nur wenn durch Ueberweidung geschaedigt. */
+  function healthOf(f, i) {
+    var parts = [];
+    ['gras', 'laub'].forEach(function (key) {
+      if (f.capacity[key][i] > 0.05 && f.health[key][i] < 0.95) {
+        parts.push(BT.FOOD[key].name.split(' ')[0] + ' ' + Math.round(f.health[key][i] * 100) + ' %');
+      }
+    });
+    return parts.length ? ' · überweidet, Zustand: ' + parts.join(', ') : '';
   }
 
   function pctOf(f, key, i) {
@@ -446,7 +533,7 @@
     legendBtn.setAttribute('aria-pressed', String(!legend.hidden));
   });
   playBtn.addEventListener('click', function () { setRunning(!running); });
-  $('mapMode').addEventListener('change', function () { dirty = true; });
+  mapMode.addEventListener('change', function () { if (world) buildLegend(); dirty = true; });
   $('stepDay').addEventListener('click', function () {
     if (!sim || skipping) return;
     setRunning(false);
@@ -455,6 +542,19 @@
     dirty = true;
   });
   $('skip').addEventListener('click', function () { skipYears(5); });
+  $('tiles').addEventListener('click', function (e) {
+    var tile = e.target.closest('.tile');
+    if (tile) setHighlight(tile.dataset.id);
+  });
+  $('tiles').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var tile = e.target.closest('.tile');
+    if (!tile) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setHighlight(tile.dataset.id);
+  });
+  hlBadge.addEventListener('click', function (e) { if (e.target.tagName === 'BUTTON') setHighlight(null); });
   speedInput.addEventListener('input', updateSpeedLabel);
   $('startInputs').addEventListener('input', function (e) {
     var id = e.target.dataset && e.target.dataset.id;
@@ -483,6 +583,7 @@
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
     if (e.key === 'r' || e.key === 'R') { if (camera) { camera.reset(); interacted(); } }
     if (e.key === ' ') { e.preventDefault(); setRunning(!running); }
+    if (e.key === 'Escape') setHighlight(null);
   });
   global.addEventListener('resize', function () {
     resize();
@@ -503,7 +604,14 @@
     get sim() { return sim; },
     get camera() { return camera; },
     redraw: function () { dirty = true; },
+    highlight: setHighlight,
     runDays: function (n) { sim.runDays(n); updatePanel(true); dirty = true; },
+    /** Neu starten mit eigenen Startwerten, z. B. { inselwolf: 0, inseladler: 0 } */
+    restartWith: function (start) {
+      startValues = Object.assign({}, recommended, start);
+      customStart = true;
+      restart();
+    },
     setRunning: setRunning
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -174,7 +174,7 @@
 
   function findPrey(sim, g) {
     var spec = g.spec, w = sim.world;
-    var best = null, bestScore = 0;
+    var best = null, bestScore = 0, bestWeight = 0;
     var groups = sim.herbivoreGroups;
     for (var i = 0; i < groups.length; i++) {
       var p = groups[i];
@@ -193,8 +193,11 @@
       if (!g.home && insideForeignTerritory(sim, g, p.x, p.y)) continue;
       if (!eligibleVictims(g, p).length) continue;
       var score = weight * (1 - d / vision);
-      if (score > bestScore) { bestScore = score; best = p; }
+      if (score > bestScore) { bestScore = score; best = p; bestWeight = weight; }
     }
+    // Seltene Beute wird nicht nur seltener gewaehlt, sondern auch seltener
+    // verfolgt (Holling Typ III): die Raeuber hungern, bevor die Beute verschwindet
+    if (best && !sim.rng.chance(Math.min(1, bestWeight / spec.prey[best.spec.id]))) return null;
     return best;
   }
 
@@ -208,6 +211,9 @@
     var p = 1 - BT.M.pow(1 - spec.huntChance, hunters);
     p *= 1 - COVER[sim.world.query.biomeAt(prey.x, prey.y)] * (spec.flies ? 0.9 : 0.4);
     p /= 1 + 0.03 * (prey.members.length - 1);           // Wachsamkeit der Gruppe
+    // Gut genaehrte Beute entkommt leichter, ausgehungerte kaum: Raeuber
+    // haben es leicht, wenn die Pflanzenfresser ihre Weiden kahl gefressen haben
+    p *= 1.1 - 0.3 * avg(victims, 'energy');
     if (!sim.rng.chance(p)) return false;
 
     // Opfer: bevorzugt Jungtiere und geschwaechte Tiere
@@ -322,7 +328,9 @@
         g.speedNow = sp;
         if (dist(g, prey) < 30) {
           if (attack(sim, g, prey)) {
-            g.state = 'ruhen'; g.stateTicks = sim.ticksPerDay * 2; g.prey = null; g.tx = null;
+            // Satt wird geruht, sonst nach kurzem Fressen weitergejagt
+            var full = avg(g.members, 'energy') >= spec.hungry;
+            g.state = 'ruhen'; g.stateTicks = full ? sim.ticksPerDay * 2 : 2; g.prey = null; g.tx = null;
           } else {
             // Beute flieht, die Jagd geht weiter, bis die Zeit um ist
             prey.state = 'fliehen'; prey.fleeFrom = { x: g.x, y: g.y }; prey.stateTicks = 5;
@@ -345,8 +353,10 @@
       }
     }
 
-    // Streifen im Revier oder wandern auf der Suche nach einem
+    // Streifen im Revier oder wandern auf der Suche nach einem. Wer auch
+    // Pflanzliches oder Insekten frisst (spec.diet), sucht dabei nebenher Futter.
     g.state = g.home ? 'streifen' : 'wandern';
+    if (spec.diet && energy < spec.hungry) g.grazing = true;
     if (g.tx === null || BT.M.hypot(g.tx - g.x, g.ty - g.y) < 20 || g.stateTicks-- <= 0) {
       var c = g.home || g;
       var r = g.home ? spec.territory : spec.territory * 2.5;

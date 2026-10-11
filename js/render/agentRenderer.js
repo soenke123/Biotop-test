@@ -7,6 +7,10 @@
  *
  * Die Sprites sind Seitenansichten nach links; laeuft ein Tier nach rechts,
  * wird gespiegelt statt gedreht (wie in Wild Clusters).
+ *
+ * Hervorhebung (opts.highlight = Art-ID): alle Tiere dieser Art bekommen einen
+ * farbigen Ring und liegen obenauf, die uebrigen werden blass gezeichnet. So
+ * sieht man auch in der Gesamtansicht, wo sich z. B. alle Woelfe aufhalten.
  */
 (function (global) {
   'use strict';
@@ -15,9 +19,11 @@
 
   var MIN_PX = 12;  // Mindestgroesse eines Tiers auf dem Bildschirm
 
-  function draw(ctx, sim, view, scale, alpha) {
+  function draw(ctx, sim, view, scale, alpha, opts) {
     if (!sim) return;
     var pad = 30;
+    var hl = opts && opts.highlight || null;
+    var hlColor = opts && opts.highlightColor || '#ffffff';
 
     // Aas
     ctx.fillStyle = 'rgba(70, 40, 30, 0.75)';
@@ -51,20 +57,56 @@
       }
     }
 
-    // Tiere: Pflanzenfresser zuerst, Raeuber obenauf
-    drawList(ctx, sim.herbivoreGroups, view, scale, alpha, pad);
-    drawList(ctx, sim.predatorGroups, view, scale, alpha, pad);
+    // Tiere: Pflanzenfresser zuerst, Raeuber obenauf, hervorgehobene Art ganz oben
+    if (hl) ctx.globalAlpha = 0.3;
+    drawList(ctx, sim.herbivoreGroups, view, scale, alpha, pad, hl, false);
+    drawList(ctx, sim.predatorGroups, view, scale, alpha, pad, hl, false);
+    ctx.globalAlpha = 1;
+    if (hl) {
+      drawRings(ctx, sim.groups, view, scale, alpha, pad, hl, hlColor);
+      drawList(ctx, sim.groups, view, scale, alpha, pad, hl, true);
+    }
   }
 
-  function drawList(ctx, groups, view, scale, alpha, pad) {
+  function memberPos(a, alpha) {
+    return { x: a.px + (a.x - a.px) * alpha, y: a.py + (a.y - a.py) * alpha };
+  }
+
+  /** Leuchtende Ringe unter den Tieren der hervorgehobenen Art. */
+  function drawRings(ctx, groups, view, scale, alpha, pad, hl, color) {
+    var r = Math.max(9 / scale, 6);
+    ctx.beginPath();
+    for (var i = 0; i < groups.length; i++) {
+      var g = groups[i];
+      if (g.spec.id !== hl) continue;
+      for (var m = 0; m < g.members.length; m++) {
+        var p = memberPos(g.members[m], alpha);
+        if (!inView(p, view, pad)) continue;
+        ctx.moveTo(p.x + r, p.y);
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      }
+    }
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(3 / scale, 1.5);
+    ctx.stroke();
+  }
+
+  /**
+   * @param hl    hervorgehobene Art oder null
+   * @param only  true: nur die hervorgehobene Art, false: alle anderen
+   */
+  function drawList(ctx, groups, view, scale, alpha, pad, hl, only) {
     for (var i = 0; i < groups.length; i++) {
       var g = groups[i];
       var spec = g.spec;
+      if (hl && (spec.id === hl) !== only) continue;
       var img = BT.Sprites.get(spec.id);
       var base = Math.max(spec.size, MIN_PX / scale);
       for (var m = 0; m < g.members.length; m++) {
         var a = g.members[m];
-        var x = a.px + (a.x - a.px) * alpha, y = a.py + (a.y - a.py) * alpha;
+        var p = memberPos(a, alpha), x = p.x, y = p.y;
         if (x < view.x - pad || x > view.x + view.width + pad || y < view.y - pad || y > view.y + view.height + pad) continue;
         var size = a.age < spec.maturity ? base * (0.55 + 0.45 * a.age / spec.maturity) : base;
         // Schatten (fliegende Tiere: weiter versetzt)

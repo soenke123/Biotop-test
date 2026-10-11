@@ -93,6 +93,10 @@ button:disabled { opacity: 0.5; cursor: default; }
 .tile-name i, .chart-legend i, .chart-tip i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; }
 .tile-count { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .tile-sub { font-size: 11px; opacity: 0.65; }
+.tile { cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s, background 0.15s; }
+.tile:hover { border-color: #2d6684; }
+.tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tile.active { border-color: var(--accent); background: #1d5878; }
 
 .chart { margin-bottom: 12px; }
 .chart-head h3 { font-size: 12px; margin: 0 0 3px; font-weight: 600; opacity: 0.9; }
@@ -173,3 +177,42 @@ button:disabled { opacity: 0.5; cursor: default; }
 .legend .row { display: flex; align-items: center; gap: 8px; }
 .legend .swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.25); }
 .legend .pct { margin-left: auto; padding-left: 14px; opacity: 0.7; font-variant-numeric: tabular-nums; }
+
+/* Jahreszeit oben links auf der Karte */
+.season-badge {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--panel-bg);
+  font-size: 15px;
+  font-weight: 600;
+  pointer-events: none;
+  border: 2px solid transparent;
+  transition: border-color 0.4s;
+}
+.season-badge:empty { display: none; }
+.season-badge[data-season="0"] { border-color: #8fd36a; }
+.season-badge[data-season="1"] { border-color: #f2c94c; }
+.season-badge[data-season="2"] { border-color: #e07a35; }
+.season-badge[data-season="3"] { border-color: #cfe3f2; }
+
+/* Hinweis, welche Art hervorgehoben ist */
+.highlight-badge {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 12px;
+  border-radius: 999px;
+  background: var(--panel-bg);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.highlight-badge[hidden] { display: none; }
+.highlight-badge i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.highlight-badge button { padding: 1px 7px; border-radius: 999px; font-size: 12px; }

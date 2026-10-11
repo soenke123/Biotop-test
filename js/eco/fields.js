@@ -5,9 +5,21 @@
  * ist grob genug, um auch Jahrzehnte schnell zu rechnen, und fein genug, dass
  * abgeweidete Flaechen auf der Karte sichtbar werden.
  *
- * Wachstum pro Tag:  v += rate * jahreszeit * (K - v)
- * Es waechst also immer etwas nach (Wurzeln, Samenbank), auch aus 0 - eine
- * Pflanzenschicht kann abgefressen, aber nicht ausgerottet werden.
+ * Wachstum pro Tag:  v += rate * jahreszeit * (v + seed * K) * (1 - v / K)
+ * Pflanzen wachsen aus ihren Blaettern: Halb abgefressen waechst am meisten
+ * nach, kahl gefressen fast nichts (nur aus Wurzeln und Samenbank, `seed`).
+ *
+ * Ueberweidung: Wird eine Zelle immer wieder kahl gefressen, sinkt ihr
+ * Pflanzenzustand (health, 0..1). Abgestorbene Pflanzen tragen weniger:
+ * K = Kapazitaet * (dead + (1 - dead) * health), dead aus BT.FOOD[..].damage. Erholen kann sich eine
+ * Zelle erst nach einer Schonzeit ohne Ueberweidung (damage.rest Tage), und
+ * dann umso langsamer, je kaputter sie ist: Kahler Boden muss erst wieder
+ * besiedelt werden. Ganz verschwinden kann eine Pflanzenschicht nicht.
+ *
+ * Jahreswetter (eco/weather.js): Wachstum mal weather.growth, im Winter geteilt
+ * durch die Winterhaerte; im Mastjahr traegt eine Schicht mit `mast` im Sommer
+ * und Herbst entsprechend mehr; Schichten mit `decay` schwinden (Fruechte
+ * verrotten, Insekten sterben im Winter), in harten Wintern schneller.
  */
 (function (global) {
   'use strict';
@@ -25,10 +37,18 @@
     var n = this.cols * this.rows;
     this.capacity = {};
     this.value = {};
+    this.health = {};     // Pflanzenzustand je Schicht mit Ueberweidung
+    this.bitten = {};     // heute gefressen (fuer die Ueberweidung)
+    this.rest = {};       // Tage seit der letzten Ueberweidung
     for (var k = 0; k < BT.FOOD_ORDER.length; k++) {
       var key = BT.FOOD_ORDER[k];
       this.capacity[key] = new Float32Array(n);
       this.value[key] = new Float32Array(n);
+      this.bitten[key] = new Float32Array(n);
+      if (BT.FOOD[key].damage) {
+        this.health[key] = new Float32Array(n).fill(1);
+        this.rest[key] = new Uint16Array(n).fill(65535);
+      }
     }
     this.rebuildCapacity();
     // Start: alles voll ausgewachsen
@@ -79,37 +99,65 @@
     return { x: (fx + 0.5) * this.size, y: (fy + 0.5) * this.size };
   };
 
-  /**
-   * Ein Tag Wachstum und Schwund, abhaengig von Jahreszeit und Jahreswetter.
-   * weather: { growth, winter, mast } (siehe eco/weather.js)
-   *
-   *   'stock':  v += r * (v + seed*K) * (1 - v/K)   - kahl gefressen = langsame Erholung
-   *   'plant':  v += r * (K - v) * Laubgesundheit    - Fruechte haengen an den Bueschen
-   */
+  /** Zustand, der fuer diese Schicht gilt (eigener oder der einer anderen Schicht), oder null. */
+  Fields.prototype.healthFor = function (key) {
+    var def = BT.FOOD[key];
+    return this.health[def.healthOf || key] || null;
+  };
+
+  /** So viel traegt eine voellig ueberweidete Zelle dieser Schicht noch (Anteil). */
+  function deadFor(key) {
+    var def = BT.FOOD[key];
+    var dmg = BT.FOOD[def.healthOf || key].damage;
+    return dmg ? dmg.dead : 1;
+  }
+
+  /** Kapazitaet einer Zelle unter Beruecksichtigung des Pflanzenzustands. */
+  Fields.prototype.carrying = function (key, i) {
+    var h = this.healthFor(key);
+    var K = this.capacity[key][i];
+    var dead = deadFor(key);
+    return h ? K * (dead + (1 - dead) * h[i]) : K;
+  };
+
+  /** Ein Tag: Ueberweidung bzw. Erholung, dann Wachstum und Schwund. */
   Fields.prototype.grow = function (season, weather) {
     var w = weather || { growth: 1, winter: 1, mast: false };
-    var laubV = this.value.laub, laubK = this.capacity.laub;
     for (var k = 0; k < BT.FOOD_ORDER.length; k++) {
       var key = BT.FOOD_ORDER[k];
       var def = BT.FOOD[key];
+      var v = this.value[key], cap = this.capacity[key], bit = this.bitten[key];
+      var dmg = def.damage, h = this.health[key], rest = this.rest[key];
+      if (dmg) {
+        var rec = dmg.recover * def.season[season];
+        // Schaden nur, wenn in der Wachstumszeit kahl gefressen wird - im
+        // Winter ruhen die Pflanzen, Abweiden schadet dann kaum
+        var loss = dmg.loss * Math.min(1, def.season[season]);
+        var winterLow = def.season[season] < 0.5;
+        for (var i = 0; i < v.length; i++) {
+          if (cap[i] <= 0) continue;
+          var Kh = cap[i] * (dmg.dead + (1 - dmg.dead) * h[i]);
+          if (bit[i] > 0 && v[i] < dmg.below * Kh && !winterLow) {
+            h[i] = Math.max(0, h[i] - loss);
+            rest[i] = 0;
+          } else {
+            if (rest[i] < 65535) rest[i]++;
+            if (h[i] < 1 && rest[i] >= dmg.rest) h[i] = Math.min(1, h[i] + rec * (0.2 + 0.8 * h[i]));
+          }
+        }
+      }
+      bit.fill(0);
       var r = def.growth * def.season[season] * w.growth;
       if (season === 3) r /= w.winter;
       var mult = w.mast && def.mast && (season === 1 || season === 2) ? def.mast : 1;
       var decay = def.decay ? def.decay[season] * (season === 3 ? w.winter : 1) : 0;
-      var stock = def.regrow === 'stock';
-      var seed = def.seed || 0;
-      var v = this.value[key], K = this.capacity[key];
-      for (var i = 0; i < v.length; i++) {
-        if (K[i] <= 0) continue;
-        if (r > 0) {
-          var T = K[i] * mult;
-          if (stock) {
-            if (v[i] < T) v[i] += r * (v[i] + seed * K[i]) * (1 - v[i] / T);
-          } else if (v[i] < T) {
-            var health = laubK[i] > 0.3 ? 0.2 + 0.8 * laubV[i] / laubK[i] : 1;
-            v[i] += r * (T - v[i]) * health;
-          }
-        }
+      var hh = this.healthFor(key), seed = def.seed, dead = deadFor(key);
+      for (i = 0; i < v.length; i++) {
+        if (cap[i] <= 0) continue;
+        var K = (hh ? cap[i] * (dead + (1 - dead) * hh[i]) : cap[i]) * mult;
+        // ueber der Kapazitaet (Zustand gesunken): Pflanzen sterben ab
+        if (v[i] > K) v[i] -= (v[i] - K) * 0.1;
+        else if (r > 0) v[i] += r * (v[i] + seed * K) * (1 - v[i] / K);
         if (decay > 0) v[i] -= v[i] * decay;
       }
     }
@@ -137,6 +185,7 @@
       var v = this.value[keys[k]];
       var take = Math.min(amount, v[i]);
       v[i] -= take;
+      this.bitten[keys[k]][i] += take;
       amount -= take;
       gained += take * diet[keys[k]];
       this.lastWater += take * BT.FOOD[keys[k]].water;
@@ -152,6 +201,17 @@
       var v = this.value[key], K = this.capacity[key], sv = 0, sk = 0;
       for (var i = 0; i < v.length; i++) { sv += v[i]; sk += K[i]; }
       out[key] = sk > 0 ? sv / sk : 0;
+    }
+    return out;
+  };
+
+  /** Mittlerer Pflanzenzustand je Schicht mit Ueberweidung, gewichtet mit der Kapazitaet. */
+  Fields.prototype.healthLevels = function () {
+    var out = {};
+    for (var key in this.health) {
+      var h = this.health[key], K = this.capacity[key], sh = 0, sk = 0;
+      for (var i = 0; i < h.length; i++) { sh += h[i] * K[i]; sk += K[i]; }
+      out[key] = sk > 0 ? sh / sk : 1;
     }
     return out;
   };
