@@ -8,7 +8,7 @@ beobachten und greifen ein. Das Konzept mit den Ausbaustufen und der Begründung
 Architektur steht in `docs/KONZEPT.md`. **Vor größeren Änderungen lesen.**
 
 Stand: Stufe 1 steht – Insel, Nahrungsfelder und vier Arten (Zwerghirsch, Laufvogel,
-Inselwolf, Inseladler) mit Herden, Rudeln, Revieren, Nestern, Aas, Jahreszeiten.
+Inselwolf, Inseladler) mit Herden, Rudeln, Revieren, Nestern, Adlerhorsten, Aas, Jahreszeiten.
 **Vor jeder Arbeit an Tieren `data/arten.md` lesen** – dort stehen die Arten, ihre Werte und die
 Mechanismen, die das Ökosystem stabil halten. Werte, die im Code geändert werden, wandern
 zurück in die Datei.
@@ -59,7 +59,7 @@ tools/      load.js (Skripte in Node laden), smoketest.js, balance.js (Abstimmun
 
 Simulation: Entschieden wird je **Gruppe** (Herde, Rudel …), die Tiere folgen dem Anker der
 Gruppe mit eigenem Versatz. Pro Tick: Verhalten, Bewegung, Fressen, Energie, Durst. Pro Tag:
-Wachstum, Alter, Geburt, Nester, Abwanderung, Gruppen teilen/zusammenlegen, Statistik.
+Wachstum, Alter, Geburt, Nester und Horste, Abwanderung, Gruppen teilen/zusammenlegen, Statistik.
 
 Generator-Reihenfolge in `island.js`: Form → Relief → Feuchte (ohne Gewässer) → Wasser
 (Priority-Flood, Seen, Abfluss, Flüsse) → Feuchte (mit Gewässern) → Biome.

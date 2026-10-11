@@ -57,6 +57,24 @@
       }
     }
 
+    // Horste der Greifvoegel: Reisig, waehrend der Brut mit Eiern
+    for (i = 0; i < sim.predatorGroups.length; i++) {
+      var h = sim.predatorGroups[i].horst;
+      if (!h || !inView(h, view, pad)) continue;
+      var hr = Math.max(8, 11 / scale);
+      ctx.fillStyle = '#5e4526';
+      ctx.beginPath(); ctx.arc(h.x, h.y, hr, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#7d5f37';
+      ctx.beginPath(); ctx.arc(h.x, h.y, hr * 0.65, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#efe6cf';
+      for (e = 0; e < Math.min(3, h.eggs); e++) {
+        a = e * 2.1;
+        ctx.beginPath();
+        ctx.ellipse(h.x + Math.cos(a) * hr * 0.3, h.y + Math.sin(a) * hr * 0.3, hr * 0.24, hr * 0.18, a, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
     // Tiere: Pflanzenfresser zuerst, Raeuber obenauf, hervorgehobene Art ganz oben
     if (hl) ctx.globalAlpha = 0.3;
     drawList(ctx, sim.herbivoreGroups, view, scale, alpha, pad, hl, false);

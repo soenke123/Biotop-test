@@ -510,9 +510,15 @@
 
   var STATE_TEXT = {
     fressen: 'frisst', fliehen: 'flieht', trinken: 'geht trinken', brueten: 'brütet',
-    streifen: 'streift durchs Revier', jagen: 'jagt', ruhen: 'ruht', aas: 'frisst Aas', wandern: 'sucht ein Revier'
+    streifen: 'streift durchs Revier', jagen: 'jagt', heimflug: 'bringt Beute zum Horst', ruhen: 'ruht', aas: 'frisst Aas', wandern: 'sucht ein Revier'
   };
   var GROUP_TEXT = { herd: 'Herde', flock: 'Gruppe', pack: 'Rudel', pair: 'Paar' };
+
+  function stateText(g, a) {
+    if (g.horst && BT.Behavior.inHorst(g, a)) return a.chick ? 'Küken im Horst' : 'brütet im Horst';
+    if (g.horst && g.state !== 'heimflug') return (STATE_TEXT[g.state] || g.state) + ' (versorgt den Horst)';
+    return STATE_TEXT[g.state] || g.state;
+  }
 
   function showTooltip(pos) {
     if (!world || !camera) return;
@@ -526,7 +532,7 @@
       text = a.spec.name + (a.sex === 'f' ? ' ♀' : ' ♂') + ' · ' +
         (a.age < a.spec.maturity ? 'Jungtier' : years.toFixed(1).replace('.', ',') + ' Jahre') +
         ' · Energie ' + Math.round(a.energy * 100) + ' %' +
-        (g ? ' · ' + GROUP_TEXT[a.spec.group.kind] + ' mit ' + g.members.length + ' · ' + (STATE_TEXT[g.state] || g.state) : '');
+        (g ? ' · ' + GROUP_TEXT[a.spec.group.kind] + ' mit ' + g.members.length + ' · ' + stateText(g, a) : '');
     } else {
       var b = world.query.biomeAt(w.x, w.y);
       text = BT.BIOME_INFO[b].name;

@@ -177,6 +177,8 @@
       maturity: Y(1.5), maxAge: Y(9),
       breed: { kind: 'group-pair', season: 0, day: 6, chance: 0.85, litter: [2, 4], minEnergy: 0.5, cost: 0.15 },
       newbornEnergy: 0.6,
+      // Mehr Jagd mit Welpen (rearing: { age: Y(0.5), hungry: 0.76 }) wurde
+      // getestet: die Woelfe ueberjagen dann die Hirsche und sterben haeufiger aus
       disperse: { season: 2, minAge: Y(1.5), minGroup: 4, chance: 0.6 },
       meat: 1.2
     },
@@ -206,7 +208,21 @@
       hungry: 0.65,
       habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 1, BEACH: 1, THERMAL: 1, ROCK: 1, PEAK: 1 }),
       maturity: Y(2), maxAge: Y(14),
-      breed: { kind: 'group-pair', season: 0, day: 8, chance: 0.75, litter: [1, 2], minEnergy: 0.45, cost: 0.15 },
+      // Horst: Ein Paar mit Revier legt im Fruehling 2-3 Eier. Brut: einer sitzt,
+      // der andere jagt, bei jeder Beute wird gewechselt. Nestlinge: beide jagen
+      // und fuettern. Flugge Junge verlassen den Horst und suchen sich ein Revier.
+      breed: { kind: 'horst', season: 0, day: 1, chance: 0.85, litter: [2, 3], minEnergy: 0.55, cost: 0.1 },
+      horst: {
+        incubation: 10,               // Tage Brut
+        nestling: 15,                 // Tage, bis die Kueken fluegge sind
+        radius: 300,                  // gejagt wird in diesem Umkreis um den Horst
+        hungry: 0.95,                 // jagt fast ununterbrochen
+        huntBonus: 1.3,               // kennt die Umgebung des Horsts genau
+        abandon: 0.25,                // sinkt die Energie des Brutvogels (oder beider Eltern) darunter, wird die Brut aufgegeben
+        chickCost: 0.045,              // Kueken wachsen: zusaetzlicher Verbrauch je Tag
+        selfFirst: 0.4,               // so weit fressen die Eltern sich zuerst satt                 // sinkt die Energie des Brutvogels darunter, gibt er das Gelege auf
+        sites: pref({ FERN: 1, MOSS: 1, ROCK: 1, PEAK: 0.8, SCRUB: 0.5 })   // Baeume und Felsen
+      },
       newbornEnergy: 0.6,
       disperse: { season: 2, minAge: Y(1), minGroup: 3, chance: 1 },
       meat: 0.8

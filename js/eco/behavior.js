@@ -11,6 +11,11 @@
  * Zustaende:
  *   Pflanzenfresser  fressen · fliehen · trinken · brueten
  *   Raeuber          streifen · jagen · ruhen · trinken · wandern (ohne Revier)
+ *                    heimflug (Greifvogel bringt Beute zum Horst)
+ *
+ * Horst (spec.horst): Tiere im Horst (Brutvogel, Kueken) bleiben dort, der
+ * Anker der Gruppe sind die jagenden Eltern. Jede Beute wird zum Horst
+ * gebracht und dort verteilt.
  */
 (function (global) {
   'use strict';
@@ -160,6 +165,31 @@
 
   // ------------------------------------------------------------ Raeuber
 
+  /** Sitzt dieses Tier im Horst (Brutvogel oder Kueken)? */
+  function inHorst(g, a) {
+    var h = g.horst;
+    return !!h && (a.chick || (h.phase === 'brut' && a.id === h.sitter));
+  }
+
+  /**
+   * Ab welcher Energie gejagt wird: Wer Junge versorgt, jagt mehr - am Horst
+   * fast ununterbrochen, im Rudel mit Welpen frueher als sonst.
+   */
+  function hungerThreshold(g) {
+    var spec = g.spec;
+    if (g.horst) return spec.horst.hungry;
+    var r = spec.rearing;
+    if (r) for (var i = 0; i < g.members.length; i++) if (g.members[i].age < r.age) return r.hungry;
+    return spec.hungry;
+  }
+
+  /** Mittelpunkt und Radius, in dem die Gruppe jagt und streift (null: ohne Revier). */
+  function huntArea(g) {
+    if (g.horst) return { x: g.horst.x, y: g.horst.y, r: g.spec.horst.radius };
+    if (g.home) return { x: g.home.x, y: g.home.y, r: g.spec.territory };
+    return null;
+  }
+
   function eligibleVictims(pred, preyGroup) {
     var maxAge = pred.spec.preyMaxAge && pred.spec.preyMaxAge[preyGroup.spec.id];
     if (!maxAge) return preyGroup.members;
@@ -192,6 +222,8 @@
       if (d > vision) continue;
       // Der Revierbesitzer jagt im eigenen Revier; Wanderer ohne Revier werden
       // aus fremden Revieren vertrieben und jagen nur dazwischen
+      // Am Horst nur in dessen Umkreis
+      if (g.horst && BT.M.hypot(p.x - g.horst.x, p.y - g.horst.y) > spec.horst.radius) continue;
       if (g.home && BT.M.hypot(p.x - g.home.x, p.y - g.home.y) > spec.territory * 1.4) continue;
       if (!g.home && insideForeignTerritory(sim, g, p.x, p.y)) continue;
       if (!eligibleVictims(g, p).length) continue;
@@ -214,9 +246,13 @@
     var victims = eligibleVictims(g, prey);
     if (!victims.length) return false;
     var hunters = 0;
-    for (var i = 0; i < g.members.length; i++) if (g.members[i].age >= spec.maturity * 0.6) hunters++;
+    for (var i = 0; i < g.members.length; i++) {
+      var h = g.members[i];
+      if (h.age >= spec.maturity * 0.6 && !inHorst(g, h)) hunters++;
+    }
     hunters = Math.max(1, Math.min(hunters, 5));
     var p = 1 - BT.M.pow(1 - spec.huntChance, hunters);
+    if (g.horst) p = Math.min(1, p * spec.horst.huntBonus);
     p *= 1 - COVER[sim.world.query.biomeAt(prey.x, prey.y)] * (spec.flies ? 0.9 : 0.4);
     p /= 1 + 0.03 * (prey.members.length - 1);           // Wachsamkeit der Gruppe
     // Gut genaehrte Beute entkommt leichter, ausgehungerte kaum: Raeuber
@@ -237,6 +273,8 @@
     var meat = victim.spec.meat * (victim.age < victim.spec.maturity ? 0.5 : 1);
     var vx = victim.x, vy = victim.y;
     sim.kill(victim, spec.id);
+    // Am Horst wird die Beute heimgebracht und dort verteilt
+    if (g.horst) { g.carry = (g.carry || 0) + meat; return true; }
     var rest = sim.feed(g, meat);
     sim.addCarcass(vx, vy, rest * 0.8);     // Reste fuer Aasfresser
     return true;
@@ -306,10 +344,49 @@
     return true;
   }
 
+  /**
+   * Beute zum Horst bringen: dort wird sie verteilt, die Hungrigsten (meist
+   * Brutvogel und Kueken) zuerst. Waehrend der Brut loesen sich die Eltern ab.
+   */
+  function flyHome(sim, g) {
+    var spec = g.spec, h = g.horst;
+    if (!h) { g.carry = 0; g.state = 'streifen'; return false; }
+    var sp = spec.speed * 1.5;
+    if (BT.M.hypot(h.x - g.x, h.y - g.y) > 15) {
+      BT.Move.stepToward(sim.world, spec, g, h.x, h.y, sp);
+      g.speedNow = sp;
+      return true;
+    }
+    // Die Eltern versorgen zuerst sich selbst, dann die Kueken in der Reihenfolge
+    // des Schluepfens - in mageren Zeiten kommt nur das aelteste durch
+    var food = g.carry || 0, order = [], k;
+    for (k = 0; k < g.members.length; k++) if (!g.members[k].chick) order.push({ a: g.members[k], to: spec.horst.selfFirst });
+    for (k = 0; k < g.members.length; k++) if (g.members[k].chick) order.push({ a: g.members[k], to: 1 });
+    for (k = 0; k < order.length && food > 0.001; k++) {
+      var take = Math.max(0, Math.min(order[k].to - order[k].a.energy, food));
+      order[k].a.energy += take; food -= take;
+    }
+    var rest = sim.feed(g, food);
+    sim.addCarcass(h.x, h.y, rest * 0.8);
+    g.carry = 0;
+    if (h.phase === 'brut') {
+      for (var i = 0; i < g.members.length; i++) {
+        var a = g.members[i];
+        if (a.id !== h.sitter && !a.chick && a.age >= spec.maturity) { h.sitter = a.id; break; }
+      }
+    }
+    g.state = 'ruhen'; g.stateTicks = 1; g.tx = null;
+    g.speedNow = 0;
+    return true;
+  }
+
   function predator(sim, g) {
     var spec = g.spec;
     var energy = avg(g.members, 'energy');
+    var hungry = hungerThreshold(g);
     g.grazing = false;
+
+    if (g.state === 'heimflug' && flyHome(sim, g)) return;
 
     if (g.state === 'ruhen') {
       g.speedNow = 0;
@@ -336,8 +413,9 @@
         g.speedNow = sp;
         if (dist(g, prey) < 30) {
           if (attack(sim, g, prey)) {
+            if (g.carry) { g.state = 'heimflug'; g.prey = null; g.tx = null; return; }
             // Satt wird geruht, sonst nach kurzem Fressen weitergejagt
-            var full = avg(g.members, 'energy') >= spec.hungry;
+            var full = avg(g.members, 'energy') >= hungry;
             g.state = 'ruhen'; g.stateTicks = full ? sim.ticksPerDay * 2 : 2; g.prey = null; g.tx = null;
           } else {
             // Beute flieht, die Jagd geht weiter, bis die Zeit um ist
@@ -349,11 +427,11 @@
     }
 
     // Aas in der Naehe? Leichter als jagen.
-    if (energy < spec.hungry && scavenge(sim, g)) return;
+    if (energy < hungry && scavenge(sim, g)) return;
 
     // Hungrig? Beute suchen
     if (g.cooldown > 0) g.cooldown--;
-    if (energy < spec.hungry && !g.cooldown) {
+    if (energy < hungry && !g.cooldown) {
       var target = findPrey(sim, g);
       if (target) {
         g.state = 'jagen'; g.prey = target; g.stateTicks = spec.maxChaseTicks; g.stalkTicks = 0;
@@ -364,18 +442,17 @@
     // Streifen im Revier oder wandern auf der Suche nach einem. Wer auch
     // Pflanzliches oder Insekten frisst (spec.diet), sucht dabei nebenher Futter.
     g.state = g.home ? 'streifen' : 'wandern';
-    if (spec.diet && energy < spec.hungry) g.grazing = true;
+    if (spec.diet && energy < hungry) g.grazing = true;
     if (g.tx === null || BT.M.hypot(g.tx - g.x, g.ty - g.y) < 20 || g.stateTicks-- <= 0) {
-      var c = g.home || g;
-      var r = g.home ? spec.territory : spec.territory * 2.5;
+      var area = huntArea(g);
       var p;
-      if (!g.home) p = mateSearchPoint(sim, g) || randomPointNear(sim, spec, c.x, c.y, r);
-      else if (energy < spec.hungry * 1.15) p = preyRichPoint(sim, g, c, r);
-      else p = randomPointNear(sim, spec, c.x, c.y, r);
+      if (!area) p = mateSearchPoint(sim, g) || randomPointNear(sim, spec, g.x, g.y, spec.territory * 2.5);
+      else if (energy < hungry * 1.15) p = preyRichPoint(sim, g, area, area.r);
+      else p = randomPointNear(sim, spec, area.x, area.y, area.r);
       g.tx = p.x; g.ty = p.y;
       g.stateTicks = 40;
     }
-    var sp = energy < spec.hungry ? spec.speed * 1.3 : spec.speed;
+    var sp = energy < hungry ? spec.speed * 1.3 : spec.speed;
     BT.Move.stepToward(sim.world, spec, g, g.tx, g.ty, sp);
     g.speedNow = sp;
   }
@@ -384,6 +461,7 @@
     herbivore: herbivore,
     predator: predator,
     randomPointNear: randomPointNear,
+    inHorst: inHorst,
     COVER: COVER
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -149,6 +149,11 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   Verbrauch 0,042 Energie am Tag.
 - **Fortpflanzung:** nur das älteste Paar des Rudels, 2–4 Welpen im Frühling, und nur wenn das
   Rudel gut genährt ist (≥ 50 %), ein eigenes Revier hat und noch nicht voll ist (höchstens 6).
+- **Mit Welpen mehr jagen** wurde ausprobiert (Jagd schon unter 85 % bzw. 76 % Energie, solange
+  Welpen unter ½ Jahr im Rudel sind) und wieder abgeschaltet: Die Wölfe reißen dann mehr Hirsche,
+  als sie brauchen, und sterben danach häufiger aus (in 48 Testläufen 4–6-mal statt 1–2-mal). Der
+  Mechanismus steht noch im Code (`rearing` in der Artentabelle) und kann zum Experimentieren
+  eingeschaltet werden.
 - **Abwanderung:** Im Herbst verlassen junge Wölfe Rudel ab 4 Tieren (jeder mit 60 %). Wanderer suchen Artgenossen,
   schließen sich Rudeln an, denen ein Geschlecht fehlt, und gründen mit Partner ein Revier, wo
   Platz ist. Wanderer werden aus fremden Revieren vertrieben.
@@ -156,12 +161,30 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
 ## Inseladler
 
 - **Vorbild:** Haastadler (Neuseeland, ausgestorben).
-- **Gruppe:** Paar mit Revier (Radius 330), dazu höchstens ein Junges.
+- **Gruppe:** Paar mit Revier (Radius 330), im Frühling und Sommer dazu die Küken im Horst.
 - **Beute:** Laufvögel, junge Zwerghirsche (bis ½ Jahr). Sieht schlecht unter Bäume. Frisst Aas.
   Jagt unter 65 % Energie, verbraucht 0,03 Energie am Tag. Erfolg je Angriff und Jäger 0,3.
-- **Fortpflanzung:** 1–2 Junge im Frühling, nur im eigenen Revier und nur, solange die Familie
-  nicht voll ist (höchstens 3). Erwachsen mit 2 Jahren, Höchstalter etwa 14 Jahre.
-- **Abwanderung:** wie beim Wolf.
+- **Horst:** Jedes Paar hat einen festen Horst nahe der Reviermitte, am liebsten auf Bäumen oder
+  Felsen, und nutzt ihn jedes Jahr wieder. Auf der Karte ist er ein Reisignest, während der Brut
+  mit Eiern.
+  1. **Brut** (10 Tage ab Frühlingstag 1): Das Paar legt 2–3 Eier, wenn das Weibchen gut genährt
+     ist (≥ 55 %, Chance 85 %). Ein Vogel sitzt immer im Horst, der andere jagt. Jede Beute wird
+     zum Horst gebracht, dann wechseln sie sich ab. Sinkt der Brutvogel unter 25 % Energie oder
+     stirbt ein Partner, wird das Gelege aufgegeben.
+  2. **Nestlinge** (15 Tage): Die Küken sitzen im Horst, beide Eltern jagen und bringen jede Beute
+     heim. Küken wachsen und brauchen viel (0,045 Energie am Tag zusätzlich). Verteilt wird so:
+     erst fressen sich die Eltern bis 40 % satt, dann bekommen die Küken in der Reihenfolge des
+     Schlüpfens, der Rest wird geteilt. In guten Jahren kommen alle Küken durch, in mageren nur das
+     älteste. Hungern beide Eltern (unter 25 %), geben sie die Brut auf.
+  3. **Flügge:** Danach fliegt jedes Junge allein los und sucht sich ein eigenes Revier.
+
+  Am Horst jagen die Adler fast ununterbrochen (unter 95 % Energie) und erfolgreicher (× 1,3,
+  sie kennen die Umgebung genau), aber nur im Umkreis von 300 um den Horst. Die Brutzeit fällt
+  auf die Zeit, in der die Laufvögel ihre Küken haben.
+- **Revier gründen:** Junge Adler ohne Revier tun sich mit einem Partner des anderen Geschlechts
+  zusammen, nie mit Artgenossen desselben Geschlechts. Ein junges Paar besetzt ein freies Revier
+  und brütet, sobald beide erwachsen sind (2 Jahre). Wer ein Revier hat, verliert es erst nach
+  einem Jahr ohne Partner. Höchstalter etwa 14 Jahre.
 - **Trinkt nicht** (Wasser aus der Beute).
 
 ## Was das Ökosystem stabil hält
@@ -213,6 +236,19 @@ Hirsche, das Grasland leidet. Erholen sich die Wölfe, sinken die Hirsche, und d
 Adler, Laufvögel und Insekten zusammen.
 
 ## Abstimmung (Stand)
+
+**Horst-System der Adler** (48 Inseln über 30 Jahre: `balance.js 8 30`, `16 30 --seed=5000`,
+`24 30 --seed=9000`; vorher → nachher):
+
+- alle Arten überleben: 42 → 43 von 48; Adler sterben aus: 4 → 4-mal (kein messbarer Unterschied)
+- Adler im Mittel ab Jahr 10: 12 → 13–15; Laufvögel 260 → 250–256; Zustand der Insekten
+  80 % → 88 % (Standardlauf); Hirsche 127 → 95 (Standardlauf, die übrigen Läufe ~105 wie vorher)
+- Erste Fassung (Küken ohne Mehrbedarf): Die Adler verdoppelten sich in 3 Jahren, fraßen die
+  Laufvögel herunter und brachen ein. Erst seit der Bruterfolg vom Futter abhängt, bleibt es ruhig.
+- Junge Adler ohne Revier überall jagen lassen (nur der Kern um den Horst verteidigt) war deutlich
+  schlechter: Die Adler starben in 12 von 24 Läufen aus.
+
+Älterer Stand:
 
 `node tools/balance.js 8 30` rechnet 8 Inseln über 30 Jahre:
 

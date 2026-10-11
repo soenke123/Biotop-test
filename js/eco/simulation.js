@@ -3,7 +3,7 @@
  *
  * Pro Tick:   jede Gruppe entscheidet (eco/behavior.js), die Tiere folgen ihrer
  *             Gruppe, fressen, verbrauchen Energie, werden durstig.
- * Pro Tag:    Pflanzen wachsen, Alter, Geburten, Nester, Abwanderung,
+ * Pro Tag:    Pflanzen wachsen, Alter, Geburten, Nester und Horste, Abwanderung,
  *             Teilen und Zusammenlegen von Gruppen, Statistik.
  *
  * Deterministisch: aller Zufall kommt aus einem RNG, der aus dem Seed der
@@ -78,6 +78,9 @@
       prey: null,
       cooldown: 0,
       nest: null,
+      horst: null,                  // Greifvoegel: { x, y, phase: 'brut'|'nestlinge', eggs, day, sitter }
+      horstSite: null,              // Horst wird jedes Jahr wieder benutzt
+      carry: 0,                     // Beute auf dem Weg zum Horst
       speedNow: 0,
       grazing: false
     };
@@ -221,7 +224,7 @@
           a.energy = Math.min(1, a.energy + gain);
           a.thirst = Math.max(0, a.thirst - this.fields.lastWater);
         }
-        a.energy -= cost;
+        a.energy -= a.chick ? cost + spec.horst.chickCost * perTick : cost;
         a.thirst = drinks ? 0 : a.thirst + thirst;
         if (a.energy <= 0) this.kill(a, 'hunger');
         else if (a.thirst >= 1) this.kill(a, 'durst');
@@ -243,6 +246,8 @@
       var r = BT.M.hypot(a.ox, a.oy);
       if (r > spread) { a.ox *= spread / r; a.oy *= spread / r; }
       var tx = g.x + a.ox, ty = g.y + a.oy;
+      // Brutvogel und Kueken bleiben im Horst
+      if (g.horst && BT.Behavior.inHorst(g, a)) { tx = g.horst.x + a.ox * 0.25; ty = g.horst.y + a.oy * 0.25; }
       if (BT.Move.blockedAt(this.world, g.spec, tx, ty)) { tx = g.x; ty = g.y; }
       var dx = tx - a.x, dy = ty - a.y, d = BT.M.hypot(dx, dy);
       if (d > 0.01) {
@@ -280,6 +285,7 @@
       if (!g.members.length) continue;
       this.breed(g, cal);
       this.hatch(g);
+      this.tendHorst(g);
       this.disperse(g, cal);
     }
     this.reorganize();
@@ -306,6 +312,12 @@
       var a = g.members[i];
       if (a.sex === sex && a.age >= a.spec.maturity) n++;
     }
+    return n;
+  }
+
+  function anyAge(g, sex) {
+    var n = 0;
+    for (var i = 0; i < g.members.length; i++) if (g.members[i].sex === sex) n++;
     return n;
   }
 
@@ -341,6 +353,15 @@
       // Nur das ranghoechste (aelteste) Paar pflanzt sich fort
       mothers.sort(function (x, y) { return y.age - x.age; });
       if (this.rng.chance(b.chance)) this.birth(g, mothers[0]);
+    } else if (b.kind === 'horst') {
+      // Greifvogel: das Paar legt die Eier in seinen Horst, einer brütet immer
+      mothers.sort(function (x, y) { return y.age - x.age; });
+      if (!this.rng.chance(b.chance)) return;
+      if (!g.horstSite) g.horstSite = this.horstSite(spec, g.home);
+      var eggs = this.rng.intIn(b.litter);
+      mothers[0].energy -= b.cost;
+      g.horst = { x: g.horstSite.x, y: g.horstSite.y, phase: 'brut', eggs: eggs, day: this.day, sitter: mothers[0].id };
+      this.stats.nest(spec.id, eggs);
     } else if (b.kind === 'pair') {
       // Bodenbrueter: ein gemeinsames Nest, Kueken schluepfen spaeter
       var pairs = Math.min(mothers.length, males);
@@ -368,10 +389,78 @@
     g.nest = null;
   };
 
+  /** Platz fuer den Horst nahe der Reviermitte, am liebsten auf Baeumen oder Felsen. */
+  Simulation.prototype.horstSite = function (spec, home) {
+    var best = { x: home.x, y: home.y }, bestScore = -1;
+    for (var t = 0; t < 10; t++) {
+      var p = BT.Behavior.randomPointNear(this, spec, home.x, home.y, spec.territory * 0.35);
+      var score = spec.horst.sites[this.world.query.biomeAt(p.x, p.y)] + this.rng.next() * 0.1;
+      if (score > bestScore) { bestScore = score; best = p; }
+    }
+    return best;
+  };
+
+  /**
+   * Horst, einmal am Tag: Nach der Brut schluepfen die Kueken, nach der
+   * Nestlingszeit fliegen sie aus und suchen sich jedes fuer sich ein Revier.
+   * Brutvogel verhungert, allein oder Eltern ausgehungert -> Brut aufgegeben.
+   */
+  Simulation.prototype.tendHorst = function (g) {
+    var h = g.horst;
+    if (!h) return;
+    var spec = g.spec, hs = spec.horst;
+    var parents = g.members.filter(function (a) { return !a.chick && a.age >= spec.maturity; });
+    if (h.phase === 'brut') {
+      var sitter = null;
+      for (var i = 0; i < parents.length; i++) if (parents[i].id === h.sitter) sitter = parents[i];
+      if (parents.length < 2 || !sitter || sitter.energy < hs.abandon) { this.endHorst(g); return; }
+      if (this.day - h.day < hs.incubation) return;
+      for (var k = 0; k < h.eggs; k++) {
+        var c = this.makeAnimal(spec, h.x, h.y, 0, this.rng.chance(0.5) ? 'f' : 'm', spec.newbornEnergy);
+        c.chick = true;
+        this.addToGroup(g, c);
+        c.x = h.x; c.y = h.y; c.px = c.x; c.py = c.y;
+        this.stats.birth(spec.id);
+      }
+      h.phase = 'nestlinge'; h.day = this.day; h.eggs = 0;
+      return;
+    }
+    var chicks = g.members.filter(function (a) { return a.chick; });
+    // Hungern die Eltern selbst, geben sie die Brut auf: Ein langlebiger Vogel
+    // setzt nicht sein Leben fuer eine Brut aufs Spiel
+    var weak = parents.length && parents.every(function (a) { return a.energy < hs.abandon; });
+    if (!chicks.length || !parents.length || weak) { this.endHorst(g); return; }
+    if (this.day - h.day < hs.nestling) return;
+    // Fluegge: jedes Junge fliegt los und sucht sich seinen eigenen Platz
+    for (k = 0; k < chicks.length; k++) {
+      var ng = this.makeGroup(spec, h.x, h.y);
+      chicks[k].chick = false;
+      this.removeFromGroup(chicks[k]);
+      this.addToGroup(ng, chicks[k]);
+      ng.state = 'wandern';
+    }
+    this.endHorst(g);
+  };
+
+  /** Horst verlassen: verbliebene Kueken (verwaist) werden zu Wanderern. */
+  Simulation.prototype.endHorst = function (g) {
+    var orphans = g.members.filter(function (a) { return a.chick; });
+    for (var i = 0; i < orphans.length; i++) {
+      var ng = this.makeGroup(g.spec, g.horst.x, g.horst.y);
+      this.removeFromGroup(orphans[i]);
+      this.addToGroup(ng, orphans[i]);
+      ng.state = 'wandern';
+    }
+    for (i = 0; i < orphans.length; i++) orphans[i].chick = false;
+    if (g.carry) { this.feed(g, g.carry); g.carry = 0; }
+    if (g.state === 'heimflug') g.state = 'streifen';
+    g.horst = null;
+  };
+
   /** Junge Raeuber verlassen im Herbst das Rudel bzw. die Eltern. */
   Simulation.prototype.disperse = function (g, cal) {
     var d = g.spec.disperse;
-    if (!d || cal.season !== d.season || cal.dayOfSeason !== 1) return;
+    if (!d || g.horst || cal.season !== d.season || cal.dayOfSeason !== 1) return;
     if (g.members.length < d.minGroup) return;
     var oldest = g.members.slice().sort(function (a, b) { return b.age - a.age; });
     var breeders = [];
@@ -432,29 +521,48 @@
    * wird zum Wanderer. Wanderer schliessen sich Gruppen an, denen ein
    * Geschlecht fehlt, oder finden sich zu zweit zusammen. Mit Partner und
    * freiem Platz gruenden sie ein Revier.
+   *
+   * Paare (Greifvoegel) verpaaren sich schon als Jungvoegel: Ein junges Paar
+   * besetzt ein freies Revier und brütet, sobald beide erwachsen sind.
+   * Wanderer schliessen sich nur einem Partner an, nie Artgenossen desselben
+   * Geschlechts - sonst bildeten sich Trupps, die nie ein Revier gruenden.
    */
   Simulation.prototype.reorganizePredator = function (g) {
     var spec = g.spec;
-    var f = adults(g, 'f'), m = adults(g, 'm');
+    var pairs = spec.group.kind === 'pair';
+    var count = pairs ? anyAge : adults;
+    var f = count(g, 'f'), m = count(g, 'm');
     if (g.home) {
       g.lonelyDays = f && m ? 0 : (g.lonelyDays || 0) + 1;
       if (g.lonelyDays > T.DAYS_PER_YEAR) { g.home = null; g.lonelyDays = 0; }
       return;
     }
     var self = this;
+    var k;
+    if (pairs && g.members.length > 1 && !(f && m)) {
+      // Gleichgeschlechtliche Wanderer gehen getrennte Wege
+      var rest = g.members.slice(1);
+      for (k = 0; k < rest.length; k++) {
+        var ng = this.makeGroup(spec, g.x, g.y);
+        this.removeFromGroup(rest[k]); this.addToGroup(ng, rest[k]);
+        ng.state = 'wandern';
+      }
+    }
     var other = this.nearestGroupOf(spec, g, 260, function (o) {
-      if (o.members.length + g.members.length > spec.group.max) return false;
-      var of = adults(o, 'f'), om = adults(o, 'm');
-      var completes = (!of && adults(g, 'f')) || (!om && adults(g, 'm'));
+      if (o.members.length + g.members.length > spec.group.max || o.horst) return false;
+      var of = count(o, 'f'), om = count(o, 'm');
+      var completes = (!of && count(g, 'f')) || (!om && count(g, 'm'));
+      if (pairs) return completes && !(f && m);
       return completes || !o.home || o.members.length < 2;
     });
     if (other) {
       var moving = g.members.slice();
-      for (var k = 0; k < moving.length; k++) { self.removeFromGroup(moving[k]); self.addToGroup(other, moving[k]); }
+      for (k = 0; k < moving.length; k++) { self.removeFromGroup(moving[k]); self.addToGroup(other, moving[k]); }
       return;
     }
     if (f && m && this.homeIsFree(spec, g.x, g.y)) {
       g.home = { x: g.x, y: g.y };
+      g.horstSite = null;
       g.state = 'streifen';
     }
   };
