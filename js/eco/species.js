@@ -34,7 +34,8 @@
    *           Kapazitaet) abgefressen, sinkt ihr Pflanzenzustand um `loss` je Tag: die
    *           Pflanzen sterben ab, es waechst weniger nach. Erst nach `rest` Tagen ohne
    *           Ueberweidung erholt sich der Zustand, um `recover` je Tag (mal Jahreszeit,
-   *           mal 0,2 + 0,8 * Zustand: kahler Boden braucht am laengsten).
+   *           mal 0,2 + 0,8 * Zustand: kahler Boden braucht am laengsten). Voellig
+   *           ueberweidet traegt die Zelle nur noch `dead` (Anteil der Kapazitaet).
    * healthOf: diese Schicht haengt am Zustand einer anderen (Fruechte an den Bueschen)
    */
   BT.FOOD = {
@@ -43,7 +44,7 @@
       water: 0.04,
       growth: 0.13, seed: 0.05,
       season: [1.5, 1.0, 0.7, 0.3],
-      damage: { below: 0.1, loss: 0.03, recover: 0.009, rest: 30 },
+      damage: { below: 0.25, loss: 0.05, recover: 0.006, rest: 60, dead: 0.02 },
       capacity: cap({ TUSSOCK: 5.5, SCRUB: 2.75, SWAMP: 3.3, BEACH: 0.83, FERN: 0.83, MOSS: 0.55, THERMAL: 0.83, ROCK: 0.55 })
     },
     laub: {
@@ -51,7 +52,7 @@
       water: 0.06,
       growth: 0.1, seed: 0.05,
       season: [1.4, 1.0, 0.6, 0.25],
-      damage: { below: 0.2, loss: 0.015, recover: 0.003, rest: 30 },
+      damage: { below: 0.3, loss: 0.03, recover: 0.004, rest: 60, dead: 0.02 },
       capacity: cap({ FERN: 4.4, MOSS: 3.3, SCRUB: 3.85, SWAMP: 1.1, TUSSOCK: 0.55 })
     },
     frucht: {
@@ -103,7 +104,7 @@
       searchRadius: 260,              // sucht Futter
       habitat: pref({ TUSSOCK: 1.0, SCRUB: 1.0, FERN: 0.8, SWAMP: 0.5, MOSS: 0.5, BEACH: 0.3, THERMAL: 0.3, ROCK: 0.15, PEAK: 0 }),
       maturity: Y(1), maxAge: Y(8),
-      breed: { kind: 'each-female', season: 0, day: 4, chance: 0.85, litter: [1, 2], minEnergy: 0.4, cost: 0.15 },
+      breed: { kind: 'each-female', season: 0, day: 4, chance: 0.85, litter: [1, 1], minEnergy: 0.4, cost: 0.15 },
       newbornEnergy: 0.6,
       meat: 1.5                       // Energie, die ein erlegtes Tier liefert
     },
@@ -118,7 +119,7 @@
       color: '#5d8fc9',
       group: { kind: 'flock', min: 2, max: 6, spread: 16, start: [2, 4] },
       start: 160,                     // Tiere zu Beginn
-      diet: { gras: 0.04, frucht: 0.1, insekten: 0.11 },
+      diet: { frucht: 0.1, insekten: 0.11 },   // kein Gras: das Gras haengt allein an den Hirschen
       bite: 0.32,
       costPerDay: 0.055,
       winterCost: 0.015,
@@ -144,11 +145,11 @@
       color: '#7c7c86',
       group: { kind: 'pack', min: 1, max: 5, spread: 18, start: [3, 5] },
       start: 20,                      // Tiere, verteilt auf Rudel
-      prey: { zwerghirsch: 1.0, laufvogel: 0.4 },
+      prey: { zwerghirsch: 1.0, laufvogel: 0.15 },
       // Wie sein Vorbild frisst er nebenher Insekten und Fruechte - das traegt
       // ihn durch Zeiten mit wenig Beute, reicht aber nicht fuer Nachwuchs
-      diet: { frucht: 0.04, insekten: 0.04 },
-      bite: 0.1,
+      diet: { frucht: 0.06, insekten: 0.06 },
+      bite: 0.15,
       costPerDay: 0.045,
       winterCost: 0.015,
       thirstDays: 10,
@@ -160,7 +161,7 @@
       hungry: 0.7,                    // jagt, wenn Energie darunter
       habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 0.7, BEACH: 0.6, THERMAL: 0.6, ROCK: 0.6, PEAK: 0.1 }),
       maturity: Y(1.5), maxAge: Y(9),
-      breed: { kind: 'group-pair', season: 0, day: 6, chance: 0.85, litter: [2, 4], minEnergy: 0.6, cost: 0.15 },
+      breed: { kind: 'group-pair', season: 0, day: 6, chance: 0.85, litter: [2, 4], minEnergy: 0.5, cost: 0.15 },
       newbornEnergy: 0.6,
       disperse: { season: 2, minAge: Y(1.5), minGroup: 5, chance: 0.35 },
       meat: 1.2

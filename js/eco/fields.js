@@ -11,7 +11,7 @@
  *
  * Ueberweidung: Wird eine Zelle immer wieder kahl gefressen, sinkt ihr
  * Pflanzenzustand (health, 0..1). Abgestorbene Pflanzen tragen weniger:
- * K = Kapazitaet * (DEAD + (1 - DEAD) * health). Erholen kann sich eine
+ * K = Kapazitaet * (dead + (1 - dead) * health), dead aus BT.FOOD[..].damage. Erholen kann sich eine
  * Zelle erst nach einer Schonzeit ohne Ueberweidung (damage.rest Tage), und
  * dann umso langsamer, je kaputter sie ist: Kahler Boden muss erst wieder
  * besiedelt werden. Ganz verschwinden kann eine Pflanzenschicht nicht.
@@ -22,7 +22,6 @@
   var BT = global.BT || (global.BT = {});
 
   var FIELD_CELLS = 4;
-  var DEAD = 0.15;      // so viel traegt eine voellig ueberweidete Zelle noch
 
   function Fields(world) {
     this.world = world;
@@ -101,11 +100,19 @@
     return this.health[def.healthOf || key] || null;
   };
 
+  /** So viel traegt eine voellig ueberweidete Zelle dieser Schicht noch (Anteil). */
+  function deadFor(key) {
+    var def = BT.FOOD[key];
+    var dmg = BT.FOOD[def.healthOf || key].damage;
+    return dmg ? dmg.dead : 1;
+  }
+
   /** Kapazitaet einer Zelle unter Beruecksichtigung des Pflanzenzustands. */
   Fields.prototype.carrying = function (key, i) {
     var h = this.healthFor(key);
     var K = this.capacity[key][i];
-    return h ? K * (DEAD + (1 - DEAD) * h[i]) : K;
+    var dead = deadFor(key);
+    return h ? K * (dead + (1 - dead) * h[i]) : K;
   };
 
   /** Ein Tag: Ueberweidung bzw. Erholung, dann Wachstum. */
@@ -123,7 +130,7 @@
         var winterLow = def.season[season] < 0.5;
         for (var i = 0; i < v.length; i++) {
           if (cap[i] <= 0) continue;
-          var Kh = cap[i] * (DEAD + (1 - DEAD) * h[i]);
+          var Kh = cap[i] * (dmg.dead + (1 - dmg.dead) * h[i]);
           if (bit[i] > 0 && v[i] < dmg.below * Kh && !winterLow) {
             h[i] = Math.max(0, h[i] - loss);
             rest[i] = 0;
@@ -136,10 +143,10 @@
       bit.fill(0);
       var r = def.growth * def.season[season];
       if (r <= 0) continue;
-      var hh = this.healthFor(key), seed = def.seed;
+      var hh = this.healthFor(key), seed = def.seed, dead = deadFor(key);
       for (i = 0; i < v.length; i++) {
         if (cap[i] <= 0) continue;
-        var K = hh ? cap[i] * (DEAD + (1 - DEAD) * hh[i]) : cap[i];
+        var K = hh ? cap[i] * (dead + (1 - dead) * hh[i]) : cap[i];
         // ueber der Kapazitaet (Zustand gesunken): Pflanzen sterben ab
         if (v[i] > K) v[i] -= (v[i] - K) * 0.1;
         else v[i] += r * (v[i] + seed * K) * (1 - v[i] / K);
@@ -200,6 +207,5 @@
     return out;
   };
 
-  Fields.DEAD = DEAD;
   BT.Fields = Fields;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -36,11 +36,18 @@ kahl gefressen kaum noch (nur aus Wurzeln und Samen, 5 % der Kapazität). Pro Ta
 `v += Rate · Jahreszeit · (v + 0,05·K) · (1 − v/K)`. Raten: Gras 0,13, Laub 0,1, Früchte 0,18,
 Insekten 0,3.
 
-**Überweidung:** Wird eine Weidezelle immer wieder unter 20 % ihrer Kapazität abgefressen, sinkt
-ihr Pflanzenzustand (Gras um 0,03 je Tag, Laub um 0,015). Abgestorbene Pflanzen tragen weniger:
-Bei Zustand 0 wächst nur noch 15 % der Kapazität. Ohne Fraß erholt sich der Zustand langsam
-(Gras 0,006, Laub 0,003 je Tag, mal Jahreszeit), also über mehrere Jahre. Früchte hängen am
-Zustand des Laubs (Büsche, die verbissen werden, tragen weniger). Auf der Karte erscheinen
+**Überweidung:** Wird eine Weidezelle in der Wachstumszeit unter 25 % ihrer Kapazität
+abgefressen (Laub: 30 %), sinkt ihr Pflanzenzustand (Gras um 0,05 je Tag, Laub um 0,03, mal
+Jahreszeit; im Winter ruhen die Pflanzen, Abweiden schadet dann nicht). Abgestorbene Pflanzen
+tragen kaum noch: Bei Zustand 0 wächst nur noch 2 % der Kapazität. Erholen kann sich eine Zelle
+erst nach 60 Tagen (einem Jahr) ohne Überweidung, dann um 0,006 je Tag (Laub 0,004), mal
+Jahreszeit und mal 0,2 + 0,8 · Zustand: Kahler Boden muss erst wieder besiedelt werden. Eine
+völlig kahle Graszelle ist nach 3 Jahren zu einem Fünftel, nach 5 Jahren zur Hälfte und nach
+etwa 7 Jahren ganz erholt. Früchte hängen am Zustand des Laubs (Büsche, die verbissen werden,
+tragen weniger).
+
+Gras und Laub werden nur von den Zwerghirschen gefressen. Damit hängt der Zustand der Weiden
+allein an ihnen – und über sie an den Wölfen. Auf der Karte erscheinen
 abgefressene Flächen strohfarben, überweidete als brauner Boden (Knopf „Weidezustand“).
 
 ## Wasser
@@ -58,7 +65,7 @@ trinkt nicht.
 - **Gruppe:** Herde mit 2–16 Tieren. Wird sie größer, teilt sie sich.
 - **Nahrung:** Gras, Laub.
 - **Lebensraum:** Grasland, Buschland, Waldrand.
-- **Fortpflanzung:** Jedes erwachsene Weibchen bekommt im Frühling 1–2 Kälber, wenn es genug
+- **Fortpflanzung:** Jedes erwachsene Weibchen bekommt im Frühling 1 Kalb, wenn es genug
   Energie hat (≥ 40 %) und ein erwachsenes Männchen in der Herde ist. Erwachsen mit 1 Jahr,
   Höchstalter etwa 8 Jahre.
 - **Verhalten:** grast, zieht auf abgeweideten Flächen zügig weiter, geht trinken, flieht vor
@@ -70,7 +77,7 @@ trinkt nicht.
 - **Rolle:** Beute für Adler und Wölfe; später besonders gefährdet durch eingeschleppte Ratten.
 - **Gruppe:** lose Gruppe mit 2–6 Tieren. Einzelne Vögel schließen sich der nächsten Gruppe an
   (sonst finden sie keinen Partner).
-- **Nahrung:** Früchte, Insekten, etwas Gras.
+- **Nahrung:** Früchte, Samen, Insekten (kein Gras).
 - **Lebensraum:** Buschland, Wald, Sumpf.
 - **Fortpflanzung:** Im Frühling legt jedes Paar 2–4 Eier in ein gemeinsames **Nest am Boden**.
   Die Küken schlüpfen nach 8 Tagen. Solange brütet die Gruppe in der Nähe des Nests.
@@ -81,7 +88,7 @@ trinkt nicht.
 - **Vorbild:** Falklandfuchs (Warrah), der einzige heimische Landräuber der Falklandinseln, von
   Siedlern ausgerottet.
 - **Gruppe:** Rudel mit bis zu 5 Tieren und festem Revier (Radius 420).
-- **Beute:** vor allem Zwerghirsch, seltener Laufvogel. Frisst auch Aas. Wie sein Vorbild frisst er
+- **Beute:** vor allem Zwerghirsch, Laufvögel nur selten. Frisst auch Aas. Wie sein Vorbild frisst er
   nebenher Insekten und Früchte, wenn er hungrig umherstreift. Das trägt ihn durch magere
   Zeiten, reicht aber nicht für Nachwuchs.
 - **Jagd:** erst anschleichen, dann sprinten. Der Erfolg steigt mit der Zahl der Jäger und
@@ -90,7 +97,7 @@ trinkt nicht.
   Hirsch liefert 1,5 Energie (ein Laufvogel 0,6). Nach einem Riss ruht das Rudel nur, wenn es satt
   ist, sonst jagt es weiter. Gejagt wird unter 70 % Energie.
 - **Fortpflanzung:** nur das älteste Paar des Rudels, 2–4 Welpen im Frühling, und nur wenn das
-  Rudel gut genährt ist (≥ 60 %), ein eigenes Revier hat und noch nicht voll ist (höchstens 5).
+  Rudel gut genährt ist (≥ 50 %), ein eigenes Revier hat und noch nicht voll ist (höchstens 5).
 - **Abwanderung:** Im Herbst verlassen junge Wölfe große Rudel. Wanderer suchen Artgenossen,
   schließen sich Rudeln an, denen ein Geschlecht fehlt, und gründen mit Partner ein Revier, wo
   Platz ist. Wanderer werden aus fremden Revieren vertrieben.
@@ -125,26 +132,32 @@ stirbt in der Simulation fast immer eine Art aus.
 
 ## Wozu die Räuber da sind
 
-Die Pflanzen können überweidet werden (siehe oben). Daraus ergibt sich, was die Räuber im
-Ökosystem leisten: Sie halten die Pflanzenfresser unter der Grenze, an der die Weiden kaputtgehen.
+Das System ist so gebaut, dass es **nur mit allen Arten zusammen** funktioniert. Die Weiden
+können überweidet werden und erholen sich dann jahrelang nicht. Ohne Räuber vermehren sich die
+Hirsche, bis sie ihre Weiden zerstören. Die Wölfe halten sie darunter.
 
-Vergleich (`node tools/balance.js 8 30` und `… --ohne=inselwolf,inseladler`, mittlere Insel,
-Bestände ab Jahr 10):
+Vergleich (`node tools/balance.js 8 30` und `… --ohne=inselwolf,inseladler`, mittlere Insel):
 
 | | mit Räubern | ohne Räuber |
 |---|---|---|
-| Zwerghirsche, Jahr 2 | etwa 250 | etwa 370 (Massenvermehrung) |
-| Zwerghirsche, Jahr 3–4 | etwa 250–300 | Zusammenbruch auf 80–130 (Hungersnot) |
-| Zwerghirsche, danach | etwa 240, schwankend | etwa 210, viele verhungern jedes Jahr |
-| Laufvögel | etwa 430 | etwa 490 |
-| Zustand des Graslands | etwa 80 % | etwa 45 %, ein Drittel der Weiden kahl |
+| Zwerghirsche, Jahr 2–3 | etwa 100–180 | etwa 320–400 (Massenvermehrung) |
+| Zwerghirsche, ab Jahr 10 | etwa 110, schwankend | etwa 110, die meisten sterben an Hunger |
+| Laufvögel, ab Jahr 10 | etwa 310 | etwa 390, viele verhungern (Früchte fehlen) |
+| Zustand Grasland / Laub | etwa 75–95 % / 93 % | etwa 25 % / 65 % |
+| alle Arten überleben | 7 von 8 Läufen | – |
 
 Ohne Räuber verläuft es wie auf dem Kaibab-Plateau: erst viel mehr Pflanzenfresser, dann
-kahl gefressene Weiden, Hungersnot und auf Dauer *weniger* Pflanzenfresser auf schlechterem Land.
+kahl gefressene Weiden und Hungersnot. Die Insel bleibt danach kahl, weil die übrigen Hirsche
+die Weiden nie lange genug schonen.
+
+Mit Räubern sieht man eine **Kaskade**: Werden die Wölfe in einem Jahr knapp, steigen die
+Hirsche, das Grasland leidet. Erholen sich die Wölfe, sinken die Hirsche, und die Weiden heilen
+über Jahre. Stirbt das Wolfsrudel aus, kippt die Insel in den kahlen Zustand.
 
 ## Abstimmung (Stand)
 
 `node tools/balance.js 8 30` rechnet 8 Inseln über 30 Jahre:
 
-- mittlere Insel: in 8 von 8 Läufen überleben alle vier Arten
-- kleine Insel: nur in 1 von 6 Läufen; Wölfe und Adler sterben meist nach 8–25 Jahren aus
+- mittlere Insel: in 7 von 8 Läufen überleben alle vier Arten
+- kleine Insel: nur in 1 von 6 Läufen; meist sterben die Wölfe nach 9–21 Jahren aus, in einem
+  Lauf auch die Zwerghirsche
