@@ -31,8 +31,10 @@ Dazu kommen Pflanzen und Insekten als Nahrungsschichten. Die Arten stehen in
 - **Bestand** je Art mit Jungtieren und Zahl der Gruppen, dazu Diagramme für Pflanzenfresser,
   Räuber und Nahrung (beim Überfahren werden die Werte eines Tages angezeigt) und eine Tabelle
   der Todesursachen.
-- **Startwerte** (aufklappbar): Startbestand je Art ändern und neu starten. Standardmäßig passen
-  sie sich der Inselgröße an. **„Daten (CSV)“** lädt die Zeitreihe herunter (für Excel).
+- **Startbestand:** ein Regler je Art. Die empfohlenen Werte passen zur Inselgröße und sind auf
+  dem Regler gelb markiert. Vor dem Start wirkt eine Änderung sofort, danach über „Neu
+  starten“. „Empfohlene Werte“ setzt zurück. **„Daten herunterladen (CSV)“** liefert die
+  Zeitreihe für Excel.
 - Gleicher Seed und gleiche Startwerte ergeben **auf jedem Gerät** denselben Verlauf, egal wie
   schnell die Simulation läuft. Dafür nutzt das Modell eigene, exakt festgelegte
   Mathe-Funktionen (`js/core/dmath.js`).

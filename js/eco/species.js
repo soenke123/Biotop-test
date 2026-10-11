@@ -25,28 +25,34 @@
    * capacity: maximale Menge je Weidezelle und Lebensraum
    * growth:   Nachwuchsrate pro Tag (Anteil des fehlenden Bestands)
    * season:   Wachstumsfaktor je Jahreszeit [Fruehling, Sommer, Herbst, Winter]
+   * water:    so viel Durst loescht eine gefressene Einheit (Pflanzen enthalten Wasser,
+   *           Fruechte und Insekten mehr als Gras) - Trinken bleibt trotzdem noetig
    */
   BT.FOOD = {
     gras: {
       name: 'Gras und Kräuter',
+      water: 0.04,
       growth: 0.035,
       season: [1.5, 1.0, 0.7, 0.3],
       capacity: cap({ TUSSOCK: 5.5, SCRUB: 2.75, SWAMP: 3.3, BEACH: 0.83, FERN: 0.83, MOSS: 0.55, THERMAL: 0.83, ROCK: 0.55 })
     },
     laub: {
       name: 'Triebe und Laub',
+      water: 0.06,
       growth: 0.025,
       season: [1.4, 1.0, 0.6, 0.25],
       capacity: cap({ FERN: 4.4, MOSS: 3.3, SCRUB: 3.85, SWAMP: 1.1, TUSSOCK: 0.55 })
     },
     frucht: {
       name: 'Früchte und Samen',
+      water: 0.16,
       growth: 0.05,
       season: [0.2, 1.0, 1.6, 0.0],
       capacity: cap({ SCRUB: 3.3, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.1, SWAMP: 1.1 })
     },
     insekten: {
       name: 'Insekten',
+      water: 0.14,
       growth: 0.08,
       season: [1.3, 1.5, 0.7, 0.05],
       capacity: cap({ SWAMP: 3.85, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.65, SCRUB: 1.65, BEACH: 0.55 })
@@ -104,7 +110,7 @@
       bite: 0.32,
       costPerDay: 0.055,
       winterCost: 0.015,
-      thirstDays: 10,
+      thirstDays: 14,
       speed: 3.2, fleeSpeed: 11, sprintTicks: 3,
       vision: 120,
       searchRadius: 200,

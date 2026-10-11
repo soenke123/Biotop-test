@@ -27,9 +27,13 @@
   var dirty = true, dpr = 1;
   var running = false, tickAcc = 0, lastFrame = 0;
   var skipping = false;
-  // Startwerte: passend zur Inselgroesse, bis jemand sie von Hand aendert
+  // Startbestand: empfohlen = passend zur Inselgroesse; mit den Reglern aenderbar.
+  // Eigene Werte bleiben beim Wechsel des Seeds erhalten, bei anderer Inselgroesse
+  // wird wieder auf die Empfehlung gesetzt.
   var startValues = {};
+  var recommended = {};
   var customStart = false;
+  var startSize = null;
 
   // Bildpuffer: ganze Insel einmal vorgezeichnet; beim Hineinzoomen zusaetzlich
   // ein scharfer Puffer fuer genau den sichtbaren Ausschnitt.
@@ -74,14 +78,38 @@
 
   function restart() {
     if (!world) return;
-    if (!customStart) {
-      startValues = BT.Simulation.defaultStart(world);
-      doc.querySelectorAll('#startInputs input').forEach(function (inp) { inp.value = startValues[inp.dataset.id]; });
-    }
+    recommended = BT.Simulation.defaultStart(world);
+    if (startSize !== world.size) { customStart = false; startSize = world.size; }
+    if (!customStart) startValues = Object.assign({}, recommended);
+    syncStartSliders();
     sim = new BT.Simulation(world, { start: startValues });
     tickAcc = 0;
+    $('restart').classList.remove('primary');
     updatePanel(true);
     dirty = true;
+  }
+
+  /** Regler und Anzeigen an startValues/recommended angleichen. */
+  function syncStartSliders() {
+    BT.SPECIES_ORDER.forEach(function (id) {
+      var rec = recommended[id] || BT.SPECIES[id].start;
+      var max = Math.max(6, Math.ceil(rec * 3 / 2) * 2);
+      var inp = doc.querySelector('#startInputs input[data-id="' + id + '"]');
+      inp.max = max;
+      inp.value = startValues[id];
+      $('mark-' + id).style.left = 'calc(8px + (100% - 16px) * ' + (rec / max) + ')';
+      $('sv-' + id).textContent = startValues[id];
+      $('sv-' + id).classList.toggle('changed', startValues[id] !== rec);
+      $('rec-' + id).textContent = 'empfohlen ' + rec;
+    });
+  }
+
+  /** Startbestand geaendert: vor dem Start sofort uebernehmen, sonst Neustart anbieten. */
+  function startValuesChanged() {
+    customStart = BT.SPECIES_ORDER.some(function (id) { return startValues[id] !== recommended[id]; });
+    syncStartSliders();
+    if (sim && sim.day === 0 && !running) restart();
+    else $('restart').classList.add('primary');
   }
 
   // ---------------------------------------------------------------- Zeit
@@ -250,10 +278,14 @@
       })
     ];
 
-    // Startwerte
+    // Startbestand: ein Regler je Art, die Empfehlung ist als Strich markiert
     $('startInputs').innerHTML = BT.SPECIES_ORDER.map(function (id) {
-      return '<label>' + BT.SPECIES[id].plural + '<input type="number" min="0" max="2000" step="1" data-id="' + id + '" value=""></label>';
-    }).join('') + '<button id="defaults" type="button" class="link">Standard für diese Insel</button>';
+      return '<div class="sv"><span class="sv-name"><i style="background:' + SERIES_COLOR[id] + '"></i>' + BT.SPECIES[id].plural + '</span>' +
+        '<b id="sv-' + id + '" class="sv-value"></b>' +
+        '<div class="sv-track"><input type="range" min="0" step="1" data-id="' + id + '" aria-label="Startbestand ' + BT.SPECIES[id].plural + '">' +
+        '<span class="sv-mark" id="mark-' + id + '"></span></div>' +
+        '<small id="rec-' + id + '" class="sv-rec"></small></div>';
+    }).join('');
   }
 
   function updatePanel(force) {
@@ -420,18 +452,17 @@
   });
   $('skip').addEventListener('click', function () { skipYears(5); });
   speedInput.addEventListener('input', updateSpeedLabel);
-  $('startInputs').addEventListener('click', function (e) {
-    if (e.target.id !== 'defaults') return;
-    customStart = false;
-    setRunning(false);
-    restart();
+  $('startInputs').addEventListener('input', function (e) {
+    var id = e.target.dataset && e.target.dataset.id;
+    if (!id) return;
+    startValues[id] = parseInt(e.target.value, 10) || 0;
+    startValuesChanged();
+  });
+  $('defaults').addEventListener('click', function () {
+    startValues = Object.assign({}, recommended);
+    startValuesChanged();
   });
   $('restart').addEventListener('click', function () {
-    customStart = true;
-    doc.querySelectorAll('#startInputs input').forEach(function (inp) {
-      startValues[inp.dataset.id] = Math.max(0, Math.min(2000, parseInt(inp.value, 10) || 0));
-      inp.value = startValues[inp.dataset.id];
-    });
     setRunning(false);
     restart();
   });

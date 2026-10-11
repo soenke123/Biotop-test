@@ -47,6 +47,15 @@
         </label>
       </section>
 
+      <section class="startvalues">
+        <h2>Startbestand <small>für diese Insel</small></h2>
+        <div id="startInputs" class="start-list"></div>
+        <div class="row">
+          <button id="restart" type="button">Neu starten</button>
+          <button id="defaults" type="button">Empfohlene Werte</button>
+        </div>
+      </section>
+
       <section>
         <h2>Bestand</h2>
         <div id="tiles" class="tiles"></div>
@@ -59,14 +68,11 @@
         <table id="deaths" class="deaths"></table>
       </section>
 
-      <details class="startvalues">
-        <summary>Startwerte</summary>
-        <div id="startInputs" class="start-grid"></div>
+      <section>
         <div class="row">
-          <button id="restart" type="button">Neu starten</button>
-          <button id="csv" type="button">Daten (CSV)</button>
+          <button id="csv" type="button">Daten herunterladen (CSV)</button>
         </div>
-      </details>
+      </section>
     </aside>
   </div>
 

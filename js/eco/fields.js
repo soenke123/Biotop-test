@@ -103,9 +103,11 @@
 
   /**
    * Fressen: bis zu `amount` Einheiten, ergiebigste Nahrung zuerst.
-   * Liefert die gewonnene Energie.
+   * Liefert die gewonnene Energie; das mitgefressene Wasser steht danach in
+   * this.lastWater (wie viel Durst es loescht).
    */
   Fields.prototype.eat = function (i, diet, amount) {
+    this.lastWater = 0;
     if (i < 0) return 0;
     var gained = 0;
     var keys = Object.keys(diet).sort(function (a, b) { return diet[b] - diet[a]; });
@@ -115,6 +117,7 @@
       v[i] -= take;
       amount -= take;
       gained += take * diet[keys[k]];
+      this.lastWater += take * BT.FOOD[keys[k]].water;
     }
     return gained;
   };

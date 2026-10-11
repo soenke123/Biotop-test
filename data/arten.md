@@ -32,6 +32,14 @@ blickend (läuft das Tier nach rechts, wird gespiegelt), Seitenverhältnis etwa 
 Eine Weidezelle fasst 4 × 4 Rasterzellen zusammen (24 × 24 Einheiten). Abgefressenes wächst
 immer nach, auch aus null.
 
+## Wasser
+
+Durst steigt jeden Tag. Er sinkt beim **Trinken** (an See oder Fluss) und beim **Fressen**, denn
+Nahrung enthält Wasser: Gras wenig (0,04 je Einheit), Laub etwas mehr (0,06), Insekten (0,14) und
+Früchte (0,16) viel. Räuber decken einen Teil über das Fleisch. Trinken bleibt trotzdem nötig.
+Ohne Wasser halten Zwerghirsch und Laufvogel 14 Tage durch, der Inselwolf 10. Der Inseladler
+trinkt nicht.
+
 ## Zwerghirsch
 
 - **Vorbild:** Inselverzwergung bei Hirschen (z. B. ausgestorbene Zwerghirsche auf Kreta).

@@ -127,6 +127,7 @@
         var take = Math.min(1 - ms[i].energy, pass === 0 ? share : rest);
         if (take <= 0) continue;
         ms[i].energy += take;
+        ms[i].thirst = Math.max(0, ms[i].thirst - take * 0.5);   // Fleisch enthaelt Wasser
         rest -= take;
       }
     }
@@ -216,6 +217,7 @@
         if (g.grazing && a.energy < 0.98) {
           var gain = this.fields.eat(this.fields.index(a.x, a.y), spec.diet, spec.bite);
           a.energy = Math.min(1, a.energy + gain);
+          a.thirst = Math.max(0, a.thirst - this.fields.lastWater);
         }
         a.energy -= cost;
         a.thirst = drinks ? 0 : a.thirst + thirst;
