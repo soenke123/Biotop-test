@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Biotop – Insel</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="bar">
+    <h1>Biotop</h1>
+    <label class="field">Seed
+      <input id="seed" type="text" inputmode="numeric" autocomplete="off" spellcheck="false">
+    </label>
+    <button id="newWorld" type="button">Neue Insel</button>
+    <label class="field">Größe
+      <select id="size">
+        <option value="klein">klein</option>
+        <option value="mittel" selected>mittel</option>
+        <option value="gross">groß</option>
+      </select>
+    </label>
+    <button id="resetView" type="button" title="Gesamtansicht (R)">Ansicht zurücksetzen</button>
+    <button id="toggleLegend" type="button" aria-pressed="true">Legende</button>
+    <span class="spacer"></span>
+    <span id="status" class="status"></span>
+  </header>
+
+  <main class="stage">
+    <canvas id="map"></canvas>
+    <div id="tooltip" class="tooltip" hidden></div>
+    <aside id="legend" class="legend"></aside>
+  </main>
+
+  <!-- Ladereihenfolge = Abhaengigkeitsaufloesung (kein Modulsystem, laeuft unter file://) -->
+  <script src="js/core/rng.js"></script>
+  <script src="js/core/noise.js"></script>
+  <script src="js/core/grid.js"></script>
+  <script src="js/core/geometry.js"></script>
+  <script src="js/core/contour.js"></script>
+  <script src="js/world/config.js"></script>
+  <script src="js/world/island.js"></script>
+  <script src="js/world/decor.js"></script>
+  <script src="js/world/world.js"></script>
+  <script src="js/render/palette.js"></script>
+  <script src="js/render/shapes.js"></script>
+  <script src="js/render/camera.js"></script>
+  <script src="js/render/terrainRenderer.js"></script>
+  <script src="js/ui/app.js"></script>
+</body>
+</html>

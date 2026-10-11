@@ -44,16 +44,20 @@ Die Insel entsteht aus einem Seed (gleicher Seed = gleiche Insel), in drei Schic
 2. **Feuchte**: Abstand zu Wasser, Höhe und Rauschen.
 3. **Lebensraum** aus Höhe und Feuchte:
 
-| Lebensraum | Lage | Rolle im Ökosystem |
+Vorbild ist Neuseeland, mit fantasievollen Zuspitzungen. Umgesetzt in `js/world/island.js`:
+
+| Lebensraum | Lage | Rolle im Ökosystem (geplant) |
 |---|---|---|
-| Meer | außen | Grenze; später Landeplatz der Siedler |
-| Strand, Dünen | Küste | karg, Übergangszone |
-| Grasland | tief, mittel feucht | viel Grasnahrung, offen, wenig Deckung |
-| Buschland | Übergänge | Deckung, Beeren |
-| Wald | mittel | Laub, Früchte, Deckung |
-| Bergland | hoch | wenig Nahrung, Rückzugsraum |
-| Feuchtgebiet | feucht, tief | Insekten, Wasser |
-| Seen, Bäche | Senken | **Wasser als Bedarf** (Durst) |
+| Offenes Meer, Lagune | außen | Grenze; später Landeplatz der Siedler |
+| Strand | Küste | karg, Übergangszone |
+| Tussock-Grasland | trocken, vor allem im Regenschatten östlich der Berge | viel Grasnahrung, offen, wenig Deckung |
+| Buschland | mittlere Feuchte | Deckung, Beeren |
+| Farnwald | feucht, tief bis mittel | Laub, Früchte, Deckung |
+| Moosnebelwald | feucht und hoch | Rückzugsraum, wenig Nahrung |
+| Flachs-Sumpf | sehr feucht, flach, nahe Gewässern | Insekten, Wasser |
+| Bergland, Gipfel | Bergketten, Vulkan | kaum Nahrung, Rückzug |
+| Thermalfeld | Flanken des Vulkans | Besonderheit, ohne Nahrung, im Winter warm (Idee) |
+| See, Fluss | Senken und Abflussrinnen | **Wasser als Bedarf** (Durst) |
 
 Das Mosaik ist entscheidend: **Rückzugsräume und Übergänge stabilisieren Räuber-Beute-Systeme.**
 Die Landschaft ist damit kein Hintergrund, sondern Teil des Modells.
@@ -241,8 +245,14 @@ data/        arten.md (fachliche Wahrheit für species.js)
 | Herden und Rudel machen das Abstimmen schwerer | erst eine Art mit Gruppe stabil, dann die nächste |
 | Zu viele Regler | Szenarien statt Parameterwüste |
 
-## 10. Offene Entscheidungen
+## 10. Entschieden
 
-1. Passt die heimische Artenliste (Zwerghirsch, Laufvogel, Inselwolf, Inseladler)? Namen?
-2. Grafikstil: weich wie Wild Clusters oder Pixel-Art?
-3. Inselname und Klima: eher gemäßigt-ozeanisch (Neuseeland-artig) oder subtropisch?
+- Heimische Arten: Zwerghirsch, Laufvogel, Inselwolf, Inseladler (Feinheiten später).
+- Grafikstil wie Wild Clusters (weiche Flächen); eigene Grafiken sind möglich.
+- Klima und Optik: Neuseeland mit etwas Fantasie, nicht mitteleuropäisch.
+- Später ein Skill in MPSkills.
+
+## 11. Offene Entscheidungen
+
+1. Inselname, Namen der Arten.
+2. Ob Thermalfelder eine ökologische Rolle bekommen (z. B. warme Winterzuflucht) oder Kulisse bleiben.
