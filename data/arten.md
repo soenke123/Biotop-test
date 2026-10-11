@@ -32,6 +32,23 @@ blickend (läuft das Tier nach rechts, wird gespiegelt), Seitenverhältnis etwa 
 Eine Weidezelle fasst 4 × 4 Rasterzellen zusammen (24 × 24 Einheiten). Abgefressenes wächst
 immer nach, auch aus null.
 
+## Jahreswetter
+
+Kein Jahr ist wie das andere (`js/eco/weather.js`). Zu Beginn jedes Jahres wird gewürfelt:
+
+| Größe | Spanne | Wirkung |
+|---|---|---|
+| Wachstum | 0,75–1,25 | wie gut alle Pflanzen in diesem Jahr wachsen |
+| Winterhärte | 0,55–1,5 | Energieverbrauch im Winter, Wachstum im Winter, Schwund von Früchten und Insekten |
+| Mastjahr | 16 % (nie zweimal hintereinander) | Früchte bis zum 2,4-Fachen im Sommer und Herbst |
+
+Das Wetter hat einen eigenen Zufallsgenerator: Dieselbe Insel hat immer dieselbe Wetterfolge,
+auch wenn man die Startbestände ändert. Vergleichsläufe sind dadurch fair. In den Diagrammen sind
+Mastjahre gelb und harte Winter blau hinterlegt.
+
+Früchte verrotten ab dem Herbst (im Winter 7 % pro Tag), Insekten sterben im Winter (12 % pro
+Tag); in harten Wintern geht es schneller.
+
 ## Wasser
 
 Durst steigt jeden Tag. Er sinkt beim **Trinken** (an See oder Fluss) und beim **Fressen**, denn
@@ -58,11 +75,31 @@ trinkt nicht.
 - **Vorbild:** Takahē, Moa, Dodo – flugunfähige Bodenbrüter.
 - **Rolle:** Beute für Adler und Wölfe; später besonders gefährdet durch eingeschleppte Ratten.
 - **Gruppe:** lose Gruppe mit 1–6 Tieren.
-- **Nahrung:** Früchte, Insekten, etwas Gras.
 - **Lebensraum:** Buschland, Wald, Sumpf.
 - **Fortpflanzung:** Im Frühling legt jedes Paar 2–4 Eier in ein gemeinsames **Nest am Boden**.
   Die Küken schlüpfen nach 8 Tagen. Solange brütet die Gruppe in der Nähe des Nests.
 - **Verhalten:** sucht Futter, flieht vor Räubern, brütet.
+
+### Ökologische Nische
+
+Der Laufvogel ist **Allesfresser am Boden**: Früchte und Samen, Insekten, etwas Gras. Damit
+überschneidet er sich kaum mit dem Zwerghirsch, der Gras und Laub frisst. Die beiden
+Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begrenzt.
+
+**Was den Laufvogel begrenzt:**
+
+1. **Der Winter.** Früchte gibt es nur im Sommer und Herbst, Insekten nur im Frühling und
+   Sommer. Im Winter verrotten die Früchte und die Insekten sterben. Bleibt nur Gras, und das
+   ist für ihn wenig wert. Ein harter Winter lässt viele Vögel verhungern.
+2. **Das Fruchtangebot schwankt von Jahr zu Jahr.** In einem **Mastjahr** tragen Büsche und
+   Bäume massenhaft Früchte, die Vögel gehen gut genährt in den Winter und brüten im
+   Frühling erfolgreich. Danach wächst der Bestand, bis ein mageres Jahr oder ein harter Winter
+   ihn wieder einbrechen lässt.
+3. **Der Inseladler** jagt vor allem Laufvögel. Er folgt dem Vogelbestand mit Verzögerung: Viele
+   Vögel bedeuten viele junge Adler, die dann die Vögel stärker dezimieren.
+4. **Der Inselwolf** nimmt Laufvögel nebenbei, vor allem wenn Zwerghirsche knapp sind.
+5. **Deckung:** Im Wald und Buschland sieht der Adler die Vögel schlecht. Im offenen Grasland
+   sind sie gefährdet.
 
 ## Inselwolf
 

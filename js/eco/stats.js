@@ -33,7 +33,7 @@
 
   Stats.prototype.record = function () {
     var sim = this.sim;
-    var row = { day: sim.day, count: {}, young: {}, groups: {}, food: sim.fields.levels() };
+    var row = { day: sim.day, count: {}, young: {}, groups: {}, food: sim.fields.levels(), weather: sim.weatherNow };
     for (var k = 0; k < BT.SPECIES_ORDER.length; k++) {
       var id = BT.SPECIES_ORDER[k];
       row.count[id] = 0; row.young[id] = 0; row.groups[id] = 0;

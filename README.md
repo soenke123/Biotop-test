@@ -28,6 +28,9 @@ Dazu kommen Pflanzen und Insekten als Nahrungsschichten. Die Arten stehen in
 - **Tempo-Regler:** von „ein Tag dauert mehrere Sekunden“ (Jagden einzeln verfolgen) bis zu
   mehreren Jahren pro Sekunde. **„+1 Tag“** geht genau einen Tag weiter, **„⏩ 5 Jahre“** spult
   ohne Zeichnen vor.
+- **Jahreswetter:** gute und magere Jahre, milde und harte Winter, ab und zu ein **Mastjahr** mit
+  massenhaft Früchten. Es steht unter der Uhr und ist in den Diagrammen hinterlegt (gelb: Mastjahr,
+  blau: harter Winter).
 - **Bestand** je Art mit Jungtieren und Zahl der Gruppen, dazu Diagramme für Pflanzenfresser,
   Räuber und Nahrung (beim Überfahren werden die Werte eines Tages angezeigt) und eine Tabelle
   der Todesursachen.

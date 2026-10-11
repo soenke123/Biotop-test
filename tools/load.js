@@ -10,7 +10,7 @@ const ROOT = path.join(__dirname, '..');
 const FILES = [
   'js/core/rng.js', 'js/core/dmath.js', 'js/core/noise.js', 'js/core/grid.js', 'js/core/geometry.js', 'js/core/contour.js',
   'js/world/config.js', 'js/world/island.js', 'js/world/decor.js', 'js/world/world.js',
-  'js/eco/time.js', 'js/eco/species.js', 'js/eco/fields.js', 'js/eco/movement.js',
+  'js/eco/time.js', 'js/eco/species.js', 'js/eco/fields.js', 'js/eco/movement.js', 'js/eco/weather.js',
   'js/eco/behavior.js', 'js/eco/stats.js', 'js/eco/simulation.js'
 ];
 

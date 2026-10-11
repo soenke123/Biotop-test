@@ -100,7 +100,7 @@
       $('mark-' + id).style.left = 'calc(8px + (100% - 16px) * ' + (rec / max) + ')';
       $('sv-' + id).textContent = startValues[id];
       $('sv-' + id).classList.toggle('changed', startValues[id] !== rec);
-      $('rec-' + id).textContent = 'empfohlen ' + rec;
+      $('rec-' + id).textContent = 'empf. ' + rec;
     });
   }
 
@@ -281,10 +281,9 @@
     // Startbestand: ein Regler je Art, die Empfehlung ist als Strich markiert
     $('startInputs').innerHTML = BT.SPECIES_ORDER.map(function (id) {
       return '<div class="sv"><span class="sv-name"><i style="background:' + SERIES_COLOR[id] + '"></i>' + BT.SPECIES[id].plural + '</span>' +
-        '<b id="sv-' + id + '" class="sv-value"></b>' +
+        '<small id="rec-' + id + '" class="sv-rec"></small><b id="sv-' + id + '" class="sv-value"></b>' +
         '<div class="sv-track"><input type="range" min="0" step="1" data-id="' + id + '" aria-label="Startbestand ' + BT.SPECIES[id].plural + '">' +
-        '<span class="sv-mark" id="mark-' + id + '"></span></div>' +
-        '<small id="rec-' + id + '" class="sv-rec"></small></div>';
+        '<span class="sv-mark" id="mark-' + id + '"></span></div></div>';
     }).join('');
   }
 
@@ -292,6 +291,7 @@
     if (!sim) return;
     var now = global.performance.now();
     clock.textContent = BT.Time.label(sim.day);
+    $('weather').textContent = BT.Weather.describe(sim.weatherNow);
     if (!force && now - lastPanelUpdate < 250) return;
     lastPanelUpdate = now;
     var row = sim.stats.latest();

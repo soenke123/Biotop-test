@@ -121,6 +121,22 @@
       ctx.fillText('J' + (yr + 1), x(k), Tp + ph + 4);
     }
 
+    // Wetter als Hintergrundbaender: Mastjahre gelb, harte Winter blau
+    var DPY = BT.Time.DAYS_PER_YEAR, DPS = BT.Time.DAYS_PER_SEASON;
+    var d0 = hist[0].day;
+    for (i = 0; i < n; i++) {
+      var w = hist[i].weather;
+      if (!w) continue;
+      var doy = hist[i].day % DPY;
+      var band = null;
+      if (w.mast && doy === 0) band = { from: i, len: DPY, color: 'rgba(242, 201, 76, 0.13)' };
+      else if (w.winter > BT.Weather.HARD_WINTER && doy === 3 * DPS) band = { from: i, len: DPS, color: 'rgba(120, 170, 255, 0.16)' };
+      if (!band) continue;
+      var x0 = x(band.from), x1 = x(Math.min(n - 1, band.from + band.len));
+      ctx.fillStyle = band.color;
+      ctx.fillRect(x0, Tp, Math.max(1, x1 - x0), ph);
+    }
+
     // Linien: hoechstens ein Punkt je Pixel
     var stride = Math.max(1, Math.floor(n / pw));
     ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -141,7 +157,8 @@
       var row = hist[idx];
       ctx.strokeStyle = INK.axis; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(Math.round(x(idx)) + 0.5, Tp); ctx.lineTo(Math.round(x(idx)) + 0.5, Tp + ph); ctx.stroke();
-      var html = '<div class="tt-head">' + BT.Time.label(row.day) + '</div>';
+      var html = '<div class="tt-head">' + BT.Time.label(row.day) +
+        (row.weather ? '<br>' + BT.Weather.describe(row.weather) : '') + '</div>';
       for (s = 0; s < series.length; s++) {
         var val = series[s].get(row);
         ctx.fillStyle = series[s].color;

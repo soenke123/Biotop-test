@@ -79,16 +79,27 @@
     return { x: (fx + 0.5) * this.size, y: (fy + 0.5) * this.size };
   };
 
-  /** Ein Tag Wachstum. */
-  Fields.prototype.grow = function (season) {
+  /**
+   * Ein Tag Wachstum und Schwund, abhaengig von Jahreszeit und Jahreswetter.
+   * weather: { growth, winter, mast } (siehe eco/weather.js)
+   */
+  Fields.prototype.grow = function (season, weather) {
+    var w = weather || { growth: 1, winter: 1, mast: false };
     for (var k = 0; k < BT.FOOD_ORDER.length; k++) {
       var key = BT.FOOD_ORDER[k];
       var def = BT.FOOD[key];
-      var r = def.growth * def.season[season];
-      if (r <= 0) continue;
+      var r = def.growth * def.season[season] * w.growth;
+      if (season === 3) r /= w.winter;
+      var mult = w.mast && def.mast && (season === 1 || season === 2) ? def.mast : 1;
+      var decay = def.decay ? def.decay[season] * (season === 3 ? w.winter : 1) : 0;
       var v = this.value[key], K = this.capacity[key];
       for (var i = 0; i < v.length; i++) {
-        if (K[i] > 0) v[i] += r * (K[i] - v[i]);
+        if (K[i] <= 0) continue;
+        if (r > 0) {
+          var target = K[i] * mult;
+          if (v[i] < target) v[i] += r * (target - v[i]);
+        }
+        if (decay > 0) v[i] -= v[i] * decay;
       }
     }
   };

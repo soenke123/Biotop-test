@@ -28,6 +28,8 @@
     this.tick = 0;
     this.day = 0;
     this.calendar = T.calendar(0);
+    this.weather = new BT.Weather(world.seed);
+    this.weatherNow = this.weather.year(0);
     this.groups = [];
     this.carcasses = [];            // Aas: { x, y, meat, day }
     this.herbivoreGroups = [];
@@ -209,7 +211,7 @@
       // Wer am Wasser vorbeikommt, trinkt
       var drinks = spec.thirstDays && BT.Move.atWater(this.world, g.x, g.y);
       var onThermal = this.world.query.biomeAt(g.x, g.y) === BT.BIOME.THERMAL;
-      var cost = (spec.costPerDay + (winter ? spec.winterCost * (onThermal ? 0.3 : 1) : 0)) * perTick;
+      var cost = (spec.costPerDay + (winter ? spec.winterCost * this.weatherNow.winter * (onThermal ? 0.3 : 1) : 0)) * perTick;
       var thirst = spec.thirstDays ? perTick / spec.thirstDays : 0;
       // Rueckwaerts, weil Tiere dabei sterben koennen
       for (var m = g.members.length - 1; m >= 0; m--) {
@@ -257,7 +259,8 @@
     this.day++;
     this.calendar = T.calendar(this.day);
     var cal = this.calendar;
-    this.fields.grow(cal.season);
+    this.weatherNow = this.weather.year(cal.year - 1);
+    this.fields.grow(cal.season, this.weatherNow);
     // Aas verwest
     for (var c = this.carcasses.length - 1; c >= 0; c--) {
       var cc = this.carcasses[c];

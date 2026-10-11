@@ -25,6 +25,8 @@
    * capacity: maximale Menge je Weidezelle und Lebensraum
    * growth:   Nachwuchsrate pro Tag (Anteil des fehlenden Bestands)
    * season:   Wachstumsfaktor je Jahreszeit [Fruehling, Sommer, Herbst, Winter]
+   * decay:    Schwund pro Tag je Jahreszeit (Fruechte verrotten, Insekten sterben im Winter)
+   * mast:     in einem Mastjahr steigt die Kapazitaet um diesen Faktor (Sommer/Herbst)
    * water:    so viel Durst loescht eine gefressene Einheit (Pflanzen enthalten Wasser,
    *           Fruechte und Insekten mehr als Gras) - Trinken bleibt trotzdem noetig
    */
@@ -48,6 +50,8 @@
       water: 0.16,
       growth: 0.05,
       season: [0.2, 1.0, 1.6, 0.0],
+      decay: [0, 0, 0.015, 0.07],
+      mast: 2.4,
       capacity: cap({ SCRUB: 3.3, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.1, SWAMP: 1.1 })
     },
     insekten: {
@@ -55,6 +59,7 @@
       water: 0.14,
       growth: 0.08,
       season: [1.3, 1.5, 0.7, 0.05],
+      decay: [0, 0, 0.03, 0.12],
       capacity: cap({ SWAMP: 3.85, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.65, SCRUB: 1.65, BEACH: 0.55 })
     }
   };
