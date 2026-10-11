@@ -36,6 +36,10 @@
    *           Ueberweidung erholt sich der Zustand, um `recover` je Tag (mal Jahreszeit,
    *           mal 0,2 + 0,8 * Zustand: kahler Boden braucht am laengsten). Voellig
    *           ueberweidet traegt die Zelle nur noch `dead` (Anteil der Kapazitaet).
+   *           area: statt der einzelnen Zelle zaehlt die Umgebung (so viele Weidezellen
+   *           im Umkreis, gemessen an einer gesunden Gegend) - fuer Nahrung, die ein
+   *           Trupp im Vorbeiziehen abfrisst. season: Jahreszeiten, in denen Schaden
+   *           entsteht (sonst jede mit kraeftigem Wachstum).
    * healthOf: diese Schicht haengt am Zustand einer anderen (Fruechte an den Bueschen)
    * decay:    Schwund pro Tag je Jahreszeit (Fruechte verrotten, Insekten sterben im Winter)
    * mast:     in einem Mastjahr steigt die Kapazitaet um diesen Faktor (Sommer/Herbst)
@@ -73,6 +77,9 @@
       growth: 0.3, seed: 0.35,          // Eier und Larven ueberwintern
       season: [1.3, 1.5, 0.7, 0.05],
       decay: [0, 0, 0.03, 0.12],
+      // Zu viele Laufvoegel scharren ganze Gegenden leer: Larven und Puppen
+      // fehlen, im naechsten Jahr schluepfen weniger Insekten
+      damage: { below: 0.3, area: 2, season: [0, 1, 1, 0], loss: 0.1, recover: 0.006, rest: 120, dead: 0.03 },
       capacity: cap({ SWAMP: 3.85, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.65, SCRUB: 1.65, BEACH: 0.55 })
     }
   };
@@ -98,6 +105,7 @@
       color: '#c9874a',
       group: { kind: 'herd', min: 2, max: 16, spread: 26, start: [5, 10] },
       start: 160,                     // Tiere zu Beginn
+      scarce: 0.8,                    // Beutewechsel: als Beute halb so gefragt bei diesem Anteil des Startbestands
       // Nahrung: Energie je verzehrter Einheit
       diet: { gras: 0.11, laub: 0.09 },
       bite: 0.38,                     // Einheiten je Fressschritt und Tier
@@ -124,6 +132,7 @@
       color: '#5d8fc9',
       group: { kind: 'flock', min: 2, max: 6, spread: 16, start: [2, 4] },
       start: 160,                     // Tiere zu Beginn
+      scarce: 0.8,
       diet: { frucht: 0.1, insekten: 0.11 },   // kein Gras: das Gras haengt allein an den Hirschen
       bite: 0.32,
       costPerDay: 0.055,
@@ -148,27 +157,27 @@
       sprite: 'assets/inselwolf.png',
       size: 22,
       color: '#7c7c86',
-      group: { kind: 'pack', min: 1, max: 5, spread: 18, start: [3, 5] },
+      group: { kind: 'pack', min: 1, max: 6, spread: 18, start: [3, 5] },
       start: 20,                      // Tiere, verteilt auf Rudel
       prey: { zwerghirsch: 1.0, laufvogel: 0.15 },
       // Wie sein Vorbild frisst er nebenher Insekten und Fruechte - das traegt
       // ihn durch Zeiten mit wenig Beute, reicht aber nicht fuer Nachwuchs
       diet: { frucht: 0.06, insekten: 0.06 },
       bite: 0.15,
-      costPerDay: 0.045,
+      costPerDay: 0.042,
       winterCost: 0.015,
       thirstDays: 10,
       speed: 6, chaseSpeed: 19,
       vision: 230,
-      huntChance: 0.28,               // je Angriff und Jaeger, steigt mit der Rudelgroesse
+      huntChance: 0.32,               // je Angriff und Jaeger, steigt mit der Rudelgroesse
       maxChaseTicks: 12,
-      territory: 420,                 // Radius des Reviers
+      territory: 380,                 // Radius des Reviers
       hungry: 0.7,                    // jagt, wenn Energie darunter
       habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 0.7, BEACH: 0.6, THERMAL: 0.6, ROCK: 0.6, PEAK: 0.1 }),
       maturity: Y(1.5), maxAge: Y(9),
       breed: { kind: 'group-pair', season: 0, day: 6, chance: 0.85, litter: [2, 4], minEnergy: 0.5, cost: 0.15 },
       newbornEnergy: 0.6,
-      disperse: { season: 2, minAge: Y(1.5), minGroup: 5, chance: 0.35 },
+      disperse: { season: 2, minAge: Y(1.5), minGroup: 4, chance: 0.6 },
       meat: 1.2
     },
 
@@ -191,7 +200,7 @@
       thirstDays: 0,                  // trinkt nicht (Wasser aus der Beute)
       speed: 8, chaseSpeed: 22,
       vision: 300,
-      huntChance: 0.22,
+      huntChance: 0.3,
       maxChaseTicks: 6,
       territory: 330,
       hungry: 0.65,

@@ -11,7 +11,9 @@
  *
  * Ueberweidung: Wird eine Zelle immer wieder kahl gefressen, sinkt ihr
  * Pflanzenzustand (health, 0..1). Abgestorbene Pflanzen tragen weniger:
- * K = Kapazitaet * (dead + (1 - dead) * health), dead aus BT.FOOD[..].damage. Erholen kann sich eine
+ * K = Kapazitaet * (dead + (1 - dead) * health), dead aus BT.FOOD[..].damage.
+ * Bei den Insekten ist es die Brut im Boden: Scharren zu viele Laufvoegel eine
+ * Gegend leer, schluepfen dort weniger nach. Erholen kann sich eine
  * Zelle erst nach einer Schonzeit ohne Ueberweidung (damage.rest Tage), und
  * dann umso langsamer, je kaputter sie ist: Kahler Boden muss erst wieder
  * besiedelt werden. Ganz verschwinden kann eine Pflanzenschicht nicht.
@@ -99,25 +101,54 @@
     return { x: (fx + 0.5) * this.size, y: (fy + 0.5) * this.size };
   };
 
-  /** Zustand, der fuer diese Schicht gilt (eigener oder der einer anderen Schicht), oder null. */
-  Fields.prototype.healthFor = function (key) {
-    var def = BT.FOOD[key];
-    return this.health[def.healthOf || key] || null;
+  /** Anteil der Kapazitaet, den der Zustand einer Schicht in Zelle i erlaubt. */
+  Fields.prototype.factor = function (key, i) {
+    var dmg = BT.FOOD[key].damage, h = this.health[key];
+    return h ? dmg.dead + (1 - dmg.dead) * h[i] : 1;
   };
 
-  /** So viel traegt eine voellig ueberweidete Zelle dieser Schicht noch (Anteil). */
-  function deadFor(key) {
-    var def = BT.FOOD[key];
-    var dmg = BT.FOOD[def.healthOf || key].damage;
-    return dmg ? dmg.dead : 1;
-  }
-
-  /** Kapazitaet einer Zelle unter Beruecksichtigung des Pflanzenzustands. */
+  /**
+   * Kapazitaet einer Zelle unter Beruecksichtigung des Pflanzenzustands: der
+   * eigene und der einer anderen Schicht
+   * (Fruechte wachsen an den Bueschen, also am Laub).
+   */
   Fields.prototype.carrying = function (key, i) {
-    var h = this.healthFor(key);
-    var K = this.capacity[key][i];
-    var dead = deadFor(key);
-    return h ? K * (dead + (1 - dead) * h[i]) : K;
+    var def = BT.FOOD[key];
+    var K = this.capacity[key][i] * this.factor(key, i);
+    return def.healthOf ? K * this.factor(def.healthOf, i) : K;
+  };
+
+  /**
+   * Fuellstand der Umgebung je Weidezelle: Summe der Nahrung durch Summe der
+   * Kapazitaet einer gesunden Gegend im Quadrat mit Radius r (Weidezellen).
+   * Ueber Praefixsummen.
+   */
+  Fields.prototype.regionShare = function (key, r) {
+    var C = this.cols, R = this.rows, v = this.value[key], cap = this.capacity[key];
+    var W = C + 1, n = W * (R + 1);
+    if (!this._sv || this._sv.length !== n) { this._sv = new Float64Array(n); this._sk = new Float64Array(n); }
+    var sv = this._sv, sk = this._sk;
+    for (var y = 0; y < R; y++) {
+      var rv = 0, rk = 0;
+      for (var x = 0; x < C; x++) {
+        var i = y * C + x;
+        rv += v[i]; rk += cap[i];
+        sv[(y + 1) * W + x + 1] = sv[y * W + x + 1] + rv;
+        sk[(y + 1) * W + x + 1] = sk[y * W + x + 1] + rk;
+      }
+    }
+    var out = this._share || (this._share = new Float32Array(C * R));
+    if (out.length !== C * R) out = this._share = new Float32Array(C * R);
+    for (y = 0; y < R; y++) {
+      var y0 = Math.max(0, y - r), y1 = Math.min(R, y + r + 1);
+      for (x = 0; x < C; x++) {
+        var x0 = Math.max(0, x - r), x1 = Math.min(C, x + r + 1);
+        var a = sv[y1 * W + x1] - sv[y0 * W + x1] - sv[y1 * W + x0] + sv[y0 * W + x0];
+        var b = sk[y1 * W + x1] - sk[y0 * W + x1] - sk[y1 * W + x0] + sk[y0 * W + x0];
+        out[y * C + x] = b > 0 ? a / b : 1;
+      }
+    }
+    return out;
   };
 
   /** Ein Tag: Ueberweidung bzw. Erholung, dann Wachstum und Schwund. */
@@ -131,13 +162,21 @@
       if (dmg) {
         var rec = dmg.recover * def.season[season];
         // Schaden nur, wenn in der Wachstumszeit kahl gefressen wird - im
-        // Winter ruhen die Pflanzen, Abweiden schadet dann kaum
+        // Winter ruhen die Pflanzen, Abweiden schadet dann kaum. `damage.season`
+        // legt die Jahreszeiten fest, sonst gilt jede mit kraeftigem Wachstum.
         var loss = dmg.loss * Math.min(1, def.season[season]);
-        var winterLow = def.season[season] < 0.5;
+        var active = dmg.season ? dmg.season[season] > 0 : def.season[season] >= 0.5;
+        // Bei Nahrung, die ein umherziehender Trupp nur kurz abfrisst und die
+        // schnell nachwaechst (Insekten), zaehlt die Umgebung (`damage.area`
+        // Weidezellen im Umkreis), gemessen an einer gesunden Gegend: Ein
+        // durchziehender Trupp schadet nicht, nur zu viele Tiere in der ganzen
+        // Gegend. Ist sie einmal verarmt, schadet jedes weitere Fressen.
+        var region = dmg.area ? this.regionShare(key, dmg.area) : null;
         for (var i = 0; i < v.length; i++) {
           if (cap[i] <= 0) continue;
-          var Kh = cap[i] * (dmg.dead + (1 - dmg.dead) * h[i]);
-          if (bit[i] > 0 && v[i] < dmg.below * Kh && !winterLow) {
+          var Kh = this.carrying(key, i);
+          var bare = bit[i] > 0 && (region ? region[i] < dmg.below : v[i] < dmg.below * Kh);
+          if (bare && active) {
             h[i] = Math.max(0, h[i] - loss);
             rest[i] = 0;
           } else {
@@ -151,10 +190,10 @@
       if (season === 3) r /= w.winter;
       var mult = w.mast && def.mast && (season === 1 || season === 2) ? def.mast : 1;
       var decay = def.decay ? def.decay[season] * (season === 3 ? w.winter : 1) : 0;
-      var hh = this.healthFor(key), seed = def.seed, dead = deadFor(key);
+      var seed = def.seed;
       for (i = 0; i < v.length; i++) {
         if (cap[i] <= 0) continue;
-        var K = (hh ? cap[i] * (dead + (1 - dead) * hh[i]) : cap[i]) * mult;
+        var K = this.carrying(key, i) * mult;
         // ueber der Kapazitaet (Zustand gesunken): Pflanzen sterben ab
         if (v[i] > K) v[i] -= (v[i] - K) * 0.1;
         else if (r > 0) v[i] += r * (v[i] + seed * K) * (1 - v[i] / K);

@@ -1,13 +1,15 @@
 /**
- * Weidezustand auf der Karte: eine Schicht ueber dem Gelaende, die zeigt, wo
- * Pflanzen abgefressen sind und wo sie durch Ueberweidung abgestorben sind.
+ * Weidezustand auf der Karte: Wo Pflanzen abgefressen oder durch Ueberweidung
+ * abgestorben sind, verliert die Landschaft ihre Farbe.
  *
- *   abgefressen   Gras und Laub unter ihrem Hoechststand -> strohfarben, trocken
- *   ueberweidet   Pflanzenzustand gesunken -> offener, brauner Boden
+ *   abgefressen   Gras und Laub unter ihrem Hoechststand -> etwas blasser
+ *   ueberweidet   Pflanzenzustand gesunken -> grau und fahl
  *
- * Ein Bildpunkt je Weidezelle, weich vergroessert und auf die Insel
- * beschnitten. Neu berechnet wird nur, wenn ein neuer Tag beginnt.
- * Reine Darstellung - liest sim.fields, veraendert nichts.
+ * Keine Farbschicht darueber: Die Textur des Gelaendes bleibt sichtbar und
+ * wird nur entsaettigt (Mischmodus "saturation") und leicht aufgehellt
+ * ("screen"). Eine Maske mit einem Bildpunkt je Weidezelle, weich vergroessert
+ * und auf die Insel beschnitten. Neu berechnet wird nur, wenn ein neuer Tag
+ * beginnt. Reine Darstellung - liest sim.fields, veraendert nichts.
  */
 (function (global) {
   'use strict';
@@ -15,9 +17,10 @@
   var BT = global.BT || (global.BT = {});
 
   var KEYS = ['gras', 'laub'];
-  var DRY = [205, 178, 104];     // abgefressen: Stroh
-  var BARE = [112, 74, 42];     // ueberweidet: offener Boden
-  var FULL_CAP = 4;             // ab dieser Pflanzenmenge je Zelle volle Deckkraft
+  var FULL_CAP = 4;             // ab dieser Pflanzenmenge je Zelle volle Wirkung
+  var GRAY = [128, 128, 128];   // Quelle fuer die Entsaettigung (Farbton egal, Saettigung 0)
+  var FADE = [112, 106, 94];    // Aufhellung: fahles, leicht warmes Grau
+  var FADE_ALPHA = 0.4;         // Aufhellung im Verhaeltnis zur Entsaettigung
 
   var UP = 4;                   // Vergroesserung des weichgezeichneten Puffers
 
@@ -50,13 +53,10 @@
       // Abgefressen ist nur ein Hauch (im Winter ist ohnehin wenig da),
       // abgestorbene Pflanzen dagegen deutlich: offener Boden
       var e = Math.max(0, eaten - 0.5) / 0.5;
-      var a = weight * Math.min(1, 0.4 * e + 1.6 * dead);
+      var a = weight * Math.min(1, 0.35 * e + 1.4 * dead);
       if (a < 0.02) continue;
-      var t = Math.min(1, 2.5 * dead / (2.5 * dead + 0.4 * e + 0.001));
       var o = i * 4;
-      d[o] = Math.round(DRY[0] + (BARE[0] - DRY[0]) * t);
-      d[o + 1] = Math.round(DRY[1] + (BARE[1] - DRY[1]) * t);
-      d[o + 2] = Math.round(DRY[2] + (BARE[2] - DRY[2]) * t);
+      d[o] = GRAY[0]; d[o + 1] = GRAY[1]; d[o + 2] = GRAY[2];
       d[o + 3] = Math.round(a * 255);
     }
     cx.putImageData(img, 0, 0);
@@ -82,10 +82,40 @@
     ctx.save();
     if (island) ctx.clip(island, 'evenodd');
     ctx.imageSmoothingEnabled = true;
-    ctx.globalAlpha = 0.9;
-    ctx.drawImage(cache.canvas, 0, 0, f.cols * f.size, f.rows * f.size);
+    var w = f.cols * f.size, h = f.rows * f.size;
+    // 1. Farbe herausnehmen: Saettigung der Maske (0) uebernehmen, Helligkeit
+    //    und Relief bleiben
+    ctx.globalCompositeOperation = 'saturation';
+    ctx.drawImage(cache.canvas, 0, 0, w, h);
+    // 2. fahl machen: dieselbe Maske als warmes Grau aufhellend darueber
+    if (!cache.fade) cache.fade = tint(cache.canvas, FADE);
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = FADE_ALPHA;
+    ctx.drawImage(cache.fade, 0, 0, w, h);
     ctx.restore();
   }
 
-  BT.PlantRenderer = { draw: draw, DRY: DRY, BARE: BARE };
+  /** Maske in einer anderen Farbe (gleiche Deckkraft). */
+  function tint(mask, rgb) {
+    var c = global.document.createElement('canvas');
+    c.width = mask.width; c.height = mask.height;
+    var x = c.getContext('2d');
+    x.drawImage(mask, 0, 0);
+    x.globalCompositeOperation = 'source-in';
+    x.fillStyle = 'rgb(' + rgb.join(',') + ')';
+    x.fillRect(0, 0, c.width, c.height);
+    return c;
+  }
+
+  /** Farbe eines Lebensraums, wie sie bei abgefressenen/ueberweideten Pflanzen erscheint (Legende). */
+  function sample(rgb, strength) {
+    var l = 0.3 * rgb[0] + 0.59 * rgb[1] + 0.11 * rgb[2];
+    return rgb.map(function (v, k) {
+      var g = v + (l - v) * strength;                        // entsaettigen
+      var f = 255 - (255 - g) * (255 - FADE[k]) / 255;       // screen
+      return Math.round(g + (f - g) * FADE_ALPHA * strength);
+    });
+  }
+
+  BT.PlantRenderer = { draw: draw, sample: sample };
 })(typeof window !== 'undefined' ? window : globalThis);

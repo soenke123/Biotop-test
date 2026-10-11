@@ -22,6 +22,9 @@
   var COVER = new Array(13).fill(0);
   COVER[B.FERN] = 0.5; COVER[B.MOSS] = 0.6; COVER[B.SCRUB] = 0.35; COVER[B.SWAMP] = 0.25;
 
+  // So viele Tage kostet es, eine seltene Beute vergeblich zu suchen
+  var SEARCH_DAYS = 1;
+
   function dist(a, b) { return BT.M.hypot(a.x - b.x, a.y - b.y); }
 
   function avg(members, key) {
@@ -196,8 +199,13 @@
       if (score > bestScore) { bestScore = score; best = p; bestWeight = weight; }
     }
     // Seltene Beute wird nicht nur seltener gewaehlt, sondern auch seltener
-    // verfolgt (Holling Typ III): die Raeuber hungern, bevor die Beute verschwindet
-    if (best && !sim.rng.chance(Math.min(1, bestWeight / spec.prey[best.spec.id]))) return null;
+    // verfolgt (Holling Typ III): die Raeuber hungern, bevor die Beute verschwindet.
+    // Die vergebliche Suche kostet Zeit - sonst wuerde der Raeuber es einfach im
+    // naechsten Tick wieder versuchen, und die Seltenheit braechte nichts.
+    if (best && !sim.rng.chance(Math.min(1, bestWeight / spec.prey[best.spec.id]))) {
+      g.cooldown = sim.ticksPerDay * SEARCH_DAYS;
+      return null;
+    }
     return best;
   }
 

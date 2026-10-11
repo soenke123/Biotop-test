@@ -492,12 +492,12 @@
   /**
    * Beutewechsel (Holling Typ III): Wird eine Beuteart selten, suchen die
    * Raeuber kaum noch gezielt nach ihr. Faktor 0..1 aus dem Bestand von gestern
-   * relativ zum Startbestand.
+   * relativ zum Startbestand (bei spec.scarce mal Startbestand ist es 0,5).
    */
   Simulation.prototype.preyAvailability = function (id) {
     var row = this.stats.latest();
     var n = row ? row.count[id] : 0;
-    var h = Math.max(10, this.startCounts[id] * 0.8);
+    var h = Math.max(10, this.startCounts[id] * BT.SPECIES[id].scarce);
     return n * n / (n * n + h * h);
   };
 

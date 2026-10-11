@@ -46,10 +46,11 @@ js/world/   config.js (alle Stellschrauben, Lebensräume), island.js (Generator)
             decor.js (Streudetails), world.js (world-Objekt, query)
 js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefschattierung),
             seasonRenderer (Jahreszeiten als Farbschicht), plantRenderer (Weidezustand:
-            abgefressen/überweidet), sprites, agentRenderer (Tiere, Hervorhebung einer Art)
+            entsättigt die Textur, abgefressen blasser, überweidet grau), sprites, agentRenderer (Tiere, Hervorhebung einer Art)
 js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung und
             Pflanzenzustand je Weidezelle, Überweidung), movement, behavior (Gruppen-Entscheidungen), stats, simulation (Tick/Tag)
-js/ui/      app.js (Karte, Zeitregler, Seitenleiste, Bildpuffer), charts.js
+js/ui/      app.js (Karte, Zeitregler, Seitenleiste, Bildpuffer, Großansicht der Diagramme),
+            charts.js (LineChart; ChartView: gemeinsamer Zeitraum und Fadenkreuz)
 data/       arten.md (fachliche Wahrheit für species.js)
 assets/     Tierbilder (Platzhalter aus Wild Clusters)
 tools/      load.js (Skripte in Node laden), smoketest.js, balance.js (Abstimmung),

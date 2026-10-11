@@ -47,10 +47,18 @@ etwa 7 Jahren ganz erholt. Früchte hängen am Zustand des Laubs (Büsche, die v
 tragen weniger).
 
 Gras und Laub werden nur von den Zwerghirschen gefressen. Damit hängt der Zustand der Weiden
-allein an ihnen – und über sie an den Wölfen. Auf der Karte erscheinen
-abgefressene Flächen strohfarben, überweidete als brauner Boden (Auswahl „Karte“ oben,
-Standard „Weidezustand“). Dieselbe Auswahl zeigt auch jede Nahrungsschicht einzeln: abgefressen
+allein an ihnen – und über sie an den Wölfen. Auf der Karte verliert die Landschaft dort ihre
+Farbe: abgefressene Flächen werden etwas blasser, überweidete grau und fahl. Die Textur bleibt
+sichtbar, sie wird nur entsättigt (Auswahl „Karte“ oben, Standard „Weidezustand“). Dieselbe Auswahl zeigt auch jede Nahrungsschicht einzeln: abgefressen
 braun, voll leicht grün – so sieht man z. B., wo die Laufvögel Früchte und Insekten leer fressen.
+
+**Übernutzte Insekten:** Auch die Laufvögel können ihre Nahrung zerstören. Sie scharren den
+Boden nach Larven und Puppen ab. Fällt der Insektenbestand einer ganzen Gegend (5 × 5
+Weidezellen, also 120 × 120 Einheiten) in Sommer oder Herbst unter 30 % dessen, was eine gesunde
+Gegend trägt, sinkt dort, wo gefressen wird, der Zustand der Insekten um 0,1 je Tag. Ein
+durchziehender Trupp schadet also nicht, nur zu viele Vögel in der ganzen Gegend. Ist eine Gegend
+einmal verarmt, schadet jedes weitere Fressen, und erholen kann sie sich erst nach 120 Tagen Ruhe
+(um 0,006 je Tag, kahl nur zu 3 %).
 
 ## Jahreswetter
 
@@ -129,7 +137,7 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
 
 - **Vorbild:** Falklandfuchs (Warrah), der einzige heimische Landräuber der Falklandinseln, von
   Siedlern ausgerottet.
-- **Gruppe:** Rudel mit bis zu 5 Tieren und festem Revier (Radius 420).
+- **Gruppe:** Rudel mit bis zu 6 Tieren und festem Revier (Radius 380).
 - **Beute:** vor allem Zwerghirsch, Laufvögel nur selten. Frisst auch Aas. Wie sein Vorbild frisst er
   nebenher Insekten und Früchte, wenn er hungrig umherstreift. Das trägt ihn durch magere
   Zeiten, reicht aber nicht für Nachwuchs.
@@ -137,10 +145,11 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   sinkt mit der Deckung, der Herdengröße und der Verfassung der Beute (ausgehungerte Tiere
   entkommen schlechter). Bevorzugte Opfer sind Jungtiere, schwache und alte Tiere. Ein erlegter
   Hirsch liefert 1,5 Energie (ein Laufvogel 0,6). Nach einem Riss ruht das Rudel nur, wenn es satt
-  ist, sonst jagt es weiter. Gejagt wird unter 70 % Energie.
+  ist, sonst jagt es weiter. Gejagt wird unter 70 % Energie. Erfolg je Angriff und Jäger 0,32,
+  Verbrauch 0,042 Energie am Tag.
 - **Fortpflanzung:** nur das älteste Paar des Rudels, 2–4 Welpen im Frühling, und nur wenn das
-  Rudel gut genährt ist (≥ 50 %), ein eigenes Revier hat und noch nicht voll ist (höchstens 5).
-- **Abwanderung:** Im Herbst verlassen junge Wölfe große Rudel. Wanderer suchen Artgenossen,
+  Rudel gut genährt ist (≥ 50 %), ein eigenes Revier hat und noch nicht voll ist (höchstens 6).
+- **Abwanderung:** Im Herbst verlassen junge Wölfe Rudel ab 4 Tieren (jeder mit 60 %). Wanderer suchen Artgenossen,
   schließen sich Rudeln an, denen ein Geschlecht fehlt, und gründen mit Partner ein Revier, wo
   Platz ist. Wanderer werden aus fremden Revieren vertrieben.
 
@@ -149,7 +158,7 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
 - **Vorbild:** Haastadler (Neuseeland, ausgestorben).
 - **Gruppe:** Paar mit Revier (Radius 330), dazu höchstens ein Junges.
 - **Beute:** Laufvögel, junge Zwerghirsche (bis ½ Jahr). Sieht schlecht unter Bäume. Frisst Aas.
-  Jagt unter 65 % Energie, verbraucht 0,03 Energie am Tag.
+  Jagt unter 65 % Energie, verbraucht 0,03 Energie am Tag. Erfolg je Angriff und Jäger 0,3.
 - **Fortpflanzung:** 1–2 Junge im Frühling, nur im eigenen Revier und nur, solange die Familie
   nicht voll ist (höchstens 3). Erwachsen mit 2 Jahren, Höchstalter etwa 14 Jahre.
 - **Abwanderung:** wie beim Wolf.
@@ -164,7 +173,8 @@ stirbt in der Simulation fast immer eine Art aus.
    Nachwuchs, volle Rudel auch nicht. Das begrenzt die Zahl der Räuber auf die Zahl der Reviere.
 2. **Beutewechsel (Holling Typ III):** Wird eine Beuteart selten, wird sie seltener gewählt und
    seltener verfolgt. Die Räuber hungern dann, bevor die Beute verschwindet (Bezug: 80 % des
-   Startbestands).
+   Startbestands, `scarce` in der Artentabelle). Die vergebliche Suche nach seltener Beute kostet
+   einen Tag – sonst würde ein hungriger Räuber es einfach gleich wieder versuchen.
 3. **Rückzugsräume:** Im Wald werden Beutetiere schlechter entdeckt und erwischt.
 4. **Aas:** Verhungerte Tiere und Reste von Rissen ernähren die Räuber in schlechten Zeiten.
 5. **Fortpflanzung je nach Futterlage:** Hungrige Räuber bekommen keinen Nachwuchs.
@@ -174,34 +184,45 @@ stirbt in der Simulation fast immer eine Art aus.
 
 ## Wozu die Räuber da sind
 
-Das System ist so gebaut, dass es **nur mit allen Arten zusammen** funktioniert. Die Weiden
-können überweidet werden und erholen sich dann jahrelang nicht. Ohne Räuber vermehren sich die
-Hirsche, bis sie ihre Weiden zerstören. Die Wölfe halten sie darunter.
+Das System ist so gebaut, dass es **nur mit allen Arten zusammen** funktioniert. Weiden und
+Insektenbestände können übernutzt werden und erholen sich dann jahrelang nicht.
 
-Vergleich (`node tools/balance.js 8 30` und `… --ohne=inselwolf,inseladler`, mittlere Insel):
+- Ohne Wölfe vermehren sich die Hirsche, bis sie ihre Weiden zerstören.
+- Ohne Adler (und Wölfe) vermehren sich die Laufvögel, bis sie die Insekten ganzer Gegenden
+  ausgeräumt haben. Danach überlebt nur ein Rest – weniger als mit Räubern.
+
+Vergleich (`node tools/balance.js 8 30` und `… --ohne=inselwolf,inseladler`, mittlere Insel,
+Mittel ab Jahr 10):
 
 | | mit Räubern | ohne Räuber |
 |---|---|---|
-| Zwerghirsche, Jahr 2–3 | etwa 100–180 | etwa 320–400 (Massenvermehrung) |
-| Zwerghirsche, ab Jahr 10 | etwa 110, schwankend | etwa 110, die meisten sterben an Hunger |
-| Laufvögel, ab Jahr 10 | etwa 310 | etwa 390, viele verhungern (Früchte fehlen) |
-| Zustand Grasland / Laub | etwa 75–95 % / 93 % | etwa 25 % / 65 % |
+| Zwerghirsche, Jahr 2–3 | etwa 100–200 | etwa 310–400 (Massenvermehrung) |
+| Zwerghirsche, ab Jahr 10 | etwa 130, schwankend | etwa 115, viele sterben an Hunger |
+| Laufvögel, Jahr 3–4 | etwa 250–350 | etwa 500–640 (Massenvermehrung) |
+| Laufvögel, ab Jahr 10 | etwa 260 | etwa 120 (Insekten ausgeräumt) |
+| Zustand Grasland / Laub / Insekten | etwa 87 % / 97 % / 80 % | etwa 27 % / 68 % / 42 % |
 | alle Arten überleben | 7 von 8 Läufen | – |
 
 Ohne Räuber verläuft es wie auf dem Kaibab-Plateau: erst viel mehr Pflanzenfresser, dann
-kahl gefressene Weiden und Hungersnot. Die Insel bleibt danach kahl, weil die übrigen Hirsche
-die Weiden nie lange genug schonen.
+kahl gefressene Weiden, ausgeräumte Böden und Hungersnot. Die Insel bleibt danach verarmt, weil
+die übrigen Tiere Weiden und Böden nie lange genug schonen.
 
 Mit Räubern sieht man eine **Kaskade**: Werden die Wölfe in einem Jahr knapp, steigen die
 Hirsche, das Grasland leidet. Erholen sich die Wölfe, sinken die Hirsche, und die Weiden heilen
-über Jahre. Stirbt das Wolfsrudel aus, kippt die Insel in den kahlen Zustand.
+über Jahre. Stirbt das Wolfsrudel aus, kippt die Insel in den kahlen Zustand. Ebenso hängen
+Adler, Laufvögel und Insekten zusammen.
 
 ## Abstimmung (Stand)
 
 `node tools/balance.js 8 30` rechnet 8 Inseln über 30 Jahre:
 
-- mittlere Insel: in 6 von 8 Läufen überleben alle vier Arten (mit Jahreswetter; ohne Wetter
-  waren es 7 von 8). Mittlere Bestände ab Jahr 10: Hirsche ~126, Laufvögel ~326 (schwankend
-  etwa 70–730), Wölfe ~13, Adler ~13.
-- kleine Insel: nur in 1 von 6 Läufen; meist sterben die Wölfe nach 9–21 Jahren aus, in einem
-  Lauf auch die Zwerghirsche
+- mittlere Insel: in 7 von 8 Läufen überleben alle vier Arten (vorher 6 von 8). Mittlere
+  Bestände ab Jahr 10: Hirsche ~127 (schwankend etwa 35–370), Laufvögel ~260, Wölfe ~20 (vorher
+  13), Adler ~12. Die Wölfe reißen mehr Hirsche, die Weiden bleiben dadurch gesünder (Gras 87 %
+  statt 73 %); auf gesunden Weiden kommen aber auch mehr Kälber durch, deshalb sinkt die mittlere
+  Hirschzahl kaum.
+- Hungrigere Adler (Verbrauch 0,035–0,045) verhungerten in den Tests, sobald sie die Laufvögel
+  dezimiert hatten. Stärker wirken sie deshalb über den Jagderfolg (0,22 → 0,3), nicht über Hunger.
+- kleine Insel (`--size=klein`): wie vorher nur in 1 von 6 Läufen; meist sterben die Wölfe
+  nach 8–29 Jahren aus, in 2 Läufen rotten die stärkeren Wölfe zuvor die Zwerghirsche aus
+  (vorher 1). Die kleine Insel ist zu klein für stabile Räuberbestände.

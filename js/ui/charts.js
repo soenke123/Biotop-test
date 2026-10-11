@@ -1,11 +1,16 @@
 /**
- * Kleine Liniendiagramme fuer die Zeitreihen (Canvas, ohne Bibliothek).
+ * Liniendiagramme fuer die Zeitreihen (Canvas, ohne Bibliothek).
  *
  * Jedes Diagramm hat genau eine y-Achse. Bestaende sehr unterschiedlicher
  * Groesse (Hirsche vs. Woelfe) stehen deshalb in getrennten Diagrammen.
  * Die Legende ueber dem Diagramm nennt jede Reihe mit aktuellem Wert, damit
- * die Zuordnung nie nur an der Farbe haengt. Beim Ueberfahren zeigt ein
- * Fadenkreuz die Werte an diesem Tag.
+ * die Zuordnung nie nur an der Farbe haengt.
+ *
+ * Alle Diagramme teilen sich eine Ansicht (BT.ChartView):
+ *   - Zeitraum: alles oder nur die letzten N Jahre
+ *   - Fadenkreuz: Wer ueber ein Diagramm faehrt, sieht denselben Tag als
+ *     Strich in allen Diagrammen; die Legenden zeigen dann die Werte dieses
+ *     Tages. So lassen sich Zusammenhaenge (Hirsche - Woelfe - Gras) ablesen.
  */
 (function (global) {
   'use strict';
@@ -13,7 +18,8 @@
   var BT = global.BT || (global.BT = {});
   var doc = global.document;
 
-  var INK = { axis: 'rgba(232, 241, 244, 0.25)', grid: 'rgba(232, 241, 244, 0.08)', text: 'rgba(232, 241, 244, 0.7)' };
+  var INK = { axis: 'rgba(232, 241, 244, 0.25)', grid: 'rgba(232, 241, 244, 0.08)', text: 'rgba(232, 241, 244, 0.7)', cross: 'rgba(232, 241, 244, 0.75)' };
+  var SEASON_SHORT = ['Fr', 'So', 'He', 'Wi'];
 
   function niceMax(v) {
     if (v <= 0) return 1;
@@ -23,12 +29,89 @@
     return 10 * p;
   }
 
+  // ------------------------------------------------------------ gemeinsame Ansicht
+
+  /** Zeitraum und Fadenkreuz, gemeinsam fuer alle angemeldeten Diagramme. */
+  function ChartView() {
+    this.years = 0;          // 0 = ganzer Verlauf
+    this.hoverDay = null;    // Tag unter dem Zeiger (in irgendeinem Diagramm)
+    this.hoverChart = null;  // Diagramm, ueber dem der Zeiger steht (bekommt den Tooltip)
+    this.charts = [];
+    this.listeners = [];
+  }
+
+  ChartView.prototype.add = function (chart) { this.charts.push(chart); };
+
+  /** Ausschnitt der Zeitreihe, der gerade gezeigt wird. */
+  ChartView.prototype.slice = function (history) {
+    if (!this.years || !history.length) return history;
+    var from = history[history.length - 1].day - this.years * BT.Time.DAYS_PER_YEAR;
+    if (history[0].day >= from) return history;
+    // history[i].day === i (eine Zeile je Tag ab Tag 0); zur Sicherheit suchen
+    var i = Math.max(0, Math.min(history.length - 1, from - history[0].day));
+    while (i > 0 && history[i].day > from) i--;
+    while (i < history.length - 1 && history[i].day < from) i++;
+    return history.slice(i);
+  };
+
+  ChartView.prototype.setYears = function (y) {
+    this.years = y;
+    this.drawAll();
+    for (var i = 0; i < this.listeners.length; i++) this.listeners[i](y);
+  };
+
+  ChartView.prototype.onRange = function (fn) { this.listeners.push(fn); };
+
+  ChartView.prototype.setHover = function (day, chart) {
+    if (day === this.hoverDay && chart === this.hoverChart) return;
+    this.hoverDay = day;
+    this.hoverChart = chart;
+    this.drawAll();
+  };
+
+  ChartView.prototype.drawAll = function () {
+    for (var i = 0; i < this.charts.length; i++) this.charts[i].draw();
+  };
+
+  /**
+   * Knopfleiste fuer den Zeitraum. Mehrere Leisten (Seitenleiste, Grossansicht)
+   * bleiben ueber die gemeinsame Ansicht im Gleichschritt.
+   */
+  ChartView.prototype.rangeButtons = function (container) {
+    var self = this;
+    var opts = [[0, 'Alles'], [100, '100 J'], [50, '50 J'], [10, '10 J'], [1, '1 J']];
+    var bar = doc.createElement('div');
+    bar.className = 'range-bar';
+    bar.setAttribute('role', 'group');
+    bar.setAttribute('aria-label', 'Zeitraum der Diagramme');
+    bar.innerHTML = opts.map(function (o) {
+      return '<button type="button" data-years="' + o[0] + '" title="' +
+        (o[0] ? 'Die letzten ' + (o[0] === 1 ? 'zwölf Monate' : o[0] + ' Jahre') : 'Ganzer Verlauf') + '">' + o[1] + '</button>';
+    }).join('');
+    function mark(y) {
+      var bs = bar.querySelectorAll('button');
+      for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', String(+bs[i].dataset.years === y));
+    }
+    bar.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (b) self.setYears(+b.dataset.years);
+    });
+    this.onRange(mark);
+    mark(this.years);
+    container.appendChild(bar);
+    return bar;
+  };
+
+  // ------------------------------------------------------------ Diagramm
+
   /**
    * @param container  Element, in das Titel, Legende und Canvas kommen
-   * @param opts       { title, series: [{label, color, get(row)}], percent }
+   * @param opts       { title, series: [{label, color, get(row)}], percent, view }
    */
   function LineChart(container, opts) {
     this.opts = opts;
+    this.view = opts.view || new ChartView();
+    this.view.add(this);
     this.root = doc.createElement('div');
     this.root.className = 'chart';
     this.root.innerHTML = '<div class="chart-head"><h3></h3><div class="chart-legend"></div></div>' +
@@ -39,17 +122,16 @@
     this.tip = this.root.querySelector('.chart-tip');
     this.ctx = this.canvas.getContext('2d');
     this.history = [];
-    this.hoverX = null;
+    this.layout = null;      // zuletzt gezeichneter Ausschnitt (fuer die Zeigerposition)
     container.appendChild(this.root);
 
     var self = this;
     this.canvas.addEventListener('pointermove', function (e) {
       var r = self.canvas.getBoundingClientRect();
-      self.hoverX = e.clientX - r.left;
-      self.draw();
+      self.view.setHover(self.dayAt(e.clientX - r.left), self);
     });
     this.canvas.addEventListener('pointerleave', function () {
-      self.hoverX = null; self.tip.hidden = true; self.draw();
+      if (self.view.hoverChart === self) self.view.setHover(null, null);
     });
     this.buildLegend();
   }
@@ -57,7 +139,7 @@
   LineChart.prototype.buildLegend = function () {
     var html = '';
     this.opts.series.forEach(function (s) {
-      html += '<span class="lg"><i style="background:' + s.color + '"></i>' + s.label + ' <b data-k="' + s.label + '">–</b></span>';
+      html += '<span class="lg"><i style="background:' + s.color + '"></i>' + s.label + ' <b>–</b></span>';
     });
     this.legend.innerHTML = html;
     this.values = this.legend.querySelectorAll('b');
@@ -67,35 +149,50 @@
     return this.opts.percent ? Math.round(v * 100) + ' %' : String(Math.round(v));
   };
 
+  /** Tag unter einer x-Position im Canvas (oder null ausserhalb). */
+  LineChart.prototype.dayAt = function (px) {
+    var l = this.layout;
+    if (!l || px < l.L - 4 || px > l.L + l.pw + 4) return null;
+    var k = Math.round((px - l.L) / l.pw * (l.n - 1));
+    return l.d0 + Math.max(0, Math.min(l.n - 1, k));
+  };
+
   LineChart.prototype.update = function (history) {
     this.history = history;
-    var last = history[history.length - 1];
-    if (last) {
-      for (var i = 0; i < this.opts.series.length; i++) this.values[i].textContent = this.fmt(this.opts.series[i].get(last));
-    }
     this.draw();
+  };
+
+  /** Legendenwerte: am Fadenkreuz der Wert dieses Tages, sonst der aktuelle. */
+  LineChart.prototype.updateLegend = function (row, hovered) {
+    if (!row) return;
+    for (var i = 0; i < this.opts.series.length; i++) this.values[i].textContent = this.fmt(this.opts.series[i].get(row));
+    this.legend.classList.toggle('at-cursor', !!hovered);
   };
 
   LineChart.prototype.draw = function () {
     var c = this.canvas, ctx = this.ctx;
     var dpr = global.devicePixelRatio || 1;
     var W = c.clientWidth, H = c.clientHeight;
-    if (!W || !H) return;
+    if (!W || !H) return;    // unsichtbar (z. B. Grossansicht geschlossen)
     if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) {
       c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
-    var hist = this.history, series = this.opts.series;
+    var hist = this.view.slice(this.history), series = this.opts.series;
     var L = 34, R = 8, Tp = 6, Bt = 18;
     var pw = W - L - R, ph = H - Tp - Bt;
     var n = hist.length;
-    if (n < 2) return;
+    this.layout = null;
+    this.tip.hidden = true;
+    if (n < 2) { this.updateLegend(hist[n - 1], false); return; }
+    var d0 = hist[0].day;
+    this.layout = { L: L, pw: pw, n: n, d0: d0 };
 
     var max = 0;
     for (var i = 0; i < n; i++) for (var s = 0; s < series.length; s++) max = Math.max(max, series[s].get(hist[i]));
-    max = this.opts.percent ? 1 : niceMax(max * 1.05);
+    max = this.opts.percent ? 1 : niceMax(Math.max(2, max * 1.05));
 
     var x = function (k) { return L + (k / (n - 1)) * pw; };
     var y = function (v) { return Tp + ph - (v / max) * ph; };
@@ -104,37 +201,59 @@
     ctx.font = '10px system-ui, sans-serif';
     ctx.fillStyle = INK.text;
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    for (var t = 0; t <= 2; t++) {
-      var v = max * t / 2;
+    var rows = ph > 140 ? 4 : 2;
+    for (var t = 0; t <= rows; t++) {
+      var v = max * t / rows;
       ctx.strokeStyle = t === 0 ? INK.axis : INK.grid;
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(L, Math.round(y(v)) + 0.5); ctx.lineTo(L + pw, Math.round(y(v)) + 0.5); ctx.stroke();
       ctx.fillText(this.fmt(v), L - 5, y(v));
     }
-    // Jahresmarken
-    var days = hist[n - 1].day - hist[0].day;
-    var years = days / BT.Time.DAYS_PER_YEAR;
-    var stepY = Math.max(1, niceMax(years / 5));
-    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    for (var yr = 0; yr <= years; yr += stepY) {
-      var k = Math.round(yr * BT.Time.DAYS_PER_YEAR / Math.max(1, days) * (n - 1));
-      ctx.fillText('J' + (yr + 1), x(k), Tp + ph + 4);
+
+    // Wetter als Hintergrundbaender: Mastjahre gelb, harte Winter blau.
+    // Zeilenweise geprueft, damit auch ein angeschnittenes Jahr markiert ist.
+    var DPY = BT.Time.DAYS_PER_YEAR, DPS = BT.Time.DAYS_PER_SEASON;
+    var bands = [
+      { test: function (r) { return r.weather && r.weather.mast; }, color: 'rgba(242, 201, 76, 0.13)' },
+      { test: function (r) { return r.weather && r.weather.winter > BT.Weather.HARD_WINTER && r.day % DPY >= 3 * DPS; }, color: 'rgba(120, 170, 255, 0.16)' }
+    ];
+    var half = pw / (n - 1) / 2;
+    for (var b = 0; b < bands.length; b++) {
+      ctx.fillStyle = bands[b].color;
+      var runStart = -1;
+      for (i = 0; i <= n; i++) {
+        var on = i < n && bands[b].test(hist[i]);
+        if (on && runStart < 0) runStart = i;
+        if (!on && runStart >= 0) {
+          var x0 = Math.max(L, x(runStart) - half), x1 = Math.min(L + pw, x(i - 1) + half);
+          ctx.fillRect(x0, Tp, Math.max(1, x1 - x0), ph);
+          runStart = -1;
+        }
+      }
     }
 
-    // Wetter als Hintergrundbaender: Mastjahre gelb, harte Winter blau
-    var DPY = BT.Time.DAYS_PER_YEAR, DPS = BT.Time.DAYS_PER_SEASON;
-    var d0 = hist[0].day;
+    // Zeitmarken: Jahre, bei kurzem Zeitraum auch Jahreszeiten
+    var years = (n - 1) / DPY;
+    var maxLabels = Math.max(2, Math.floor(pw / 46));
+    var stepY = Math.max(1, niceMax(years / maxLabels));
+    var seasons = years <= 2.5;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     for (i = 0; i < n; i++) {
-      var w = hist[i].weather;
-      if (!w) continue;
-      var doy = hist[i].day % DPY;
-      var band = null;
-      if (w.mast && doy === 0) band = { from: i, len: DPY, color: 'rgba(242, 201, 76, 0.13)' };
-      else if (w.winter > BT.Weather.HARD_WINTER && doy === 3 * DPS) band = { from: i, len: DPS, color: 'rgba(120, 170, 255, 0.16)' };
-      if (!band) continue;
-      var x0 = x(band.from), x1 = x(Math.min(n - 1, band.from + band.len));
-      ctx.fillStyle = band.color;
-      ctx.fillRect(x0, Tp, Math.max(1, x1 - x0), ph);
+      var day = hist[i].day;
+      if (day % DPS !== 0) continue;
+      var cal = BT.Time.calendar(day);
+      var px = Math.round(x(i)) + 0.5;
+      if (cal.dayOfYear === 0 && (cal.year - 1) % stepY === 0) {
+        ctx.strokeStyle = INK.grid; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(px, Tp); ctx.lineTo(px, Tp + ph); ctx.stroke();
+        ctx.fillStyle = INK.text;
+        ctx.fillText('J' + cal.year, x(i), Tp + ph + 4);
+      } else if (seasons) {
+        ctx.fillStyle = INK.text;
+        ctx.globalAlpha = 0.6;
+        ctx.fillText(SEASON_SHORT[cal.season], x(i), Tp + ph + 4);
+        ctx.globalAlpha = 1;
+      }
     }
 
     // Linien: hoechstens ein Punkt je Pixel
@@ -144,34 +263,43 @@
       ctx.strokeStyle = series[s].color;
       ctx.beginPath();
       for (i = 0; i < n; i += stride) {
-        var px = x(i), py = y(series[s].get(hist[i]));
-        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        var lx = x(i), ly = y(series[s].get(hist[i]));
+        if (i === 0) ctx.moveTo(lx, ly); else ctx.lineTo(lx, ly);
       }
       ctx.lineTo(x(n - 1), y(series[s].get(hist[n - 1])));
       ctx.stroke();
     }
 
-    // Fadenkreuz und Tooltip
-    if (this.hoverX !== null && this.hoverX >= L && this.hoverX <= L + pw) {
-      var idx = Math.round((this.hoverX - L) / pw * (n - 1));
-      var row = hist[idx];
-      ctx.strokeStyle = INK.axis; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(Math.round(x(idx)) + 0.5, Tp); ctx.lineTo(Math.round(x(idx)) + 0.5, Tp + ph); ctx.stroke();
-      var html = '<div class="tt-head">' + BT.Time.label(row.day) +
-        (row.weather ? '<br>' + BT.Weather.describe(row.weather) : '') + '</div>';
-      for (s = 0; s < series.length; s++) {
-        var val = series[s].get(row);
-        ctx.fillStyle = series[s].color;
-        ctx.beginPath(); ctx.arc(x(idx), y(val), 4, 0, Math.PI * 2); ctx.fill();
-        html += '<div><i style="background:' + series[s].color + '"></i>' + series[s].label + ' <b>' + this.fmt(val) + '</b></div>';
-      }
-      this.tip.innerHTML = html;
-      this.tip.hidden = false;
-      var left = x(idx) + 10;
-      if (left + 150 > W) left = x(idx) - 160;
-      this.tip.style.left = left + 'px';
+    // Fadenkreuz: derselbe Tag in allen Diagrammen
+    var hd = this.view.hoverDay;
+    var idx = hd === null ? -1 : hd - d0;
+    if (idx < 0 || idx >= n) { this.updateLegend(hist[n - 1], false); return; }
+    var row = hist[idx];
+    var cx = Math.round(x(idx)) + 0.5;
+    ctx.strokeStyle = INK.cross; ctx.lineWidth = 1;
+    ctx.setLineDash(this.view.hoverChart === this ? [] : [3, 3]);
+    ctx.beginPath(); ctx.moveTo(cx, Tp); ctx.lineTo(cx, Tp + ph); ctx.stroke();
+    ctx.setLineDash([]);
+    for (s = 0; s < series.length; s++) {
+      ctx.fillStyle = series[s].color;
+      ctx.beginPath(); ctx.arc(x(idx), y(series[s].get(row)), 3.5, 0, Math.PI * 2); ctx.fill();
     }
+    this.updateLegend(row, true);
+
+    // Tooltip nur im Diagramm unter dem Zeiger
+    if (this.view.hoverChart !== this) return;
+    var html = '<div class="tt-head">' + BT.Time.label(row.day) +
+      (row.weather ? '<br>' + BT.Weather.describe(row.weather) : '') + '</div>';
+    for (s = 0; s < series.length; s++) {
+      html += '<div><i style="background:' + series[s].color + '"></i>' + series[s].label + ' <b>' + this.fmt(series[s].get(row)) + '</b></div>';
+    }
+    this.tip.innerHTML = html;
+    this.tip.hidden = false;
+    var left = x(idx) + 10;
+    if (left + 170 > W) left = x(idx) - 180;
+    this.tip.style.left = left + 'px';
   };
 
+  BT.ChartView = ChartView;
   BT.LineChart = LineChart;
 })(typeof window !== 'undefined' ? window : globalThis);

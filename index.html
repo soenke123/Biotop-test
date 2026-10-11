@@ -75,8 +75,15 @@
         <div id="tiles" class="tiles"></div>
       </section>
 
-      <section id="charts"></section>
-      <p class="chart-note"><i class="mast"></i> Mastjahr <i class="winter"></i> harter Winter</p>
+      <section>
+        <h2>Verlauf <small>Zeiger über ein Diagramm: derselbe Tag in allen</small></h2>
+        <div class="chart-tools">
+          <div id="chartTools"></div>
+          <button id="openBig" type="button" aria-expanded="false" aria-controls="bigView" title="Alle Diagramme groß untereinander">⤢ Groß</button>
+        </div>
+        <div id="charts"></div>
+        <p class="chart-note"><i class="mast"></i> Mastjahr <i class="winter"></i> harter Winter</p>
+      </section>
 
       <section>
         <h2>Todesursachen <small>seit Start</small></h2>
@@ -89,6 +96,18 @@
         </div>
       </section>
     </aside>
+  </div>
+
+  <!-- Grossansicht der Diagramme: volle Breite, untereinander -->
+  <div id="bigView" class="big-view" role="dialog" aria-modal="true" aria-label="Diagramme groß" hidden>
+    <div class="big-head">
+      <h2>Verlauf</h2>
+      <div id="bigTools"></div>
+      <p class="chart-note"><i class="mast"></i> Mastjahr <i class="winter"></i> harter Winter</p>
+      <span class="spacer"></span>
+      <button id="closeBig" type="button" title="Schließen (Esc)">✕ Schließen</button>
+    </div>
+    <div id="bigCharts" class="big-charts"></div>
   </div>
 
   <!-- Ladereihenfolge = Abhaengigkeitsaufloesung (kein Modulsystem, laeuft unter file://) -->

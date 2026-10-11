@@ -23,6 +23,7 @@ const size = flags.size || 'mittel';
 const ids = BT.SPECIES_ORDER;
 const without = flags.ohne ? String(flags.ohne).split(',') : [];
 const start = Object.fromEntries(without.map((id) => [id, 0]));
+const HEALTH = BT.FOOD_ORDER.filter((k) => BT.FOOD[k].damage);
 const short = { zwerghirsch: 'Hirsch', laufvogel: 'Vogel', inselwolf: 'Wolf', inseladler: 'Adler' };
 
 const summary = [];
@@ -50,16 +51,16 @@ for (let s = 0; s < SEEDS; s++) {
   const food = {};
   for (const k of BT.FOOD_ORDER) food[k] = late.reduce((a, r) => a + r.food[k], 0) / late.length;
   const health = {};
-  for (const k of ['gras', 'laub']) health[k] = late.reduce((a, r) => a + r.health[k], 0) / late.length;
+  for (const k of HEALTH) health[k] = late.reduce((a, r) => a + r.health[k], 0) / late.length;
   summary.push({ seed, sim, range, mean, food, health, ms, years: yearly.length });
 
   if (flags.verlauf && s === 0) {
     console.log(`Seed ${seed}: Bestand am Jahresende (Jungtiere in Klammern) · Nahrung in %`);
-    console.log('Jahr  ' + ids.map((id) => short[id].padStart(11)).join('') + '   Gras Laub Frucht Insekt  Zustand Gras Laub');
+    console.log('Jahr  ' + ids.map((id) => short[id].padStart(11)).join('') + '   Gras Laub Frucht Insekt  Zustand ' + HEALTH.join(' '));
     yearly.forEach((r, i) => {
       console.log(String(i + 1).padStart(4) + '  ' + ids.map((id) => `${r.count[id]}(${r.young[id]})`.padStart(11)).join('') +
         '   ' + BT.FOOD_ORDER.map((k) => String(Math.round(r.food[k] * 100)).padStart(5)).join('') +
-        '         ' + ['gras', 'laub'].map((k) => String(Math.round(r.health[k] * 100)).padStart(5)).join(''));
+        '         ' + HEALTH.map((k) => String(Math.round(r.health[k] * 100)).padStart(5)).join(''));
     });
     console.log('Todesursachen:');
     for (const id of ids) console.log('  ' + short[id].padEnd(7) + JSON.stringify(sim.stats.deaths[id]) + '  Geburten ' + sim.stats.births[id]);
@@ -79,4 +80,4 @@ const avgOf = (f) => summary.reduce((a, r) => a + f(r), 0) / summary.length;
 console.log('Mittlerer Bestand (ab Jahr ' + Math.ceil(YEARS / 3) + '): ' +
   ids.map((id) => short[id] + ' ' + Math.round(avgOf((r) => r.mean[id]))).join(' · ') +
   ' · Nahrung ' + BT.FOOD_ORDER.map((k) => k + ' ' + Math.round(avgOf((r) => r.food[k]) * 100) + ' %').join(', ') +
-  ' · Pflanzenzustand ' + ['gras', 'laub'].map((k) => k + ' ' + Math.round(avgOf((r) => r.health[k]) * 100) + ' %').join(', '));
+  ' · Zustand ' + HEALTH.map((k) => k + ' ' + Math.round(avgOf((r) => r.health[k]) * 100) + ' %').join(', '));

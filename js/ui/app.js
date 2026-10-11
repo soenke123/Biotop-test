@@ -299,8 +299,50 @@
     zwerghirsch: '#d95926', laufvogel: '#3987e5', inselwolf: '#9085e9', inseladler: '#c98500',
     gras: '#199e70', frucht: '#e66767', laub: '#008300', insekten: '#d55181'
   };
-  var charts = [];
+  var charts = [], bigCharts = [], chartView = null;
+  // Schichten mit Pflanzenzustand (Gras, Laub, ... - je nach Artentabelle)
+  var HEALTH_KEYS = BT.FOOD_ORDER.filter(function (k) { return BT.FOOD[k].damage; });
   var lastPanelUpdate = 0;
+
+  function makeCharts(box) {
+    function series(ids, get) {
+      return ids.map(function (id) { return { label: (BT.SPECIES[id] || BT.FOOD[id]).plural || BT.FOOD[id].name, color: SERIES_COLOR[id], get: get(id) }; });
+    }
+    var count = function (id) { return function (r) { return r.count[id]; }; };
+    return [
+      new BT.LineChart(box, { view: chartView, title: 'Pflanzenfresser', series: series(['zwerghirsch', 'laufvogel'], count) }),
+      new BT.LineChart(box, { view: chartView, title: 'Räuber', series: series(['inselwolf', 'inseladler'], count) }),
+      new BT.LineChart(box, {
+        view: chartView, title: 'Nahrung (Anteil am Höchststand)', percent: true,
+        series: ['gras', 'frucht', 'laub', 'insekten'].map(function (k) {
+          return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.food[k]; } };
+        })
+      }),
+      new BT.LineChart(box, {
+        view: chartView, title: 'Zustand der Pflanzen (100 % = gesund, sinkt bei Übernutzung)', percent: true,
+        series: HEALTH_KEYS.map(function (k) {
+          return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.health && r.health[k] != null ? r.health[k] : 1; } };
+        })
+      })
+    ];
+  }
+
+  function updateCharts() {
+    if (!sim) return;
+    var h = sim.stats.history;
+    for (var i = 0; i < charts.length; i++) charts[i].update(h);
+    if (bigOpen()) for (i = 0; i < bigCharts.length; i++) bigCharts[i].update(h);
+  }
+
+  // Grossansicht: alle Diagramme ueber die volle Breite untereinander
+  var bigBox = $('bigView');
+  function bigOpen() { return !bigBox.hidden; }
+  function setBig(open) {
+    bigBox.hidden = !open;
+    $('openBig').setAttribute('aria-expanded', String(open));
+    chartView.setHover(null, null);
+    if (open) { updateCharts(); $('closeBig').focus(); }
+  }
 
   function buildPanel() {
     // Kacheln je Art
@@ -313,27 +355,15 @@
         '<div class="tile-count" id="count-' + id + '">–</div><div class="tile-sub" id="sub-' + id + '"></div></div></div>';
     }).join('');
 
-    var box = $('charts');
-    function series(ids, get) {
-      return ids.map(function (id) { return { label: (BT.SPECIES[id] || BT.FOOD[id]).plural || BT.FOOD[id].name, color: SERIES_COLOR[id], get: get(id) }; });
-    }
-    var count = function (id) { return function (r) { return r.count[id]; }; };
-    charts = [
-      new BT.LineChart(box, { title: 'Pflanzenfresser', series: series(['zwerghirsch', 'laufvogel'], count) }),
-      new BT.LineChart(box, { title: 'Räuber', series: series(['inselwolf', 'inseladler'], count) }),
-      new BT.LineChart(box, {
-        title: 'Nahrung (Anteil am Höchststand)', percent: true,
-        series: ['gras', 'frucht', 'laub', 'insekten'].map(function (k) {
-          return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.food[k]; } };
-        })
-      }),
-      new BT.LineChart(box, {
-        title: 'Zustand der Pflanzen (100 % = gesund, sinkt bei Überweidung)', percent: true,
-        series: ['gras', 'laub'].map(function (k) {
-          return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.health ? r.health[k] : 1; } };
-        })
-      })
-    ];
+    // Diagramme: kleine in der Seitenleiste, grosse in der Grossansicht.
+    // Beide teilen Zeitraum und Fadenkreuz.
+    chartView = new BT.ChartView();
+    chartView.rangeButtons($('chartTools'));
+    chartView.rangeButtons($('bigTools'));
+    charts = makeCharts($('charts'));
+    bigCharts = makeCharts($('bigCharts'));
+    // Bei geaendertem Zeitraum stehen die neuen Werte sofort in der Legende
+    chartView.onRange(function () { updateCharts(); });
 
     // Startbestand: ein Regler je Art, die Empfehlung ist als Strich markiert
     $('startInputs').innerHTML = BT.SPECIES_ORDER.map(function (id) {
@@ -360,7 +390,7 @@
       $('sub-' + id).textContent = row.count[id] ? row.young[id] + ' Jungtiere · ' + g + ' ' + kind[g === 1 ? 0 : 1]
         : sim.startCounts[id] ? 'ausgestorben in ' + BT.Time.label(sim.stats.extinct[id]).replace(/,.*/, '') : 'nicht auf der Insel';
     });
-    for (var i = 0; i < charts.length; i++) charts[i].update(sim.stats.history);
+    updateCharts();
     updateDeaths();
     updateHighlightCount();
   }
@@ -389,10 +419,16 @@
         info.name + '<span class="pct">' + pct.toFixed(1) + ' %</span></div>';
     }
     if (showPlants()) {
-      var rgb = function (c) { return 'rgb(' + c.join(',') + ')'; };
+      // Beispiel: Grasland und Farnwald, wie sie bei Uebernutzung ihre Farbe verlieren
+      var hex = function (h) { return [1, 3, 5].map(function (k) { return parseInt(h.substr(k, 2), 16); }); };
+      var sw = function (key, s) { return 'rgb(' + BT.PlantRenderer.sample(hex(P[key].base), s).join(',') + ')'; };
+      var pair = function (s) {
+        return '<span class="swatch" style="background:linear-gradient(90deg,' + sw('tussock', s) + ' 50%,' + sw('fern', s) + ' 50%)"></span>';
+      };
       html += '<h2>Weidezustand</h2>' +
-        '<div class="row"><span class="swatch" style="background:' + rgb(BT.PlantRenderer.DRY) + '"></span>abgefressen</div>' +
-        '<div class="row"><span class="swatch" style="background:' + rgb(BT.PlantRenderer.BARE) + '"></span>überweidet, Pflanzen abgestorben</div>';
+        '<div class="row">' + pair(0) + 'gesund</div>' +
+        '<div class="row">' + pair(0.35) + 'abgefressen: blasser</div>' +
+        '<div class="row">' + pair(1) + 'überweidet: grau und fahl</div>';
     }
     legend.innerHTML = html;
   }
@@ -583,12 +619,14 @@
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
     if (e.key === 'r' || e.key === 'R') { if (camera) { camera.reset(); interacted(); } }
     if (e.key === ' ') { e.preventDefault(); setRunning(!running); }
-    if (e.key === 'Escape') setHighlight(null);
+    if (e.key === 'Escape') { if (bigOpen()) setBig(false); else setHighlight(null); }
   });
   global.addEventListener('resize', function () {
     resize();
-    for (var i = 0; i < charts.length; i++) charts[i].draw();
+    chartView.drawAll();
   });
+  $('openBig').addEventListener('click', function () { setBig(true); });
+  $('closeBig').addEventListener('click', function () { setBig(false); });
 
   // ---------------------------------------------------------------- Start
   buildPanel();
