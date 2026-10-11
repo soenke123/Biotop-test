@@ -44,7 +44,9 @@ Soll später ein Skill in MPSkills werden (wie Wild Clusters in `newTablet-Schul
 js/core/    rng, noise, grid, geometry, contour     (aus Wild Clusters, WL -> BT)
 js/world/   config.js (alle Stellschrauben, Lebensräume), island.js (Generator),
             decor.js (Streudetails), world.js (world-Objekt, query)
-js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefschattierung)
+js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefschattierung),
+            seasonRenderer (Jahreszeiten als Farbschicht), sprites, agentRenderer (Tiere,
+            Hervorhebung einer Art)
 js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung je
             Weidezelle), movement, behavior (Gruppen-Entscheidungen), stats, simulation (Tick/Tag)
 js/ui/      app.js (Karte, Zeitregler, Seitenleiste, Bildpuffer), charts.js
