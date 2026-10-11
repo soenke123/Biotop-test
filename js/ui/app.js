@@ -239,6 +239,8 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       drawTerrain();
       var alpha = running && ticksPerSecond() <= 90 ? Math.min(1, tickAcc) : 1;
+      setWorldTransform(ctx);
+      BT.FoodOverlay.draw(ctx, sim, $('mapMode').value);
       BT.AgentRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale, alpha);
     }
     global.requestAnimationFrame(frame);
@@ -299,7 +301,8 @@
       $('count-' + id).textContent = row.count[id];
       var g = row.groups[id];
       var kind = { herd: ['Herde', 'Herden'], flock: ['Gruppe', 'Gruppen'], pack: ['Rudel', 'Rudel'], pair: ['Paar/Revier', 'Paare/Reviere'] }[BT.SPECIES[id].group.kind];
-      $('sub-' + id).textContent = row.count[id] ? row.young[id] + ' Jungtiere · ' + g + ' ' + kind[g === 1 ? 0 : 1] : 'ausgestorben';
+      $('sub-' + id).textContent = row.count[id] ? row.young[id] + ' Jungtiere · ' + g + ' ' + kind[g === 1 ? 0 : 1]
+        : sim.startCounts[id] ? 'ausgestorben in ' + BT.Time.label(sim.stats.extinct[id]).replace(/,.*/, '') : 'nicht auf der Insel';
     });
     for (var i = 0; i < charts.length; i++) charts[i].update(sim.stats.history);
     updateDeaths();
@@ -443,6 +446,7 @@
     legendBtn.setAttribute('aria-pressed', String(!legend.hidden));
   });
   playBtn.addEventListener('click', function () { setRunning(!running); });
+  $('mapMode').addEventListener('change', function () { dirty = true; });
   $('stepDay').addEventListener('click', function () {
     if (!sim || skipping) return;
     setRunning(false);

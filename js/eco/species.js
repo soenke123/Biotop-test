@@ -23,7 +23,13 @@
   /**
    * Pflanzen und Insekten sind Felder (ein Wert je Weidezelle), keine Tiere.
    * capacity: maximale Menge je Weidezelle und Lebensraum
-   * growth:   Nachwuchsrate pro Tag (Anteil des fehlenden Bestands)
+   * growth:   Wachstumsrate pro Tag
+   * regrow:   'stock'  waechst aus dem vorhandenen Bestand (logistisch) plus einer kleinen
+   *                    Reserve (Wurzeln, Samenbank, Larven): kahl gefressene Flaechen
+   *                    erholen sich nur langsam -> Ueberweidung ist moeglich
+   *           'plant'  wird von Pflanzen gebildet (Fruechte): waechst mit der Gesundheit
+   *                    der Buesche, also mit dem Fuellstand von Laub
+   * seed:     Reserve als Anteil der Kapazitaet (nur bei 'stock')
    * season:   Wachstumsfaktor je Jahreszeit [Fruehling, Sommer, Herbst, Winter]
    * decay:    Schwund pro Tag je Jahreszeit (Fruechte verrotten, Insekten sterben im Winter)
    * mast:     in einem Mastjahr steigt die Kapazitaet um diesen Faktor (Sommer/Herbst)
@@ -34,33 +40,37 @@
     gras: {
       name: 'Gras und Kräuter',
       water: 0.04,
-      growth: 0.035,
+      regrow: 'stock', seed: 0.1,
+      growth: 0.06,
       season: [1.5, 1.0, 0.7, 0.3],
-      capacity: cap({ TUSSOCK: 5.5, SCRUB: 2.75, SWAMP: 3.3, BEACH: 0.83, FERN: 0.83, MOSS: 0.55, THERMAL: 0.83, ROCK: 0.55 })
+      capacity: cap({ TUSSOCK: 9.9, SCRUB: 4.95, SWAMP: 5.94, BEACH: 1.49, FERN: 1.49, MOSS: 0.99, THERMAL: 1.49, ROCK: 0.99 })
     },
     laub: {
       name: 'Triebe und Laub',
       water: 0.06,
-      growth: 0.025,
+      regrow: 'stock', seed: 0.1,
+      growth: 0.042,
       season: [1.4, 1.0, 0.6, 0.25],
-      capacity: cap({ FERN: 4.4, MOSS: 3.3, SCRUB: 3.85, SWAMP: 1.1, TUSSOCK: 0.55 })
+      capacity: cap({ FERN: 7.92, MOSS: 5.94, SCRUB: 6.93, SWAMP: 1.98, TUSSOCK: 0.99 })
     },
     frucht: {
       name: 'Früchte und Samen',
       water: 0.16,
+      regrow: 'plant',
       growth: 0.05,
       season: [0.2, 1.0, 1.6, 0.0],
       decay: [0, 0, 0.015, 0.07],
       mast: 2.4,
-      capacity: cap({ SCRUB: 3.3, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.1, SWAMP: 1.1 })
+      capacity: cap({ SCRUB: 4.62, FERN: 3.08, MOSS: 2.31, TUSSOCK: 1.54, SWAMP: 1.54 })
     },
     insekten: {
       name: 'Insekten',
       water: 0.14,
-      growth: 0.08,
+      regrow: 'stock', seed: 0.35,       // Eier und Larven ueberwintern
+      growth: 0.14,
       season: [1.3, 1.5, 0.7, 0.05],
       decay: [0, 0, 0.03, 0.12],
-      capacity: cap({ SWAMP: 3.85, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.65, SCRUB: 1.65, BEACH: 0.55 })
+      capacity: cap({ SWAMP: 6.16, FERN: 3.52, MOSS: 2.64, TUSSOCK: 2.64, SCRUB: 2.64, BEACH: 0.88 })
     }
   };
   BT.FOOD_ORDER = ['gras', 'laub', 'frucht', 'insekten'];
@@ -138,8 +148,8 @@
       group: { kind: 'pack', min: 1, max: 8, spread: 18, start: [3, 5] },
       start: 20,                      // Tiere, verteilt auf Rudel
       prey: { zwerghirsch: 1.0, laufvogel: 0.8 },
-      costPerDay: 0.045,
-      winterCost: 0.015,
+      costPerDay: 0.038,
+      winterCost: 0.012,
       thirstDays: 10,
       speed: 6, chaseSpeed: 19,
       vision: 230,

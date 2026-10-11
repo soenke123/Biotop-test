@@ -29,8 +29,32 @@ blickend (läuft das Tier nach rechts, wird gespiegelt), Seitenverhältnis etwa 
 | Früchte und Samen | Buschland, Farnwald | Sommer/Herbst, im Winter keine |
 | Insekten | Sumpf, Farnwald | Frühling/Sommer |
 
-Eine Weidezelle fasst 4 × 4 Rasterzellen zusammen (24 × 24 Einheiten). Abgefressenes wächst
-immer nach, auch aus null.
+Eine Weidezelle fasst 4 × 4 Rasterzellen zusammen (24 × 24 Einheiten).
+
+**Wie Nahrung nachwächst:**
+
+- **Gras, Laub, Insekten** wachsen aus dem vorhandenen Bestand (logistisch), dazu kommt eine
+  kleine Reserve aus Wurzeln, Samen oder Eiern. Eine kahl gefressene Fläche erholt sich deshalb
+  nur langsam. Das ist **Überweidung**: Zu viele Fresser zerstören ihre eigene Nahrungsgrundlage,
+  der Bestand bricht ein und erholt sich erst, wenn die Pflanzen nachgewachsen sind. Insekten
+  haben eine große Reserve (überwinternde Eier und Larven) und sind im Frühling schnell zurück.
+- **Früchte** werden von den Büschen gebildet. Wie viel nachwächst, hängt davon ab, wie
+  gesund die Büsche sind, also vom Füllstand von Laub. Verbeißen die Zwerghirsche das Laub,
+  gibt es weniger Früchte für die Laufvögel – eine indirekte Konkurrenz.
+
+**Auf der Karte sichtbar:** Unter „Karte“ oben lässt sich die Nahrungsansicht einschalten
+(alles oder eine einzelne Schicht). Abgefressene Flächen werden braun, volle leicht grün.
+
+## Grenzen jeder Art (Test: nur diese Art auf der Insel)
+
+| Art allein | Verlauf | Was sie begrenzt |
+|---|---|---|
+| Laufvögel | wachsen bis ~1.100, fressen Früchte, Insekten und Gras kahl, brechen dann z. B. auf ~630 ein, schwanken danach mit dem Wetter | Nahrung, vor allem im Winter |
+| Zwerghirsche | wachsen schnell, Gras und Laub werden kahl gefressen, Einbruch auf etwa ein Drittel | Nahrung (Überweidung) |
+| Räuber allein | verhungern | keine Beute |
+
+Die Obergrenze ist nirgends fest eingestellt. Sie ergibt sich allein aus Nahrung, Wetter und
+Fressfeinden.
 
 ## Jahreswetter
 
@@ -107,7 +131,7 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   Siedlern ausgerottet.
 - **Gruppe:** Rudel mit bis zu 8 Tieren und festem Revier (Radius 320).
 - **Beute:** Zwerghirsch, Laufvogel. Frisst auch Aas.
-- **Jagd:** erst anschleichen, dann sprinten. Der Erfolg steigt mit der Zahl der Jäger und
+- **Jagd:** erst anschleichen (mindestens so schnell wie die ziehende Herde), dann sprinten. Der Erfolg steigt mit der Zahl der Jäger und
   sinkt mit der Deckung und der Herdengröße. Bevorzugte Opfer sind Jungtiere, schwache und alte
   Tiere.
 - **Fortpflanzung:** nur das älteste Paar des Rudels, 2–4 Welpen im Frühling, und nur wenn das
@@ -144,5 +168,7 @@ stirbt in der Simulation fast immer eine Art aus.
 
 `node tools/balance.js 8 30` rechnet 8 Inseln über 30 Jahre:
 
-- mittlere Insel: in 7 von 8 Läufen überleben alle vier Arten
-- kleine Insel: nur in 1 von 6 Läufen; Wölfe und Adler sterben meist nach 5–12 Jahren aus
+- mittlere Insel: in 6 von 8 Läufen überleben alle vier Arten. Die Bestände schwanken kräftig
+  (Hirsche etwa 130–800), und in einzelnen Läufen bricht nach einem Boom ein Räuber zusammen.
+- kleine Insel: Wölfe und Adler sterben meist nach wenigen Jahren aus (Stand vor der Umstellung
+  auf logistisches Wachstum, noch nicht neu gemessen).

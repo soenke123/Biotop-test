@@ -313,7 +313,9 @@
       } else {
         // Anschleichen, solange die Beute noch nichts merkt, dann Sprint
         var close = dist(g, prey) < prey.spec.vision * 0.55 || prey.state === 'fliehen';
-        var sp = close ? spec.chaseSpeed : spec.speed * 1.2;
+        // Beim Anschleichen mindestens so schnell wie die ziehende Herde
+        var stalk = Math.min(spec.chaseSpeed * 0.7, Math.max(spec.speed * 1.2, (prey.speedNow || 0) + 2));
+        var sp = close ? spec.chaseSpeed : stalk;
         if (close) g.stateTicks--;
         else g.stateTicks++;           // Anschleichen verbraucht keine Sprintzeit
         BT.Move.stepToward(sim.world, spec, g, prey.x, prey.y, sp);

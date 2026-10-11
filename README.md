@@ -22,6 +22,7 @@ Dazu kommen Pflanzen und Insekten als Nahrungsschichten. Die Arten stehen in
 | Gesamtansicht | Taste `R` oder „Ansicht zurücksetzen“ | Button |
 | Lebensraum, Nahrung oder Tier ablesen | Zeiger über die Karte | – |
 | Start/Pause | Leertaste oder „Start“ | Button |
+| Nahrung auf der Karte zeigen | „Karte“ oben: Nahrung (alles) oder eine Schicht | dito |
 
 ## Simulation
 

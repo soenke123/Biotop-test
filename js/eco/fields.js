@@ -82,9 +82,13 @@
   /**
    * Ein Tag Wachstum und Schwund, abhaengig von Jahreszeit und Jahreswetter.
    * weather: { growth, winter, mast } (siehe eco/weather.js)
+   *
+   *   'stock':  v += r * (v + seed*K) * (1 - v/K)   - kahl gefressen = langsame Erholung
+   *   'plant':  v += r * (K - v) * Laubgesundheit    - Fruechte haengen an den Bueschen
    */
   Fields.prototype.grow = function (season, weather) {
     var w = weather || { growth: 1, winter: 1, mast: false };
+    var laubV = this.value.laub, laubK = this.capacity.laub;
     for (var k = 0; k < BT.FOOD_ORDER.length; k++) {
       var key = BT.FOOD_ORDER[k];
       var def = BT.FOOD[key];
@@ -92,12 +96,19 @@
       if (season === 3) r /= w.winter;
       var mult = w.mast && def.mast && (season === 1 || season === 2) ? def.mast : 1;
       var decay = def.decay ? def.decay[season] * (season === 3 ? w.winter : 1) : 0;
+      var stock = def.regrow === 'stock';
+      var seed = def.seed || 0;
       var v = this.value[key], K = this.capacity[key];
       for (var i = 0; i < v.length; i++) {
         if (K[i] <= 0) continue;
         if (r > 0) {
-          var target = K[i] * mult;
-          if (v[i] < target) v[i] += r * (target - v[i]);
+          var T = K[i] * mult;
+          if (stock) {
+            if (v[i] < T) v[i] += r * (v[i] + seed * K[i]) * (1 - v[i] / T);
+          } else if (v[i] < T) {
+            var health = laubK[i] > 0.3 ? 0.2 + 0.8 * laubV[i] / laubK[i] : 1;
+            v[i] += r * (T - v[i]) * health;
+          }
         }
         if (decay > 0) v[i] -= v[i] * decay;
       }

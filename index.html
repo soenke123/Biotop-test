@@ -22,6 +22,16 @@
     </label>
     <button id="resetView" type="button" title="Gesamtansicht (R)">Ansicht zurücksetzen</button>
     <button id="toggleLegend" type="button" aria-pressed="false">Lebensräume</button>
+    <label class="field">Karte
+      <select id="mapMode">
+        <option value="aus">Landschaft</option>
+        <option value="alles">Nahrung (alles)</option>
+        <option value="gras">Gras und Kräuter</option>
+        <option value="laub">Triebe und Laub</option>
+        <option value="frucht">Früchte und Samen</option>
+        <option value="insekten">Insekten</option>
+      </select>
+    </label>
     <span class="spacer"></span>
     <span id="status" class="status"></span>
   </header>
@@ -102,6 +112,7 @@
   <script src="js/render/camera.js"></script>
   <script src="js/render/terrainRenderer.js"></script>
   <script src="js/render/sprites.js"></script>
+  <script src="js/render/foodOverlay.js"></script>
   <script src="js/render/agentRenderer.js"></script>
   <script src="js/ui/charts.js"></script>
   <script src="js/ui/app.js"></script>
