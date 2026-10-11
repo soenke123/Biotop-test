@@ -23,37 +23,48 @@
   /**
    * Pflanzen und Insekten sind Felder (ein Wert je Weidezelle), keine Tiere.
    * capacity: maximale Menge je Weidezelle und Lebensraum
-   * growth:   Nachwuchsrate pro Tag (Anteil des fehlenden Bestands)
+   * growth:   Wachstumsrate pro Tag. Pflanzen wachsen aus ihrer Blattmasse: halb
+   *           abgefressen waechst am schnellsten nach, kahl gefressen nur sehr
+   *           langsam (aus dem Rest `seed`, Wurzeln und Samenbank).
+   * seed:     Rest, aus dem auch eine kahle Flaeche nachwaechst (Anteil von capacity)
    * season:   Wachstumsfaktor je Jahreszeit [Fruehling, Sommer, Herbst, Winter]
    * water:    so viel Durst loescht eine gefressene Einheit (Pflanzen enthalten Wasser,
    *           Fruechte und Insekten mehr als Gras) - Trinken bleibt trotzdem noetig
+   * damage:   Ueberweidung. Wird eine Weidezelle immer wieder unter `below` (Anteil der
+   *           Kapazitaet) abgefressen, sinkt ihr Pflanzenzustand um `loss` je Tag: die
+   *           Pflanzen sterben ab, es waechst weniger nach. Ohne Ueberweidung erholt sich
+   *           der Zustand um `recover` je Tag (mal Jahreszeit).
+   * healthOf: diese Schicht haengt am Zustand einer anderen (Fruechte an den Bueschen)
    */
   BT.FOOD = {
     gras: {
       name: 'Gras und Kräuter',
       water: 0.04,
-      growth: 0.035,
+      growth: 0.13, seed: 0.05,
       season: [1.5, 1.0, 0.7, 0.3],
+      damage: { below: 0.2, loss: 0.03, recover: 0.006 },
       capacity: cap({ TUSSOCK: 5.5, SCRUB: 2.75, SWAMP: 3.3, BEACH: 0.83, FERN: 0.83, MOSS: 0.55, THERMAL: 0.83, ROCK: 0.55 })
     },
     laub: {
       name: 'Triebe und Laub',
       water: 0.06,
-      growth: 0.025,
+      growth: 0.1, seed: 0.05,
       season: [1.4, 1.0, 0.6, 0.25],
+      damage: { below: 0.2, loss: 0.015, recover: 0.003 },
       capacity: cap({ FERN: 4.4, MOSS: 3.3, SCRUB: 3.85, SWAMP: 1.1, TUSSOCK: 0.55 })
     },
     frucht: {
       name: 'Früchte und Samen',
       water: 0.16,
-      growth: 0.05,
+      growth: 0.18, seed: 0.05,
       season: [0.2, 1.0, 1.6, 0.0],
+      healthOf: 'laub',
       capacity: cap({ SCRUB: 3.3, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.1, SWAMP: 1.1 })
     },
     insekten: {
       name: 'Insekten',
       water: 0.14,
-      growth: 0.08,
+      growth: 0.3, seed: 0.05,
       season: [1.3, 1.5, 0.7, 0.05],
       capacity: cap({ SWAMP: 3.85, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.65, SCRUB: 1.65, BEACH: 0.55 })
     }
@@ -93,7 +104,7 @@
       maturity: Y(1), maxAge: Y(8),
       breed: { kind: 'each-female', season: 0, day: 4, chance: 0.85, litter: [1, 2], minEnergy: 0.4, cost: 0.15 },
       newbornEnergy: 0.6,
-      meat: 2.2                       // Energie, die ein erlegtes Tier liefert
+      meat: 1.5                       // Energie, die ein erlegtes Tier liefert
     },
 
     laufvogel: {
@@ -104,7 +115,7 @@
       sprite: 'assets/laufvogel.png',
       size: 18,
       color: '#5d8fc9',
-      group: { kind: 'flock', min: 1, max: 6, spread: 16, start: [2, 4] },
+      group: { kind: 'flock', min: 2, max: 6, spread: 16, start: [2, 4] },
       start: 160,                     // Tiere zu Beginn
       diet: { gras: 0.04, frucht: 0.1, insekten: 0.11 },
       bite: 0.32,
@@ -119,7 +130,7 @@
       // Bodenbrueter: Gelege im Fruehling, Kueken schluepfen nach einigen Tagen
       breed: { kind: 'pair', season: 0, day: 2, chance: 0.85, litter: [2, 4], minEnergy: 0.35, cost: 0.15, incubation: 8 },
       newbornEnergy: 0.55,
-      meat: 0.7
+      meat: 0.6
     },
 
     inselwolf: {
@@ -130,18 +141,22 @@
       sprite: 'assets/inselwolf.png',
       size: 22,
       color: '#7c7c86',
-      group: { kind: 'pack', min: 1, max: 8, spread: 18, start: [3, 5] },
+      group: { kind: 'pack', min: 1, max: 5, spread: 18, start: [3, 5] },
       start: 20,                      // Tiere, verteilt auf Rudel
-      prey: { zwerghirsch: 1.0, laufvogel: 0.8 },
+      prey: { zwerghirsch: 1.0, laufvogel: 0.4 },
+      // Wie sein Vorbild frisst er nebenher Insekten und Fruechte - das traegt
+      // ihn durch Zeiten mit wenig Beute, reicht aber nicht fuer Nachwuchs
+      diet: { frucht: 0.04, insekten: 0.04 },
+      bite: 0.1,
       costPerDay: 0.045,
       winterCost: 0.015,
       thirstDays: 10,
       speed: 6, chaseSpeed: 19,
       vision: 230,
-      huntChance: 0.22,               // je Angriff und Jaeger, steigt mit der Rudelgroesse
+      huntChance: 0.28,               // je Angriff und Jaeger, steigt mit der Rudelgroesse
       maxChaseTicks: 12,
-      territory: 320,                 // Radius des Reviers
-      hungry: 0.65,                   // jagt, wenn Energie darunter
+      territory: 420,                 // Radius des Reviers
+      hungry: 0.7,                    // jagt, wenn Energie darunter
       habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 0.7, BEACH: 0.6, THERMAL: 0.6, ROCK: 0.6, PEAK: 0.1 }),
       maturity: Y(1.5), maxAge: Y(9),
       breed: { kind: 'group-pair', season: 0, day: 6, chance: 0.85, litter: [2, 4], minEnergy: 0.6, cost: 0.15 },
@@ -164,15 +179,15 @@
       // Greift Jungtiere des Hirschs und Laufvoegel an, sieht nicht unter Baeume
       prey: { laufvogel: 1.0, zwerghirsch: 0.6 },
       preyMaxAge: { zwerghirsch: Y(0.5) },
-      costPerDay: 0.036,
+      costPerDay: 0.03,
       winterCost: 0.005,
       thirstDays: 0,                  // trinkt nicht (Wasser aus der Beute)
       speed: 8, chaseSpeed: 22,
       vision: 300,
-      huntChance: 0.16,
+      huntChance: 0.22,
       maxChaseTicks: 6,
       territory: 330,
-      hungry: 0.6,
+      hungry: 0.65,
       habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 1, BEACH: 1, THERMAL: 1, ROCK: 1, PEAK: 1 }),
       maturity: Y(2), maxAge: Y(14),
       breed: { kind: 'group-pair', season: 0, day: 8, chance: 0.75, litter: [1, 2], minEnergy: 0.45, cost: 0.15 },

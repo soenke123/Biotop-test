@@ -24,6 +24,8 @@
   var seasonBadge = $('season'), hlBadge = $('highlight');
   var SEASON_ICON = ['🌸', '☀️', '🍂', '❄️'];
   var highlight = null;   // Art-ID, deren Tiere auf der Karte markiert sind
+  var showPlants = true;  // Weidezustand (abgefressen, ueberweidet) auf der Karte
+  var plantsBtn = $('togglePlants');
   var playBtn = $('play'), speedInput = $('speed'), speedLabel = $('speedLabel'), clock = $('clock');
 
   var world = null, sim = null, camera = null;
@@ -282,6 +284,8 @@
       drawTerrain();
       var alpha = running && ticksPerSecond() <= 90 ? Math.min(1, tickAcc) : 1;
       if (sim) BT.SeasonRenderer.draw(ctx, world, seasonPos(alpha));
+      // nach den Jahreszeiten, sonst faerbt der Fruehling den kahlen Boden gruen
+      if (sim && showPlants) BT.PlantRenderer.draw(ctx, world, sim);
       BT.AgentRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale, alpha,
         { highlight: highlight, highlightColor: highlight && SERIES_COLOR[highlight] });
     }
@@ -319,6 +323,12 @@
         title: 'Nahrung (Anteil am Höchststand)', percent: true,
         series: ['gras', 'frucht', 'laub', 'insekten'].map(function (k) {
           return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.food[k]; } };
+        })
+      }),
+      new BT.LineChart(box, {
+        title: 'Zustand der Pflanzen (100 % = gesund, sinkt bei Überweidung)', percent: true,
+        series: ['gras', 'laub'].map(function (k) {
+          return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.health ? r.health[k] : 1; } };
         })
       })
     ];
@@ -374,6 +384,12 @@
       if (pct < 0.05) continue;
       html += '<div class="row"><span class="swatch" style="background:' + P[info.key].base + '"></span>' +
         info.name + '<span class="pct">' + pct.toFixed(1) + ' %</span></div>';
+    }
+    if (showPlants) {
+      var rgb = function (c) { return 'rgb(' + c.join(',') + ')'; };
+      html += '<h2>Weidezustand</h2>' +
+        '<div class="row"><span class="swatch" style="background:' + rgb(BT.PlantRenderer.DRY) + '"></span>abgefressen</div>' +
+        '<div class="row"><span class="swatch" style="background:' + rgb(BT.PlantRenderer.BARE) + '"></span>überweidet, Pflanzen abgestorben</div>';
     }
     legend.innerHTML = html;
   }
@@ -478,13 +494,25 @@
       if (BT.BIOME_INFO[b].land && sim) {
         var f = sim.fields, i = f.index(w.x, w.y);
         text += ' · Gras ' + pctOf(f, 'gras', i) + ' · Laub ' + pctOf(f, 'laub', i) +
-          ' · Früchte ' + pctOf(f, 'frucht', i) + ' · Insekten ' + pctOf(f, 'insekten', i);
+          ' · Früchte ' + pctOf(f, 'frucht', i) + ' · Insekten ' + pctOf(f, 'insekten', i) +
+          healthOf(f, i);
       }
     }
     tooltip.textContent = text;
     tooltip.style.left = pos.x + 'px';
     tooltip.style.top = pos.y + 'px';
     tooltip.hidden = false;
+  }
+
+  /** Pflanzenzustand der Zelle, nur wenn durch Ueberweidung geschaedigt. */
+  function healthOf(f, i) {
+    var parts = [];
+    ['gras', 'laub'].forEach(function (key) {
+      if (f.capacity[key][i] > 0.05 && f.health[key][i] < 0.95) {
+        parts.push(BT.FOOD[key].name.split(' ')[0] + ' ' + Math.round(f.health[key][i] * 100) + ' %');
+      }
+    });
+    return parts.length ? ' · überweidet, Zustand: ' + parts.join(', ') : '';
   }
 
   function pctOf(f, key, i) {
@@ -500,6 +528,12 @@
   legendBtn.addEventListener('click', function () {
     legend.hidden = !legend.hidden;
     legendBtn.setAttribute('aria-pressed', String(!legend.hidden));
+  });
+  plantsBtn.addEventListener('click', function () {
+    showPlants = !showPlants;
+    plantsBtn.setAttribute('aria-pressed', String(showPlants));
+    buildLegend();
+    dirty = true;
   });
   playBtn.addEventListener('click', function () { setRunning(!running); });
   $('stepDay').addEventListener('click', function () {
@@ -574,6 +608,12 @@
     redraw: function () { dirty = true; },
     highlight: setHighlight,
     runDays: function (n) { sim.runDays(n); updatePanel(true); dirty = true; },
+    /** Neu starten mit eigenen Startwerten, z. B. { inselwolf: 0, inseladler: 0 } */
+    restartWith: function (start) {
+      startValues = Object.assign({}, recommended, start);
+      customStart = true;
+      restart();
+    },
     setRunning: setRunning
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -45,10 +45,10 @@ js/core/    rng, noise, grid, geometry, contour     (aus Wild Clusters, WL -> BT
 js/world/   config.js (alle Stellschrauben, Lebensräume), island.js (Generator),
             decor.js (Streudetails), world.js (world-Objekt, query)
 js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefschattierung),
-            seasonRenderer (Jahreszeiten als Farbschicht), sprites, agentRenderer (Tiere,
-            Hervorhebung einer Art)
-js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung je
-            Weidezelle), movement, behavior (Gruppen-Entscheidungen), stats, simulation (Tick/Tag)
+            seasonRenderer (Jahreszeiten als Farbschicht), plantRenderer (Weidezustand:
+            abgefressen/überweidet), sprites, agentRenderer (Tiere, Hervorhebung einer Art)
+js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung und
+            Pflanzenzustand je Weidezelle, Überweidung), movement, behavior (Gruppen-Entscheidungen), stats, simulation (Tick/Tag)
 js/ui/      app.js (Karte, Zeitregler, Seitenleiste, Bildpuffer), charts.js
 data/       arten.md (fachliche Wahrheit für species.js)
 assets/     Tierbilder (Platzhalter aus Wild Clusters)
@@ -68,7 +68,8 @@ Generator-Reihenfolge in `island.js`: Form → Relief → Feuchte (ohne Gewässe
 ```
 node tools/smoketest.js 20
 node tools/balance.js 8 30
-node tools/shot.js /tmp/x.png 482917 mittel 1 0.5 0.5 300
+node tools/balance.js 8 30 --ohne=inselwolf,inseladler   # Vergleich ohne Räuber
+node tools/shot.js /tmp/x.png 482917 mittel 1 0.5 0.5 300 [inselwolf,inseladler]
 ```
 
 `tools/shot.js` meldet Fehler aus der Browser-Konsole und endet dann mit Code 1. Nach

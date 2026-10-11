@@ -2,10 +2,11 @@
  * Screenshot der echten Seite in headless Chromium (Playwright).
  * Nur ein Entwicklungswerkzeug - die Anwendung selbst braucht nichts davon.
  *
- *   node tools/shot.js <out.png> [seed] [size] [zoom] [cx] [cy] [tage]
+ *   node tools/shot.js <out.png> [seed] [size] [zoom] [cx] [cy] [tage] [ohne]
  *
  *   zoom  Vergroesserung relativ zur Gesamtansicht (Standard 1)
  *   cx,cy Mittelpunkt des Ausschnitts als Anteil der Welt (0..1)
+ *   ohne  Arten ohne Startbestand, z. B. inselwolf,inseladler
  */
 const path = require('path');
 let chromium;
@@ -16,7 +17,7 @@ try {
 }
 
 (async () => {
-  const [out = 'shot.png', seed = '482917', size = 'mittel', zoom = '1', cx = '0.5', cy = '0.5', days = '0'] = process.argv.slice(2);
+  const [out = 'shot.png', seed = '482917', size = 'mittel', zoom = '1', cx = '0.5', cy = '0.5', days = '0', ohne = ''] = process.argv.slice(2);
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1400, height: 950 } });
   const errors = [];
@@ -25,6 +26,9 @@ try {
   const url = 'file://' + path.join(__dirname, '..', 'index.html') + '#seed=' + seed + '&size=' + size;
   await page.goto(url);
   await page.waitForFunction(() => window.BT && BT.app && BT.app.world && BT.app.sim, null, { timeout: 30000 });
+  if (ohne) {
+    await page.evaluate((ids) => BT.app.restartWith(Object.fromEntries(ids.map((id) => [id, 0]))), ohne.split(','));
+  }
   if (+days > 0) {
     const t0 = Date.now();
     await page.evaluate((d) => BT.app.runDays(d), +days);
