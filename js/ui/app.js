@@ -21,6 +21,9 @@
   var seedInput = $('seed'), sizeSelect = $('size');
   var tooltip = $('tooltip'), legend = $('legend'), legendBtn = $('toggleLegend');
   var status = $('status');
+  var seasonBadge = $('season'), hlBadge = $('highlight');
+  var SEASON_ICON = ['🌸', '☀️', '🍂', '❄️'];
+  var highlight = null;   // Art-ID, deren Tiere auf der Karte markiert sind
   var playBtn = $('play'), speedInput = $('speed'), speedLabel = $('speedLabel'), clock = $('clock');
 
   var world = null, sim = null, camera = null;
@@ -217,6 +220,45 @@
     }
   }
 
+  /** Position im Jahr in Jahreszeiten (0..4), stufenlos zwischen den Ticks. */
+  function seasonPos(alpha) {
+    var T = BT.Time;
+    var days = sim.day % T.DAYS_PER_YEAR + ((sim.tick % T.TICKS_PER_DAY) + (alpha < 1 ? alpha : 0)) / T.TICKS_PER_DAY;
+    return days / T.DAYS_PER_SEASON;
+  }
+
+  function updateSeasonBadge() {
+    var c = BT.Time.calendar(sim.day);
+    seasonBadge.textContent = SEASON_ICON[c.season] + ' ' + c.seasonName;
+    seasonBadge.dataset.season = c.season;
+  }
+
+  // ---------------------------------------------------------------- Hervorheben einer Art
+  /** Klick auf eine Kachel: alle Tiere dieser Art auf der Karte markieren (nochmal: aus). */
+  function setHighlight(id) {
+    highlight = id && id !== highlight ? id : null;
+    var tiles = doc.querySelectorAll('#tiles .tile');
+    for (var i = 0; i < tiles.length; i++) {
+      var on = tiles[i].dataset.id === highlight;
+      tiles[i].classList.toggle('active', on);
+      tiles[i].setAttribute('aria-pressed', String(on));
+    }
+    if (highlight) {
+      var s = BT.SPECIES[highlight];
+      hlBadge.innerHTML = '<i style="background:' + SERIES_COLOR[highlight] + '"></i>' + s.plural +
+        ' hervorgehoben <span id="hlCount"></span> <button type="button" aria-label="Hervorhebung aufheben">✕</button>';
+      updateHighlightCount();
+    }
+    hlBadge.hidden = !highlight;
+    dirty = true;
+  }
+
+  function updateHighlightCount() {
+    var el = $('hlCount');
+    if (!el || !sim || !highlight) return;
+    el.textContent = '(' + sim.stats.latest().count[highlight] + ')';
+  }
+
   function frame(now) {
     if (running && sim && !skipping) {
       if (lastFrame) {
@@ -239,7 +281,9 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       drawTerrain();
       var alpha = running && ticksPerSecond() <= 90 ? Math.min(1, tickAcc) : 1;
-      BT.AgentRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale, alpha);
+      if (sim) BT.SeasonRenderer.draw(ctx, world, seasonPos(alpha));
+      BT.AgentRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale, alpha,
+        { highlight: highlight, highlightColor: highlight && SERIES_COLOR[highlight] });
     }
     global.requestAnimationFrame(frame);
   }
@@ -257,7 +301,8 @@
     var tiles = $('tiles');
     tiles.innerHTML = BT.SPECIES_ORDER.map(function (id) {
       var s = BT.SPECIES[id];
-      return '<div class="tile"><img src="' + s.sprite + '" alt=""><div><div class="tile-name">' +
+      return '<div class="tile" role="button" tabindex="0" aria-pressed="false" data-id="' + id + '" title="Alle ' + s.plural + ' auf der Karte zeigen">' +
+        '<img src="' + s.sprite + '" alt=""><div><div class="tile-name">' +
         '<i style="background:' + SERIES_COLOR[id] + '"></i>' + s.plural + '</div>' +
         '<div class="tile-count" id="count-' + id + '">–</div><div class="tile-sub" id="sub-' + id + '"></div></div></div>';
     }).join('');
@@ -292,6 +337,7 @@
     if (!sim) return;
     var now = global.performance.now();
     clock.textContent = BT.Time.label(sim.day);
+    updateSeasonBadge();
     if (!force && now - lastPanelUpdate < 250) return;
     lastPanelUpdate = now;
     var row = sim.stats.latest();
@@ -303,6 +349,7 @@
     });
     for (var i = 0; i < charts.length; i++) charts[i].update(sim.stats.history);
     updateDeaths();
+    updateHighlightCount();
   }
 
   function updateDeaths() {
@@ -334,6 +381,7 @@
   // ---------------------------------------------------------------- Eingabe Karte
   var pointers = new Map();
   var pinchDist = 0;
+  var clickStart = null;   // Zeigerposition beim Druecken: kaum bewegt = Klick
 
   function localPos(e) {
     var rect = canvas.getBoundingClientRect();
@@ -343,6 +391,7 @@
   canvas.addEventListener('pointerdown', function (e) {
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, localPos(e));
+    clickStart = pointers.size === 1 ? localPos(e) : null;
     canvas.classList.add('dragging');
     if (pointers.size === 2) {
       var p = Array.from(pointers.values());
@@ -371,6 +420,16 @@
   });
 
   function endPointer(e) {
+    // Klick auf ein Tier hebt seine Art hervor
+    if (e.type === 'pointerup' && clickStart && pointers.size === 1 && sim && camera) {
+      var pos = localPos(e);
+      if (Math.abs(pos.x - clickStart.x) + Math.abs(pos.y - clickStart.y) < 5) {
+        var w = camera.screenToWorld(pos.x, pos.y);
+        var a = BT.AgentRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale));
+        if (a) setHighlight(a.spec.id);
+      }
+    }
+    clickStart = null;
     pointers.delete(e.pointerId);
     if (!pointers.size) canvas.classList.remove('dragging');
     pinchDist = 0;
@@ -451,6 +510,19 @@
     dirty = true;
   });
   $('skip').addEventListener('click', function () { skipYears(5); });
+  $('tiles').addEventListener('click', function (e) {
+    var tile = e.target.closest('.tile');
+    if (tile) setHighlight(tile.dataset.id);
+  });
+  $('tiles').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var tile = e.target.closest('.tile');
+    if (!tile) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setHighlight(tile.dataset.id);
+  });
+  hlBadge.addEventListener('click', function (e) { if (e.target.tagName === 'BUTTON') setHighlight(null); });
   speedInput.addEventListener('input', updateSpeedLabel);
   $('startInputs').addEventListener('input', function (e) {
     var id = e.target.dataset && e.target.dataset.id;
@@ -479,6 +551,7 @@
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
     if (e.key === 'r' || e.key === 'R') { if (camera) { camera.reset(); interacted(); } }
     if (e.key === ' ') { e.preventDefault(); setRunning(!running); }
+    if (e.key === 'Escape') setHighlight(null);
   });
   global.addEventListener('resize', function () {
     resize();
@@ -499,6 +572,7 @@
     get sim() { return sim; },
     get camera() { return camera; },
     redraw: function () { dirty = true; },
+    highlight: setHighlight,
     runDays: function (n) { sim.runDays(n); updatePanel(true); dirty = true; },
     setRunning: setRunning
   };

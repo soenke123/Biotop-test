@@ -29,6 +29,8 @@
   <div class="layout">
     <main class="stage">
       <canvas id="map"></canvas>
+      <div id="season" class="season-badge"></div>
+      <div id="highlight" class="highlight-badge" hidden></div>
       <div id="tooltip" class="tooltip" hidden></div>
       <aside id="legend" class="legend" hidden></aside>
     </main>
@@ -57,7 +59,7 @@
       </section>
 
       <section>
-        <h2>Bestand</h2>
+        <h2>Bestand <small>Art anklicken: auf der Karte zeigen</small></h2>
         <div id="tiles" class="tiles"></div>
       </section>
 
@@ -98,6 +100,7 @@
   <script src="js/render/shapes.js"></script>
   <script src="js/render/camera.js"></script>
   <script src="js/render/terrainRenderer.js"></script>
+  <script src="js/render/seasonRenderer.js"></script>
   <script src="js/render/sprites.js"></script>
   <script src="js/render/agentRenderer.js"></script>
   <script src="js/ui/charts.js"></script>
