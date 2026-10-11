@@ -86,7 +86,7 @@
       var la = rng.range(0, Math.PI * 2);
       var ld = rng.range(0.75, 1.05);
       lobes.push({
-        x: cx + Math.cos(la) * rx * ld, y: cy + Math.sin(la) * ry * ld,
+        x: cx + BT.M.cos(la) * rx * ld, y: cy + BT.M.sin(la) * ry * ld,
         rx: rx * rng.rangeIn(cfg.lobeSize), ry: ry * rng.rangeIn(cfg.lobeSize)
       });
     }
@@ -183,8 +183,8 @@
       var ang = ridgeRng.range(0, Math.PI);
       var len = ridgeRng.rangeIn(cfg.ridgeLength) * islandSpan;
       ridges.push({
-        ax: mid.x - Math.cos(ang) * len / 2, ay: mid.y - Math.sin(ang) * len / 2,
-        bx: mid.x + Math.cos(ang) * len / 2, by: mid.y + Math.sin(ang) * len / 2,
+        ax: mid.x - BT.M.cos(ang) * len / 2, ay: mid.y - BT.M.sin(ang) * len / 2,
+        bx: mid.x + BT.M.cos(ang) * len / 2, by: mid.y + BT.M.sin(ang) * len / 2,
         width: ridgeRng.rangeIn(cfg.ridgeWidth) * islandSpan,
         height: ridgeRng.rangeIn(cfg.ridgeHeight)
       });
@@ -211,9 +211,9 @@
     var nBasins = basinRng.intIn(cfg.basins);
     for (var bt = 0; bt < nBasins * 20 && basins.length < nBasins; bt++) {
       var bp = randomLandPoint(basinRng, maxDist * 0.25);
-      if (volcano && Math.hypot(bp.x - volcano.x, bp.y - volcano.y) < volcano.radius * 2.6) continue;
+      if (volcano && BT.M.hypot(bp.x - volcano.x, bp.y - volcano.y) < volcano.radius * 2.6) continue;
       var close = false;
-      for (var q = 0; q < basins.length; q++) if (Math.hypot(basins[q].x - bp.x, basins[q].y - bp.y) < islandSpan * 0.18) close = true;
+      for (var q = 0; q < basins.length; q++) if (BT.M.hypot(basins[q].x - bp.x, basins[q].y - bp.y) < islandSpan * 0.18) close = true;
       if (close) continue;
       basins.push({ x: bp.x, y: bp.y, radius: basinRng.rangeIn(cfg.basinRadius) * islandSpan, depth: basinRng.rangeIn(cfg.basinDepth) });
     }
@@ -225,26 +225,26 @@
         var wx = (x + 0.5) * cell, wy = (y + 0.5) * cell;
         // Glatter Anstieg aus der Inselform (das Abstandsfeld haette Knicke)
         var inland = clamp(base[idx] / maxBase, 0, 1);
-        var h = 0.04 + Math.pow(inland, 0.8) * 0.26;
+        var h = 0.04 + BT.M.pow(inland, 0.8) * 0.26;
         h += hills.fbm(wx * 0.0035, wy * 0.0035, 4) * cfg.hillNoise * smoothstep(0, 0.25, inland);
         var coastFade = smoothstep(0, 0.12, inland);
         for (r = 0; r < ridges.length; r++) {
           var rd = ridges[r];
           var sd = segDistT(wx, wy, rd);
-          var taper = Math.pow(Math.sin(Math.PI * sd.t), 0.6);
+          var taper = BT.M.pow(BT.M.sin(Math.PI * sd.t), 0.6);
           var rough = 0.65 + 0.35 * hills.fbm(wx * 0.012 + 50, wy * 0.012, 3);
-          h += rd.height * Math.exp(-Math.pow(sd.d / rd.width, 2)) * taper * rough * coastFade;
+          h += rd.height * BT.M.exp(-BT.M.pow(sd.d / rd.width, 2)) * taper * rough * coastFade;
         }
         if (volcano) {
-          var vd = Math.hypot(wx - volcano.x, wy - volcano.y) / volcano.radius;
+          var vd = BT.M.hypot(wx - volcano.x, wy - volcano.y) / volcano.radius;
           if (vd < 2.2) {
-            h += cfg.volcanoHeight * Math.pow(Math.max(0, 1 - vd / 2.2), 1.6);
+            h += cfg.volcanoHeight * BT.M.pow(Math.max(0, 1 - vd / 2.2), 1.6);
             if (vd < cfg.craterRadius) h -= cfg.craterDepth * (1 - vd / cfg.craterRadius);
           }
         }
         for (var bi = 0; bi < basins.length; bi++) {
           var bs = basins[bi];
-          var bd = Math.hypot(wx - bs.x, wy - bs.y) / bs.radius;
+          var bd = BT.M.hypot(wx - bs.x, wy - bs.y) / bs.radius;
           bd += hills.signed(wx * 0.02 + bi * 7, wy * 0.02, 2) * 0.35;
           if (bd < 1) h -= bs.depth * (1 - bd * bd);
         }
@@ -265,7 +265,7 @@
     var len2 = vx * vx + vy * vy;
     var t = len2 ? clamp(((px - s.ax) * vx + (py - s.ay) * vy) / len2, 0, 1) : 0;
     var qx = s.ax + vx * t, qy = s.ay + vy * t;
-    return { d: Math.hypot(px - qx, py - qy), t: t };
+    return { d: BT.M.hypot(px - qx, py - qy), t: t };
   }
   function segDist(px, py, s) { return segDistT(px, py, s).d; }
 
@@ -400,9 +400,9 @@
     for (i = 0; i < n; i++) if (river[i] && down[i] >= 0) hasUpRiver[down[i]] = 1;
     var visited = new Uint8Array(n);
     var rivers = [];
-    var logMax = Math.log(60);
+    var logMax = BT.M.log(60);
     function widthAt(idx) {
-      var t = clamp(Math.log(acc[idx] / cfg.riverThreshold) / logMax, 0, 1);
+      var t = clamp(BT.M.log(acc[idx] / cfg.riverThreshold) / logMax, 0, 1);
       return cfg.riverWidthMin + (cfg.riverWidthMax - cfg.riverWidthMin) * t;
     }
     // Quellen nach Einzugsgebiet sortieren -> lange Hauptlaeufe zuerst
@@ -431,7 +431,7 @@
     var land = shape.land, height = relief.height;
     var noise = new BT.Noise(rng.fork('moisture').seed);
     var ang = rng.fork('wind').rangeIn(cfg.windAngle);
-    var wdx = Math.cos(ang), wdy = Math.sin(ang);
+    var wdx = BT.M.cos(ang), wdy = BT.M.sin(ang);
     var raw = new Float32Array(n);
     var STEP = 3, STEPS = 28;
 
@@ -449,10 +449,10 @@
         }
         var shadow = Math.max(0, maxUp - height[i] * 0.6);
         var m = 0.65 - cfg.rainShadow * shadow;
-        m += 0.18 * Math.exp(-relief.distSea[i] / 18);           // Kuestennebel
+        m += 0.18 * BT.M.exp(-relief.distSea[i] / 18);           // Kuestennebel
         m += 0.25 * height[i];                                    // Steigungsregen in der Hoehe
         m += noise.signed(x * 0.025, y * 0.025, 4) * cfg.moistureNoise;
-        if (fresh) m += 0.35 * Math.exp(-fresh[i] / 5);           // Gewaessernaehe
+        if (fresh) m += 0.35 * BT.M.exp(-fresh[i] / 5);           // Gewaessernaehe
         raw[i] = m;
       }
     }
@@ -492,7 +492,9 @@
         if (water.lake[i]) { g[i] = B.LAKE; continue; }
         var h = height[i];
         var m = moisture[i];
-        if (relief.distSea[i] <= cfg.beachCells + en * 1.2 && h < 0.15) { g[i] = B.BEACH; continue; }
+        // Strand: breit an flachen Kuesten, schmal oder gar keiner an steilen
+        var beachW = cfg.beachCells * (1 + 0.6 * en) * clamp(1.4 - h * 6, 0, 1.4);
+        if (relief.distSea[i] <= beachW) { g[i] = B.BEACH; continue; }
         if (h >= cfg.peakHeight + en * 0.03) { g[i] = B.PEAK; continue; }
         if (h >= cfg.rockHeight + en * 0.05) { g[i] = B.ROCK; continue; }
         var slope = slopeAt(height, cols, rows, x, y);
@@ -511,13 +513,13 @@
       for (var t = 0; t < count * 12 && thermal.length < count; t++) {
         var a = tr.range(0, Math.PI * 2);
         var d = v.radius * tr.range(1.3, 2.6);
-        var px = v.x + Math.cos(a) * d, py = v.y + Math.sin(a) * d;
+        var px = v.x + BT.M.cos(a) * d, py = v.y + BT.M.sin(a) * d;
         var gx = Math.floor(px / cell), gy = Math.floor(py / cell);
         if (!grid.inBounds(gx, gy)) continue;
         var gi = gy * cols + gx;
         if (!land[gi] || water.lake[gi] || g[gi] === B.PEAK || g[gi] === B.BEACH) continue;
         var tooClose = false;
-        for (var q = 0; q < thermal.length; q++) if (Math.hypot(thermal[q].x - px, thermal[q].y - py) < 160) tooClose = true;
+        for (var q = 0; q < thermal.length; q++) if (BT.M.hypot(thermal[q].x - px, thermal[q].y - py) < 160) tooClose = true;
         if (tooClose) continue;
         thermal.push({ x: px, y: py, radius: tr.rangeIn(cfg.thermalRadius) });
       }
@@ -531,7 +533,7 @@
             var ii = yy * cols + xx;
             if (!land[ii] || g[ii] === B.LAKE || g[ii] === B.BEACH || g[ii] === B.PEAK) continue;
             var wx = (xx + 0.5) * cell, wy = (yy + 0.5) * cell;
-            var dd = Math.hypot(wx - th.x, wy - th.y) / th.radius;
+            var dd = BT.M.hypot(wx - th.x, wy - th.y) / th.radius;
             if (dd < 1 + 0.35 * edgeNoise.signed(wx * 0.02, wy * 0.02, 2)) g[ii] = B.THERMAL;
           }
         }

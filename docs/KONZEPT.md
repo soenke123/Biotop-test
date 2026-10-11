@@ -255,4 +255,5 @@ data/        arten.md (fachliche Wahrheit für species.js)
 ## 11. Offene Entscheidungen
 
 1. Inselname, Namen der Arten.
-2. Ob Thermalfelder eine ökologische Rolle bekommen (z. B. warme Winterzuflucht) oder Kulisse bleiben.
+2. Thermalfelder: Vorläufig umgesetzt als **warme Winterzuflucht** (dort kostet der Winter
+   weniger Energie, und Herden ziehen im Winter bevorzugt hin). Noch nicht endgültig entschieden.

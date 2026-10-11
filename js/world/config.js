@@ -111,7 +111,7 @@
     },
 
     biome: {
-      beachCells: 2,
+      beachCells: 3.6,
       rockHeight: 0.55,               // Hoehe ab der Bergland beginnt
       peakHeight: 0.80,
       mossHeight: 0.33,               // feuchter Wald oberhalb dieser Hoehe = Moosnebelwald

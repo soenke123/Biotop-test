@@ -21,19 +21,58 @@
       </select>
     </label>
     <button id="resetView" type="button" title="Gesamtansicht (R)">Ansicht zurücksetzen</button>
-    <button id="toggleLegend" type="button" aria-pressed="true">Legende</button>
+    <button id="toggleLegend" type="button" aria-pressed="false">Lebensräume</button>
     <span class="spacer"></span>
     <span id="status" class="status"></span>
   </header>
 
-  <main class="stage">
-    <canvas id="map"></canvas>
-    <div id="tooltip" class="tooltip" hidden></div>
-    <aside id="legend" class="legend"></aside>
-  </main>
+  <div class="layout">
+    <main class="stage">
+      <canvas id="map"></canvas>
+      <div id="tooltip" class="tooltip" hidden></div>
+      <aside id="legend" class="legend" hidden></aside>
+    </main>
+
+    <aside class="panel">
+      <section class="time">
+        <div id="clock" class="clock">Jahr 1 · Frühling, Tag 1</div>
+        <div class="row">
+          <button id="play" type="button" class="primary" title="Start/Pause (Leertaste)">▶ Start</button>
+          <button id="stepDay" type="button" title="Einen Tag weiter">+1 Tag</button>
+          <button id="skip" type="button" title="Ohne Zeichnen vorspulen">⏩ 5 Jahre</button>
+        </div>
+        <label class="speed">Tempo
+          <input id="speed" type="range" min="0" max="100" value="38">
+          <span id="speedLabel"></span>
+        </label>
+      </section>
+
+      <section>
+        <h2>Bestand</h2>
+        <div id="tiles" class="tiles"></div>
+      </section>
+
+      <section id="charts"></section>
+
+      <section>
+        <h2>Todesursachen <small>seit Start</small></h2>
+        <table id="deaths" class="deaths"></table>
+      </section>
+
+      <details class="startvalues">
+        <summary>Startwerte</summary>
+        <div id="startInputs" class="start-grid"></div>
+        <div class="row">
+          <button id="restart" type="button">Neu starten</button>
+          <button id="csv" type="button">Daten (CSV)</button>
+        </div>
+      </details>
+    </aside>
+  </div>
 
   <!-- Ladereihenfolge = Abhaengigkeitsaufloesung (kein Modulsystem, laeuft unter file://) -->
   <script src="js/core/rng.js"></script>
+  <script src="js/core/dmath.js"></script>
   <script src="js/core/noise.js"></script>
   <script src="js/core/grid.js"></script>
   <script src="js/core/geometry.js"></script>
@@ -42,10 +81,20 @@
   <script src="js/world/island.js"></script>
   <script src="js/world/decor.js"></script>
   <script src="js/world/world.js"></script>
+  <script src="js/eco/time.js"></script>
+  <script src="js/eco/species.js"></script>
+  <script src="js/eco/fields.js"></script>
+  <script src="js/eco/movement.js"></script>
+  <script src="js/eco/behavior.js"></script>
+  <script src="js/eco/stats.js"></script>
+  <script src="js/eco/simulation.js"></script>
   <script src="js/render/palette.js"></script>
   <script src="js/render/shapes.js"></script>
   <script src="js/render/camera.js"></script>
   <script src="js/render/terrainRenderer.js"></script>
+  <script src="js/render/sprites.js"></script>
+  <script src="js/render/agentRenderer.js"></script>
+  <script src="js/ui/charts.js"></script>
   <script src="js/ui/app.js"></script>
 </body>
 </html>

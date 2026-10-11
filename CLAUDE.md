@@ -7,8 +7,11 @@
 beobachten und greifen ein. Das Konzept mit den Ausbaustufen und der Begründung der
 Architektur steht in `docs/KONZEPT.md`. **Vor größeren Änderungen lesen.**
 
-Stand: Inselgenerator und Darstellung. Simulation folgt (Stufe 1: Pflanzen → Zwerghirsch
-(Herde) → Inselwolf (Rudel), danach Laufvogel, Inseladler).
+Stand: Stufe 1 steht – Insel, Nahrungsfelder und vier Arten (Zwerghirsch, Laufvogel,
+Inselwolf, Inseladler) mit Herden, Rudeln, Revieren, Nestern, Aas, Jahreszeiten.
+**Vor jeder Arbeit an Tieren `data/arten.md` lesen** – dort stehen die Arten, ihre Werte und die
+Mechanismen, die das Ökosystem stabil halten. Werte, die im Code geändert werden, wandern
+zurück in die Datei.
 
 Soll später ein Skill in MPSkills werden (wie Wild Clusters in `newTablet-Schulung`).
 
@@ -20,6 +23,14 @@ Soll später ein Skill in MPSkills werden (wie Wild Clusters in `newTablet-Schul
 - **Deterministisch:** Nur `BT.Rng` verwenden, nie `Math.random()` (Ausnahme:
   `BT.randomSeed()`). Jeder Generierungsschritt bekommt mit `rng.fork('name')` einen eigenen
   Sub-RNG, damit neue Schritte alte Seeds nicht verschieben.
+- **Gleich auf jedem Gerät:** In `js/core`, `js/world`, `js/eco` kein `Math.sin/cos/atan2/exp/
+  log/pow/hypot` – diese rundet jede Engine anders, und die Simulation läuft dann nach etwa
+  einem Jahr auseinander. Stattdessen `BT.M.*` (`js/core/dmath.js`). Erlaubt sind die exakt
+  festgelegten: `+ - * /`, `Math.sqrt/floor/ceil/round/min/max/abs/imul`.
+- **Arten sind Daten:** Unterschiede zwischen Arten gehören in `BT.SPECIES`, nicht in
+  artspezifischen Code. Das Verhalten (`js/eco/behavior.js`) gilt für alle.
+- **Nach jeder Änderung an Arten oder Verhalten** `node tools/balance.js 8 30` laufen lassen.
+  Ziel: mittlere Insel überlebt in den meisten Läufen mit allen Arten.
 - **Raster als Wahrheit, Vektor als Bild:** `world.biome` hat genau einen Lebensraum pro
   Zelle. Gezeichnet werden geglättete Konturen (`js/render/shapes.js`), nie Zellen.
 - **Modell ohne Darstellung:** `js/core`, `js/world` (und später `js/eco`) laufen in Node ohne
@@ -34,9 +45,18 @@ js/core/    rng, noise, grid, geometry, contour     (aus Wild Clusters, WL -> BT
 js/world/   config.js (alle Stellschrauben, Lebensräume), island.js (Generator),
             decor.js (Streudetails), world.js (world-Objekt, query)
 js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefschattierung)
-js/ui/      app.js (Karte, Seed, Größe, Legende, Tooltip, Bildpuffer)
-tools/      load.js (Skripte in Node laden), smoketest.js, shot.js (Playwright-Screenshot)
+js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung je
+            Weidezelle), movement, behavior (Gruppen-Entscheidungen), stats, simulation (Tick/Tag)
+js/ui/      app.js (Karte, Zeitregler, Seitenleiste, Bildpuffer), charts.js
+data/       arten.md (fachliche Wahrheit für species.js)
+assets/     Tierbilder (Platzhalter aus Wild Clusters)
+tools/      load.js (Skripte in Node laden), smoketest.js, balance.js (Abstimmung),
+            shot.js (Playwright-Screenshot, optional nach N simulierten Tagen)
 ```
+
+Simulation: Entschieden wird je **Gruppe** (Herde, Rudel …), die Tiere folgen dem Anker der
+Gruppe mit eigenem Versatz. Pro Tick: Verhalten, Bewegung, Fressen, Energie, Durst. Pro Tag:
+Wachstum, Alter, Geburt, Nester, Abwanderung, Gruppen teilen/zusammenlegen, Statistik.
 
 Generator-Reihenfolge in `island.js`: Form → Relief → Feuchte (ohne Gewässer) → Wasser
 (Priority-Flood, Seen, Abfluss, Flüsse) → Feuchte (mit Gewässern) → Biome.
@@ -45,7 +65,8 @@ Generator-Reihenfolge in `island.js`: Form → Relief → Feuchte (ohne Gewässe
 
 ```
 node tools/smoketest.js 20
-node tools/shot.js /tmp/x.png 482917 mittel
+node tools/balance.js 8 30
+node tools/shot.js /tmp/x.png 482917 mittel 1 0.5 0.5 300
 ```
 
 `tools/shot.js` meldet Fehler aus der Browser-Konsole und endet dann mit Code 1. Nach

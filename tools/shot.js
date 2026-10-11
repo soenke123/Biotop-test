@@ -2,7 +2,7 @@
  * Screenshot der echten Seite in headless Chromium (Playwright).
  * Nur ein Entwicklungswerkzeug - die Anwendung selbst braucht nichts davon.
  *
- *   node tools/shot.js <out.png> [seed] [size] [zoom] [cx] [cy]
+ *   node tools/shot.js <out.png> [seed] [size] [zoom] [cx] [cy] [tage]
  *
  *   zoom  Vergroesserung relativ zur Gesamtansicht (Standard 1)
  *   cx,cy Mittelpunkt des Ausschnitts als Anteil der Welt (0..1)
@@ -16,7 +16,7 @@ try {
 }
 
 (async () => {
-  const [out = 'shot.png', seed = '482917', size = 'mittel', zoom = '1', cx = '0.5', cy = '0.5'] = process.argv.slice(2);
+  const [out = 'shot.png', seed = '482917', size = 'mittel', zoom = '1', cx = '0.5', cy = '0.5', days = '0'] = process.argv.slice(2);
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1400, height: 950 } });
   const errors = [];
@@ -24,7 +24,12 @@ try {
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   const url = 'file://' + path.join(__dirname, '..', 'index.html') + '#seed=' + seed + '&size=' + size;
   await page.goto(url);
-  await page.waitForFunction(() => window.BT && BT.app && BT.app.world, null, { timeout: 30000 });
+  await page.waitForFunction(() => window.BT && BT.app && BT.app.world && BT.app.sim, null, { timeout: 30000 });
+  if (+days > 0) {
+    const t0 = Date.now();
+    await page.evaluate((d) => BT.app.runDays(d), +days);
+    console.log(days, 'Tage simuliert in', Date.now() - t0, 'ms');
+  }
   await page.evaluate(({ zoom, cx, cy }) => {
     const cam = BT.app.camera, w = BT.app.world;
     if (zoom !== 1) {

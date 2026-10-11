@@ -53,9 +53,77 @@ button[aria-pressed="true"] { background: #23607f; }
 .spacer { flex: 1; }
 .status { opacity: 0.7; font-size: 12px; }
 
+.layout {
+  display: flex;
+  height: calc(100% - 50px);
+}
+
 .stage {
   position: relative;
-  height: calc(100% - 50px);
+  flex: 1;
+  min-width: 0;
+}
+
+.panel {
+  width: 340px;
+  flex: none;
+  overflow-y: auto;
+  background: var(--bar-bg);
+  border-left: 1px solid #1d4a63;
+  padding: 10px 14px 20px;
+  font-size: 13px;
+}
+.panel section { margin-bottom: 14px; }
+.panel h2 { font-size: 13px; margin: 0 0 6px; font-weight: 600; opacity: 0.9; }
+.panel h2 small { font-weight: 400; opacity: 0.6; }
+.panel .row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.clock { font-size: 16px; font-weight: 600; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+button.primary { background: #2a7f86; border-color: #52c2c0; min-width: 92px; }
+button:disabled { opacity: 0.5; cursor: default; }
+.speed { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.speed input { flex: 1; width: auto; }
+.speed span { min-width: 92px; text-align: right; opacity: 0.8; font-variant-numeric: tabular-nums; }
+
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tile { display: flex; gap: 6px; align-items: center; background: #153f58; border-radius: 8px; padding: 6px; }
+.tile img { width: 38px; height: 33px; object-fit: contain; }
+.tile-name { font-size: 12px; opacity: 0.85; display: flex; align-items: center; gap: 5px; }
+.tile-name i, .chart-legend i, .chart-tip i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; }
+.tile-count { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tile-sub { font-size: 11px; opacity: 0.65; }
+
+.chart { margin-bottom: 12px; }
+.chart-head h3 { font-size: 12px; margin: 0 0 3px; font-weight: 600; opacity: 0.9; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 11px; opacity: 0.9; margin-bottom: 3px; }
+.chart-legend .lg { display: inline-flex; align-items: center; gap: 4px; }
+.chart-legend b { font-variant-numeric: tabular-nums; }
+.chart-plot { position: relative; }
+.chart canvas { display: block; width: 100%; height: 110px; touch-action: none; }
+.chart-tip {
+  position: absolute; top: 0; pointer-events: none; min-width: 140px;
+  background: rgba(8, 30, 44, 0.95); border: 1px solid #2d6684; border-radius: 6px;
+  padding: 4px 7px; font-size: 11px; line-height: 1.5;
+}
+.chart-tip .tt-head { opacity: 0.75; }
+.chart-tip b { font-variant-numeric: tabular-nums; margin-left: 4px; }
+
+.deaths { width: 100%; border-collapse: collapse; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.deaths th { font-weight: 500; opacity: 0.7; text-align: right; padding: 2px 3px; }
+.deaths td { text-align: right; padding: 2px 3px; border-top: 1px solid #1d4a63; }
+.deaths td:first-child { text-align: left; }
+
+.startvalues summary { cursor: pointer; font-weight: 600; margin-bottom: 6px; }
+.start-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin-bottom: 8px; }
+.start-grid label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; opacity: 0.9; }
+.start-grid input { width: 100%; }
+.start-grid .link { grid-column: 1 / -1; justify-self: start; background: none; border: 0; padding: 0; text-decoration: underline; opacity: 0.75; font-size: 12px; }
+
+@media (max-width: 820px) {
+  html, body { overflow: auto; }
+  .layout { flex-direction: column; height: auto; }
+  .stage { height: 62vh; flex: none; }
+  .panel { width: 100%; border-left: 0; }
 }
 
 #map {
@@ -80,7 +148,7 @@ button[aria-pressed="true"] { background: #23607f; }
 
 .legend {
   position: absolute;
-  right: 12px;
+  left: 12px;
   bottom: 12px;
   padding: 10px 12px;
   border-radius: 10px;

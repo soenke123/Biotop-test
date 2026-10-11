@@ -1,39 +1,43 @@
 /**
- * Oberflaeche: Karte mit Verschieben/Zoomen, Seed, Inselgroesse, Legende,
- * Tooltip mit dem Lebensraum unter dem Zeiger.
+ * Oberflaeche: Karte (Verschieben/Zoomen), Seed, Inselgroesse, Simulation mit
+ * Zeitregler, Bestaende, Diagramme, Todesursachen, Startwerte.
  *
  * Der Seed steht in der Adresszeile (#seed=482917&size=mittel) - so laesst
  * sich dieselbe Insel teilen.
+ *
+ * Zeit: Der Regler bestimmt, wie viele Ticks pro Sekunde gerechnet werden.
+ * Gezeichnet wird hoechstens einmal pro Bildschirmbild. Gleicher Seed und
+ * gleiche Startwerte ergeben bei jeder Reglerstellung denselben Verlauf.
  */
 (function (global) {
   'use strict';
 
   var BT = global.BT;
   var doc = global.document;
+  var $ = function (id) { return doc.getElementById(id); };
 
-  var canvas = doc.getElementById('map');
+  var canvas = $('map');
   var ctx = canvas.getContext('2d');
-  var seedInput = doc.getElementById('seed');
-  var sizeSelect = doc.getElementById('size');
-  var tooltip = doc.getElementById('tooltip');
-  var legend = doc.getElementById('legend');
-  var legendBtn = doc.getElementById('toggleLegend');
-  var status = doc.getElementById('status');
+  var seedInput = $('seed'), sizeSelect = $('size');
+  var tooltip = $('tooltip'), legend = $('legend'), legendBtn = $('toggleLegend');
+  var status = $('status');
+  var playBtn = $('play'), speedInput = $('speed'), speedLabel = $('speedLabel'), clock = $('clock');
 
-  var world = null;
-  var camera = null;
-  var dirty = true;
-  var dpr = 1;
+  var world = null, sim = null, camera = null;
+  var dirty = true, dpr = 1;
+  var running = false, tickAcc = 0, lastFrame = 0;
+  var skipping = false;
+  // Startwerte: passend zur Inselgroesse, bis jemand sie von Hand aendert
+  var startValues = {};
+  var customStart = false;
 
-  // Bildpuffer: die ganze Insel einmal vorgezeichnet. Beim Verschieben und
-  // Zoomen wird nur noch dieses Bild kopiert; wer weiter hineinzoomt, als der
-  // Puffer aufloest, bekommt nach kurzer Ruhe ein scharf gezeichnetes Bild.
+  // Bildpuffer: ganze Insel einmal vorgezeichnet; beim Hineinzoomen zusaetzlich
+  // ein scharfer Puffer fuer genau den sichtbaren Ausschnitt.
   var CACHE_MAX_PX = 4096;
-  var cache = null;
-  var lastInteraction = 0;
-  var sharpTimer = null;
+  var cache = null, viewCache = null;
+  var lastInteraction = 0, sharpTimer = null;
 
-  // ---------------------------------------------------------------- Welt
+  // ---------------------------------------------------------------- Welt und Simulation
   function readHash() {
     var out = {};
     global.location.hash.replace(/^#/, '').split('&').forEach(function (part) {
@@ -51,7 +55,7 @@
 
   function load(seed, size) {
     status.textContent = 'erzeuge Insel …';
-    // Kurz Luft holen, damit der Status sichtbar wird
+    setRunning(false);
     global.setTimeout(function () {
       world = BT.World.generate(seed, { size: size });
       seedInput.value = seed;
@@ -61,10 +65,68 @@
       else camera.setWorld(world);
       resize();
       cache = buildCache(world);
+      viewCache = null;
       buildLegend();
+      restart();
       status.textContent = world.cols + ' × ' + world.rows + ' Zellen · ' + world.meta.generationMs + ' ms';
-      dirty = true;
     }, 10);
+  }
+
+  function restart() {
+    if (!world) return;
+    if (!customStart) {
+      startValues = BT.Simulation.defaultStart(world);
+      doc.querySelectorAll('#startInputs input').forEach(function (inp) { inp.value = startValues[inp.dataset.id]; });
+    }
+    sim = new BT.Simulation(world, { start: startValues });
+    tickAcc = 0;
+    updatePanel(true);
+    dirty = true;
+  }
+
+  // ---------------------------------------------------------------- Zeit
+  /** Regler 0..100 -> Ticks pro Sekunde, logarithmisch von 2 bis 2000 (~5 Jahre/s). */
+  function ticksPerSecond() {
+    return 2 * Math.pow(10, speedInput.value / 100 * 3);
+  }
+
+  function updateSpeedLabel() {
+    var daysPerSec = ticksPerSecond() / BT.Time.TICKS_PER_DAY;
+    var text;
+    if (daysPerSec < 1) text = (1 / daysPerSec).toFixed(1).replace('.', ',') + ' s pro Tag';
+    else if (daysPerSec < BT.Time.DAYS_PER_YEAR / 2) text = Math.round(daysPerSec) + ' Tage/s';
+    else text = (daysPerSec / BT.Time.DAYS_PER_YEAR).toFixed(1).replace('.', ',') + ' Jahre/s';
+    speedLabel.textContent = text;
+  }
+
+  function setRunning(on) {
+    running = on && !!sim;
+    playBtn.textContent = running ? '⏸ Pause' : '▶ Start';
+    lastFrame = 0;
+  }
+
+  /** Ohne Zeichnen vorspulen, in Haeppchen, damit die Seite bedienbar bleibt. */
+  function skipYears(years) {
+    if (!sim || skipping) return;
+    var wasRunning = running;
+    setRunning(false);
+    skipping = true;
+    var targetDay = sim.day + years * BT.Time.DAYS_PER_YEAR;
+    $('skip').disabled = true;
+    (function chunk() {
+      var t0 = global.performance.now();
+      while (sim.day < targetDay && global.performance.now() - t0 < 40) sim.runDays(1);
+      clock.textContent = BT.Time.label(sim.day) + ' · spule vor …';
+      updatePanel(true);
+      dirty = true;
+      if (sim.day < targetDay) global.setTimeout(chunk, 0);
+      else {
+        skipping = false;
+        $('skip').disabled = false;
+        setRunning(wasRunning);
+        updatePanel(true);
+      }
+    })();
   }
 
   // ---------------------------------------------------------------- Zeichnen
@@ -74,6 +136,7 @@
     canvas.width = Math.max(1, Math.round(rect.width * dpr));
     canvas.height = Math.max(1, Math.round(rect.height * dpr));
     if (camera) camera.setViewport(rect.width, rect.height);
+    viewCache = null;
     dirty = true;
   }
 
@@ -85,7 +148,7 @@
     var cc = c.getContext('2d');
     cc.setTransform(scale, 0, 0, scale, 0, 0);
     BT.TerrainRenderer.draw(cc, w, { x: 0, y: 0, width: w.width, height: w.height }, scale);
-    return { world: w, canvas: c, scale: scale };
+    return { canvas: c, scale: scale };
   }
 
   function interacted() {
@@ -95,26 +158,133 @@
     sharpTimer = global.setTimeout(function () { dirty = true; }, 180);
   }
 
-  function frame() {
-    if (dirty && world && camera) {
+  function setWorldTransform(c) {
+    c.setTransform(dpr * camera.scale, 0, 0, dpr * camera.scale, -camera.x * camera.scale * dpr, -camera.y * camera.scale * dpr);
+  }
+
+  function drawTerrain() {
+    var needSharp = camera.scale * dpr > cache.scale * 1.1;
+    var idle = global.performance.now() - lastInteraction > 150;
+    if (needSharp && idle) {
+      var key = camera.x + ',' + camera.y + ',' + camera.scale + ',' + canvas.width + ',' + canvas.height;
+      if (!viewCache || viewCache.key !== key) {
+        var c = viewCache && viewCache.canvas.width === canvas.width && viewCache.canvas.height === canvas.height
+          ? viewCache.canvas : doc.createElement('canvas');
+        c.width = canvas.width; c.height = canvas.height;
+        var vc = c.getContext('2d');
+        vc.setTransform(1, 0, 0, 1, 0, 0);
+        vc.fillStyle = BT.PALETTE.background;
+        vc.fillRect(0, 0, c.width, c.height);
+        setWorldTransform(vc);
+        BT.TerrainRenderer.draw(vc, world, camera.visibleRect(0), camera.scale);
+        viewCache = { key: key, canvas: c };
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(viewCache.canvas, 0, 0);
+      setWorldTransform(ctx);
+    } else {
+      setWorldTransform(ctx);
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(cache.canvas, 0, 0, world.width, world.height);
+    }
+  }
+
+  function frame(now) {
+    if (running && sim && !skipping) {
+      if (lastFrame) {
+        var dt = Math.min(0.25, (now - lastFrame) / 1000);
+        tickAcc += dt * ticksPerSecond();
+        var t0 = global.performance.now();
+        var dayBefore = sim.day;
+        // Rechnen mit Zeitbudget: reicht die Zeit nicht, laeuft es langsamer, aber gleich
+        while (tickAcc >= 1 && global.performance.now() - t0 < 30) { sim.step(); tickAcc -= 1; }
+        if (tickAcc > 1) tickAcc = 1;
+        if (sim.day !== dayBefore) updatePanel(false);
+      }
+      lastFrame = now;
+      dirty = true;
+    }
+    if (dirty && world && camera && cache) {
       dirty = false;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = BT.PALETTE.background;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.setTransform(dpr * camera.scale, 0, 0, dpr * camera.scale, -camera.x * camera.scale * dpr, -camera.y * camera.scale * dpr);
-      var needSharp = !cache || camera.scale * dpr > cache.scale * 1.1;
-      var idle = global.performance.now() - lastInteraction > 150;
-      if (needSharp && idle) {
-        BT.TerrainRenderer.draw(ctx, world, camera.visibleRect(0), camera.scale);
-      } else {
-        ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(cache.canvas, 0, 0, world.width, world.height);
-      }
+      drawTerrain();
+      var alpha = running && ticksPerSecond() <= 90 ? Math.min(1, tickAcc) : 1;
+      BT.AgentRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale, alpha);
     }
     global.requestAnimationFrame(frame);
   }
 
-  // ---------------------------------------------------------------- Legende
+  // ---------------------------------------------------------------- Seitenleiste
+  var SERIES_COLOR = {
+    zwerghirsch: '#d95926', laufvogel: '#3987e5', inselwolf: '#9085e9', inseladler: '#c98500',
+    gras: '#199e70', frucht: '#e66767', laub: '#008300', insekten: '#d55181'
+  };
+  var charts = [];
+  var lastPanelUpdate = 0;
+
+  function buildPanel() {
+    // Kacheln je Art
+    var tiles = $('tiles');
+    tiles.innerHTML = BT.SPECIES_ORDER.map(function (id) {
+      var s = BT.SPECIES[id];
+      return '<div class="tile"><img src="' + s.sprite + '" alt=""><div><div class="tile-name">' +
+        '<i style="background:' + SERIES_COLOR[id] + '"></i>' + s.plural + '</div>' +
+        '<div class="tile-count" id="count-' + id + '">–</div><div class="tile-sub" id="sub-' + id + '"></div></div></div>';
+    }).join('');
+
+    var box = $('charts');
+    function series(ids, get) {
+      return ids.map(function (id) { return { label: (BT.SPECIES[id] || BT.FOOD[id]).plural || BT.FOOD[id].name, color: SERIES_COLOR[id], get: get(id) }; });
+    }
+    var count = function (id) { return function (r) { return r.count[id]; }; };
+    charts = [
+      new BT.LineChart(box, { title: 'Pflanzenfresser', series: series(['zwerghirsch', 'laufvogel'], count) }),
+      new BT.LineChart(box, { title: 'Räuber', series: series(['inselwolf', 'inseladler'], count) }),
+      new BT.LineChart(box, {
+        title: 'Nahrung (Anteil am Höchststand)', percent: true,
+        series: ['gras', 'frucht', 'laub', 'insekten'].map(function (k) {
+          return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.food[k]; } };
+        })
+      })
+    ];
+
+    // Startwerte
+    $('startInputs').innerHTML = BT.SPECIES_ORDER.map(function (id) {
+      return '<label>' + BT.SPECIES[id].plural + '<input type="number" min="0" max="2000" step="1" data-id="' + id + '" value=""></label>';
+    }).join('') + '<button id="defaults" type="button" class="link">Standard für diese Insel</button>';
+  }
+
+  function updatePanel(force) {
+    if (!sim) return;
+    var now = global.performance.now();
+    clock.textContent = BT.Time.label(sim.day);
+    if (!force && now - lastPanelUpdate < 250) return;
+    lastPanelUpdate = now;
+    var row = sim.stats.latest();
+    BT.SPECIES_ORDER.forEach(function (id) {
+      $('count-' + id).textContent = row.count[id];
+      var g = row.groups[id];
+      var kind = { herd: ['Herde', 'Herden'], flock: ['Gruppe', 'Gruppen'], pack: ['Rudel', 'Rudel'], pair: ['Paar/Revier', 'Paare/Reviere'] }[BT.SPECIES[id].group.kind];
+      $('sub-' + id).textContent = row.count[id] ? row.young[id] + ' Jungtiere · ' + g + ' ' + kind[g === 1 ? 0 : 1] : 'ausgestorben';
+    });
+    for (var i = 0; i < charts.length; i++) charts[i].update(sim.stats.history);
+    updateDeaths();
+  }
+
+  function updateDeaths() {
+    var causes = [['hunger', 'Hunger'], ['durst', 'Durst'], ['alter', 'Alter'], ['inselwolf', 'Wolf'], ['inseladler', 'Adler']];
+    var html = '<tr><th></th>' + causes.map(function (c) { return '<th>' + c[1] + '</th>'; }).join('') + '</tr>';
+    BT.SPECIES_ORDER.forEach(function (id) {
+      var d = sim.stats.deaths[id];
+      html += '<tr><td>' + BT.SPECIES[id].plural + '</td>' + causes.map(function (c) {
+        return '<td>' + (d[c[0]] || '·') + '</td>';
+      }).join('') + '</tr>';
+    });
+    $('deaths').innerHTML = html;
+  }
+
   function buildLegend() {
     var P = BT.PALETTE;
     var shares = world.areaShares;
@@ -129,7 +299,7 @@
     legend.innerHTML = html;
   }
 
-  // ---------------------------------------------------------------- Eingabe
+  // ---------------------------------------------------------------- Eingabe Karte
   var pointers = new Map();
   var pinchDist = 0;
 
@@ -192,15 +362,33 @@
     interacted();
   });
 
+  var STATE_TEXT = {
+    fressen: 'frisst', fliehen: 'flieht', trinken: 'geht trinken', brueten: 'brütet',
+    streifen: 'streift durchs Revier', jagen: 'jagt', ruhen: 'ruht', aas: 'frisst Aas', wandern: 'sucht ein Revier'
+  };
+  var GROUP_TEXT = { herd: 'Herde', flock: 'Gruppe', pack: 'Rudel', pair: 'Paar' };
+
   function showTooltip(pos) {
     if (!world || !camera) return;
     var w = camera.screenToWorld(pos.x, pos.y);
     if (w.x < 0 || w.y < 0 || w.x >= world.width || w.y >= world.height) { tooltip.hidden = true; return; }
-    var b = world.query.biomeAt(w.x, w.y);
-    var text = BT.BIOME_INFO[b].name;
-    if (BT.BIOME_INFO[b].land) {
-      text += ' · Höhe ' + Math.round(world.query.heightAt(w.x, w.y) * 100) +
-        ' · Feuchte ' + Math.round(world.query.moistureAt(w.x, w.y) * 100);
+    var a = sim ? BT.AgentRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale)) : null;
+    var text;
+    if (a) {
+      var years = a.age / BT.Time.DAYS_PER_YEAR;
+      var g = a.group;
+      text = a.spec.name + (a.sex === 'f' ? ' ♀' : ' ♂') + ' · ' +
+        (a.age < a.spec.maturity ? 'Jungtier' : years.toFixed(1).replace('.', ',') + ' Jahre') +
+        ' · Energie ' + Math.round(a.energy * 100) + ' %' +
+        (g ? ' · ' + GROUP_TEXT[a.spec.group.kind] + ' mit ' + g.members.length + ' · ' + (STATE_TEXT[g.state] || g.state) : '');
+    } else {
+      var b = world.query.biomeAt(w.x, w.y);
+      text = BT.BIOME_INFO[b].name;
+      if (BT.BIOME_INFO[b].land && sim) {
+        var f = sim.fields, i = f.index(w.x, w.y);
+        text += ' · Gras ' + pctOf(f, 'gras', i) + ' · Laub ' + pctOf(f, 'laub', i) +
+          ' · Früchte ' + pctOf(f, 'frucht', i) + ' · Insekten ' + pctOf(f, 'insekten', i);
+      }
     }
     tooltip.textContent = text;
     tooltip.style.left = pos.x + 'px';
@@ -208,29 +396,68 @@
     tooltip.hidden = false;
   }
 
-  doc.getElementById('newWorld').addEventListener('click', function () {
-    load(BT.randomSeed(), sizeSelect.value);
-  });
-  seedInput.addEventListener('change', function () {
-    load(BT.parseSeed(seedInput.value), sizeSelect.value);
-  });
-  sizeSelect.addEventListener('change', function () {
-    load(world ? world.seed : BT.randomSeed(), sizeSelect.value);
-  });
-  doc.getElementById('resetView').addEventListener('click', function () {
-    if (camera) { camera.reset(); dirty = true; }
-  });
+  function pctOf(f, key, i) {
+    var K = f.capacity[key][i];
+    return K > 0.05 ? Math.round(f.value[key][i] / K * 100) + ' %' : '–';
+  }
+
+  // ---------------------------------------------------------------- Bedienelemente
+  $('newWorld').addEventListener('click', function () { load(BT.randomSeed(), sizeSelect.value); });
+  seedInput.addEventListener('change', function () { load(BT.parseSeed(seedInput.value), sizeSelect.value); });
+  sizeSelect.addEventListener('change', function () { load(world ? world.seed : BT.randomSeed(), sizeSelect.value); });
+  $('resetView').addEventListener('click', function () { if (camera) { camera.reset(); interacted(); } });
   legendBtn.addEventListener('click', function () {
     legend.hidden = !legend.hidden;
     legendBtn.setAttribute('aria-pressed', String(!legend.hidden));
   });
-  global.addEventListener('keydown', function (e) {
-    if (e.target === seedInput) return;
-    if (e.key === 'r' || e.key === 'R') { if (camera) { camera.reset(); dirty = true; } }
+  playBtn.addEventListener('click', function () { setRunning(!running); });
+  $('stepDay').addEventListener('click', function () {
+    if (!sim || skipping) return;
+    setRunning(false);
+    sim.runDays(1);
+    updatePanel(true);
+    dirty = true;
   });
-  global.addEventListener('resize', resize);
+  $('skip').addEventListener('click', function () { skipYears(5); });
+  speedInput.addEventListener('input', updateSpeedLabel);
+  $('startInputs').addEventListener('click', function (e) {
+    if (e.target.id !== 'defaults') return;
+    customStart = false;
+    setRunning(false);
+    restart();
+  });
+  $('restart').addEventListener('click', function () {
+    customStart = true;
+    doc.querySelectorAll('#startInputs input').forEach(function (inp) {
+      startValues[inp.dataset.id] = Math.max(0, Math.min(2000, parseInt(inp.value, 10) || 0));
+      inp.value = startValues[inp.dataset.id];
+    });
+    setRunning(false);
+    restart();
+  });
+  $('csv').addEventListener('click', function () {
+    if (!sim) return;
+    var blob = new global.Blob(['﻿' + sim.stats.toCSV()], { type: 'text/csv;charset=utf-8' });
+    var a = doc.createElement('a');
+    a.href = global.URL.createObjectURL(blob);
+    a.download = 'biotop-seed' + world.seed + '-jahr' + BT.Time.calendar(sim.day).year + '.csv';
+    a.click();
+    global.setTimeout(function () { global.URL.revokeObjectURL(a.href); }, 1000);
+  });
+  global.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'r' || e.key === 'R') { if (camera) { camera.reset(); interacted(); } }
+    if (e.key === ' ') { e.preventDefault(); setRunning(!running); }
+  });
+  global.addEventListener('resize', function () {
+    resize();
+    for (var i = 0; i < charts.length; i++) charts[i].draw();
+  });
 
   // ---------------------------------------------------------------- Start
+  buildPanel();
+  updateSpeedLabel();
+  BT.Sprites.preload(function () { dirty = true; });
   var h = readHash();
   load(h.seed ? BT.parseSeed(h.seed) : BT.randomSeed(), h.size || BT.CONFIG.size);
   global.requestAnimationFrame(frame);
@@ -238,7 +465,10 @@
   // Fuer Tests und Screenshots
   BT.app = {
     get world() { return world; },
+    get sim() { return sim; },
     get camera() { return camera; },
-    redraw: function () { dirty = true; }
+    redraw: function () { dirty = true; },
+    runDays: function (n) { sim.runDays(n); updatePanel(true); dirty = true; },
+    setRunning: setRunning
   };
 })(typeof window !== 'undefined' ? window : globalThis);

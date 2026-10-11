@@ -87,22 +87,64 @@
     return pts;
   }
 
+  /**
+   * Flusslaeufe zum Zeichnen. Muendet ein Fluss ins Meer, wird das letzte
+   * Stueck (der Treppenschritt ins Wasser) durch eine gerade Verlaengerung in
+   * Fliessrichtung ersetzt: daraus wird die Muendung.
+   */
   function riverLines(world) {
     if (world._riverLines) return world._riverLines;
-    world._riverLines = world.features.rivers.map(function (r) { return smoothLine(r, 3); });
+    var cell = world.cellSize, B = BT.BIOME;
+    world._riverLines = world.features.rivers.map(function (r) {
+      var end = r[r.length - 1];
+      var endBiome = world.query.biomeAt(end.x, end.y);
+      var toSea = endBiome === B.SHALLOW || endBiome === B.DEEP;
+      var pts = r.slice();
+      if (toSea && pts.length > 5) {
+        pts.pop();
+        var a = pts[pts.length - 1], b = pts[Math.max(0, pts.length - 5)];
+        var dx = a.x - b.x, dy = a.y - b.y, len = Math.hypot(dx, dy) || 1;
+        for (var k = 1; k <= 4; k++) {
+          pts.push({ x: a.x + dx / len * cell * 1.6 * k, y: a.y + dy / len * cell * 1.6 * k, w: a.w });
+        }
+      }
+      var line = smoothLine(pts, 3);
+      line.toSea = toSea;
+      if (toSea) {
+        // Ab wo liegt die Linie an der Kueste? Ab dort weitet sie sich zur Muendung.
+        var dist = world.fields.distSea;
+        for (var i = 0; i < line.length; i++) {
+          var cx = Math.floor(line[i].x / cell), cy = Math.floor(line[i].y / cell);
+          var ds = cx >= 0 && cy >= 0 && cx < world.cols && cy < world.rows ? dist[cy * world.cols + cx] : 0;
+          var t = Math.max(0, Math.min(1, (5 - ds) / 5));   // 0 im Land, 1 an/hinter der Kueste
+          line[i].mouth = t;
+          line[i].w = line[i].w * (1 + 1.6 * t);
+        }
+      }
+      return line;
+    });
     return world._riverLines;
+  }
+
+  function mixColor(a, b, t) {
+    var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+    var r = Math.round(((pa >> 16) & 255) * (1 - t) + ((pb >> 16) & 255) * t);
+    var g = Math.round(((pa >> 8) & 255) * (1 - t) + ((pb >> 8) & 255) * t);
+    var bl = Math.round((pa & 255) * (1 - t) + (pb & 255) * t);
+    return 'rgb(' + r + ',' + g + ',' + bl + ')';
   }
 
   function drawRivers(ctx, world, P, scale) {
     var lines = riverLines(world);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    // Segmente nach Breite buendeln -> wenige stroke()-Aufrufe
+    // Binnenlauf: Segmente nach Breite buendeln -> wenige stroke()-Aufrufe
     for (var pass = 0; pass < 2; pass++) {
       var buckets = {};
       for (var r = 0; r < lines.length; r++) {
         var pts = lines[r];
         for (var i = 1; i < pts.length; i++) {
+          if (pts[i].mouth > 0) break;
           var w = Math.round((pts[i - 1].w + pts[i].w) / 2);
           var path = buckets[w] || (buckets[w] = new Path2D());
           path.moveTo(pts[i - 1].x, pts[i - 1].y);
@@ -114,6 +156,25 @@
         var width = +key;
         ctx.lineWidth = Math.max(pass === 0 ? width + 3 : width, 0.8 / scale);
         ctx.stroke(buckets[key]);
+      }
+    }
+    // Muendungen: breiter werdend, Farbe geht in die Lagune ueber, der Ufersaum verblasst
+    for (r = 0; r < lines.length; r++) {
+      pts = lines[r];
+      if (!pts.toSea) continue;
+      for (pass = 0; pass < 2; pass++) {
+        for (i = 1; i < pts.length; i++) {
+          var t = pts[i].mouth;
+          if (!(t > 0) && !(pts[i - 1].mouth > 0)) continue;
+          if (pass === 0 && t > 0.7) continue;
+          ctx.strokeStyle = pass === 0 ? P.river.edge : mixColor(P.river.base, P.shallow.base, t);
+          var ww = (pts[i - 1].w + pts[i].w) / 2;
+          ctx.lineWidth = Math.max(pass === 0 ? ww + 3 * (1 - t) : ww, 0.8 / scale);
+          ctx.beginPath();
+          ctx.moveTo(pts[i - 1].x, pts[i - 1].y);
+          ctx.lineTo(pts[i].x, pts[i].y);
+          ctx.stroke();
+        }
       }
     }
   }
@@ -144,6 +205,9 @@
         var dy = (Math.max(0, h[yd * cols + x]) - Math.max(0, h[yu * cols + x])) * Z;
         var len = Math.sqrt(dx * dx + dy * dy + 1);
         var shade = (-dx * lx - dy * ly + lz) / len - lz; // 0 = flach
+        // An der Kueste ausblenden: der Sprung Land/Meer ist keine Hangkante
+        var ds = world.fields.distSea[i];
+        if (ds < 4) shade *= Math.max(0, (ds - 1) / 3);
         if (shade > 0) {
           img.data[o] = 255; img.data[o + 1] = 250; img.data[o + 2] = 230;
           img.data[o + 3] = Math.min(150, shade * 200);
