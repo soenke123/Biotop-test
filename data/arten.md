@@ -7,18 +7,28 @@ nachgetragen.
 Die Arten sind ausgedacht, haben aber reale Vorbilder. Die Zeit ist gestaucht: Ein Jahr hat
 60 Tage (4 Jahreszeiten zu je 15 Tagen), ein Tag hat 6 Ticks.
 
-## Grafiken (Platzhalter)
+## Grafiken
 
-Die Bilder stammen vorerst aus Wild Clusters und liegen in `assets/`. Eigene Grafiken ersetzen
-einfach die Datei. Format: PNG mit transparentem Hintergrund, Seitenansicht **nach links**
-blickend (läuft das Tier nach rechts, wird gespiegelt), Seitenverhältnis etwa 254 × 219.
+Die Tierbilder liegen in `assets/` als `<name>_<f|m|j>_<haltung>.png` (Weibchen, Männchen,
+Jungtier). Format: PNG mit transparentem Hintergrund, Seitenansicht. Läuft ein Tier in die
+andere Richtung, wird gespiegelt. Jungtiere sind im Bild schon kleiner gezeichnet (gleiche
+Bildgröße wie die Erwachsenen).
 
-| Datei | Art | Platzhalter aus Wild Clusters |
-|---|---|---|
-| `assets/zwerghirsch.png` | Zwerghirsch | Reh |
-| `assets/laufvogel.png` | Laufvogel | Storch |
-| `assets/inselwolf.png` | Inselwolf | Fuchs |
-| `assets/inseladler.png` | Inseladler | Bussard |
+| Art | Name | Blickrichtung | Gehen | Stehen | Fressen | Ruhen |
+|---|---|---|---|---|---|---|
+| Zwerghirsch | `hirsch` | rechts | gehend | stehend | essend | liegend |
+| Laufvogel | `laufvogel` | rechts | gehend | – (gehend) | essend | sitzend |
+| Inselwolf | `wolf` | links | gehend | stehend | essend | liegend |
+| Inseladler | `adler` | rechts | fliegend | stehend | essend | sitzend |
+
+Welche Haltung gezeigt wird (`js/render/agentRenderer.js`, `pose`):
+
+- **Fressen:** Die Tiere wechseln reihum zwischen Fressen und Stehen; ziehen sie schnell
+  weiter, gehen sie. Trinken und Aas zeigen ebenfalls das Fressbild.
+- **Fliehen, Jagen, Streifen, Wandern:** Gehen (Adler: Fliegen), Stehen nur ohne Bewegung.
+- **Ruhen:** Liegen bzw. Sitzen; der Adler steht beim Ruhen.
+- **Brüten:** Laufvögel am Nest wechseln zwischen Sitzen und Fressen. Brutvogel und Küken im
+  Horst des Adlers sitzen.
 
 ## Nahrung (Felder, keine Tiere)
 
