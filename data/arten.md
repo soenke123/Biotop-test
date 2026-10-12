@@ -242,15 +242,25 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   nimmt ihm das Grasland weg.
 - **Kommt mit den Menschen:** Startbestand 0. Mit der Karte „Schafweide“ stehen 12 Schafe auf
   einer eingezäunten Weide. Die gehören den Siedlern und zählen nicht zum Tierbestand, fressen
-  aber das Gras der Weide (0,25 je Tick und Schaf, tagsüber). **4 Jahre nach der ersten Weide**
-  brechen einmal 8 Schafe aus (Folgekarte 🐑 „Schafe brechen aus“). Die Siedler ersetzen sie im
-  nächsten Frühjahr, die Weide bleibt voll.
-- **Gruppe:** große Herden bis **50** Tiere (ab 3).
+  aber das Gras der Weide (0,25 je Tick und Schaf, tagsüber). **Etwa 4 Jahre nach jeder Weide**
+  (3,7–4,3) brechen dort zum ersten Mal Schafe aus, **danach alle 2–5 Jahre wieder**, jedes Mal
+  **2–6** (Folgekarte 🐑 „Schafe brechen aus“). Die Siedler ersetzen sie im nächsten Frühjahr.
+- **Ausreißer:** satt und ohne Durst. Sie laufen erst 350–600 vom Dorf weg, zu gutem Gras nah am
+  Wasser, und suchen sich erst dort ihre Weide.
+- **Zaun:** Wilde Tiere kommen nicht auf die Weide, außer Adlern und Räubern auf der Jagd.
+- **Gruppe:** große Herden bis **100** Tiere (ab 3), mit Abstand: Der Radius der Herde ist
+  mindestens 30 und wächst mit 10 · √Tiere (100 Schafe: Radius 100). Je größer die Herde, desto
+  seltener gelingt ein Angriff (wie bei allen Arten: Erfolg geteilt durch 1 + 0,03 · (Tiere − 1),
+  bei 100 Schafen also etwa ein Viertel).
+- **Teilen bei Futtermangel** (`group.split`): Ist eine Herde ab 24 Tieren im Mittel unter Energie
+  0,5, zieht die Hälfte 250–500 weit zu einer neuen Weide. Danach teilen sich beide Teile 90 Tage
+  nicht.
 - **Nahrung:** vor allem Gras (Energie 0,12, Hirsch 0,11), wenig Laub (0,05), Getreide (0,12).
   Frisst kräftiger als der Hirsch (0,42 je Schritt, Hirsch 0,38), braucht weniger (0,045 am Tag,
   Hirsch 0,05). Trinkt seltener (20 Tage ohne Wasser).
 - **Lebensraum:** Grasland und Wiese, auch Fels (0,6); Wald kaum.
-- **Fortpflanzung:** jedes Weibchen, 1–2 Lämmer, Chance 0,9. Reif mit 1 Jahr, Höchstalter 9.
+- **Fortpflanzung:** jedes Weibchen, **1–3 Lämmer**, Chance 0,95 (Hirsch: 1 Kalb, 0,85). **Reif mit
+  ½ Jahr** (Hirsch 1 Jahr), Höchstalter 9.
 - **Flucht:** 11,5. `scheu` 0,4 (kennt Menschen).
 - **Feinde** (`preyOf`): Wolf 1,0, Adler 0,25 (nur Lämmer bis ½ Jahr), Hund 1,0.
 - **Beutewechsel ohne Startbestand:** `scarceMin` 40 – bei 40 Schafen sind sie für die Räuber
@@ -262,9 +272,10 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
 - **Kommt mit den Menschen:** Startbestand 0. Mit der Karte „Hütehunde“ laufen 3 Hunde zwischen
   Dorf und Weiden umher (jede weitere Karte 3 mehr). Sie stören stärker als die Menschen allein:
   Die Störung ums Dorf reicht 20 % weiter, und um jede Weide liegt Störung im Umkreis von 200.
-  **4 Jahre nach den ersten Hütehunden** verwildern einmal 3 Hunde (Weibchen, Männchen, Weibchen;
-  Folgekarte 🐕 „Hunde verwildern“). Sie tauchen 220 vom Dorf entfernt auf und gründen ein Revier.
-  Die Siedler ersetzen die Hunde im nächsten Frühjahr.
+  **4 Jahre nach den ersten Hütehunden** verwildern 2–3 Hunde (Weibchen, Männchen, …; Folgekarte
+  🐕 „Hunde verwildern“), **danach alle 3–5 Jahre wieder 1–3**. Sie sind satt, laufen erst 400–700
+  vom Dorf weg und suchen dann ein Revier. Lebt ein wildes Hunderudel mit Platz höchstens 700 vom
+  Dorf, laufen sie zu ihm und schließen sich an. Die Siedler ersetzen die Hunde im nächsten Frühjahr.
 - **Wie der Wolf:** Alle Werte kommen vom Inselwolf (`Object.assign`), nur etwas stärker:
   Jagderfolg 0,36 (Wolf 0,32), `scheu` 0,3 (Wolf 0,9), Beute Hirsch 1,0, Schaf 1,0, Laufvogel 0,3.
   **Die Laufvögel kennen keine Hunde** (`unknownTo`) und fliehen nicht vor ihnen.

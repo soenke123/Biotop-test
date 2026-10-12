@@ -13,9 +13,13 @@
  *
  * Schafe und Hunde: Auf der Weide und im Dorf gehoeren sie den Menschen und
  * sind keine Tiere der Simulation (sie fressen aber das Gras der Weide).
- * Einige Jahre nach der ersten Karte bricht einmal eine kleine Gruppe aus und
- * wird zur eingeschleppten Art (BT.SPECIES.schaf, BT.SPECIES.hund): Folgekarten
- * "Schafe brechen aus" und "Hunde verwildern".
+ * Etwa 4 Jahre nach jeder Weide bzw. den ersten Huetehunden und danach immer
+ * wieder bricht eine kleine Gruppe aus und wird zur eingeschleppten Art
+ * (BT.SPECIES.schaf, BT.SPECIES.hund): Folgekarten "Schafe brechen aus" und
+ * "Hunde verwildern". Die Ausreisser laufen erst weit weg (g.runaway).
+ *
+ * Zaun: Die Weiden sind eingezaeunt (this.fence, ein Wert je Rasterzelle).
+ * Hinein duerfen nur fliegende Tiere und jagende Raeuber (barrier).
  */
 (function (global) {
   'use strict';
@@ -55,16 +59,22 @@
       sheep: 12,              // Schafe je Weide
       speed: 1.6,             // Weltunits je Tick
       bite: 0.25,             // Gras je Tick und Schaf (tagsueber)
-      escapeYears: 4,         // so lange nach der ersten Weide brechen Schafe aus ...
-      escape: 8               // ... so viele (Haelfte Weibchen)
+      escapeYears: 4,         // so lange nach jeder neuen Weide brechen zum ersten Mal Schafe aus (± escapeJitter) ...
+      escapeJitter: 0.3,
+      escapeEvery: [2, 5],    // ... danach immer wieder, nach so vielen Jahren
+      escape: [2, 6],         // so viele Schafe (Haelfte Weibchen)
+      runaway: [350, 600]     // so weit vom Dorf laufen sie, bevor sie sich eine Weide suchen
     },
     dogs: {                   // Karte "Huetehunde"
       perCard: 3,
       speed: 3.5,
       disturb: 200,           // Hunde an der Weide: Stoerung in diesem Umkreis (statt nur ums Haus)
       houseBonus: 1.2,        // ... und das Dorf wirkt weiter (Radius mal diesem Faktor)
-      escapeYears: 4,         // so lange nach den ersten Hunden verwildert ein Rudel ...
-      escape: 3               // ... aus so vielen Hunden (Paar und ein drittes Tier)
+      escapeYears: 4,         // so lange nach den ersten Huetehunden verwildern zum ersten Mal Hunde ...
+      escapeEvery: [3, 5],    // ... danach immer wieder, nach so vielen Jahren
+      escape: [1, 3],         // so viele Hunde (beim ersten Mal mindestens 2: Weibchen und Maennchen)
+      runaway: [400, 700],    // so weit vom Dorf laufen sie, bevor sie ein Revier suchen
+      join: 700               // ein wildes Rudel so nah am Dorf: die Ausreisser schliessen sich ihm an
     },
     village: {                // Karte "Dorf vergroessern"
       houses: 2,              // neue Haeuser je Karte
@@ -95,7 +105,9 @@
     this.dogsKept = 0;              // so viele Huetehunde halten die Siedler
     this.sheepDay = null;           // Tag der ersten Weide
     this.dogDay = null;             // Tag der ersten Huetehunde
-    this.escaped = {};              // { schaf: Tag, hund: Tag }
+    this.dogEscape = null;          // Tag, an dem als naechstes Hunde verwildern
+    this.escaped = {};              // { schaf: Tag, hund: Tag } des ersten Ausbruchs
+    this.fence = null;              // Weidezaeune: 1 je Rasterzelle innerhalb einer Weide
     var f = sim.fields;
     this.disturb = new Float32Array(f.cols * f.rows);
   }
@@ -116,6 +128,24 @@
   /** Meidet diese Art den Punkt? */
   Humans.prototype.avoids = function (spec, x, y) {
     return this.felt(spec, x, y) >= BT.HUMANS.disturb.avoid;
+  };
+
+  /** Liegt der Punkt in einer eingezaeunten Weide? */
+  Humans.prototype.fenced = function (x, y) {
+    if (!this.fence) return false;
+    var i = this.world.query.index(x, y);
+    return i >= 0 && this.fence[i] === 1;
+  };
+
+  /**
+   * Zaun fuer eine Gruppe, die bei (x, y) steht: eine Sperre fuer
+   * BT.Move.stepToward oder null. Durch den Zaun kommen nur fliegende Tiere
+   * und Raeuber auf der Jagd. Wer schon drinnen steht, darf hinaus.
+   */
+  Humans.prototype.barrier = function (g, x, y) {
+    if (!this.fence || g.spec.flies || (g.spec.role === 'predator' && g.state === 'jagen') || this.fenced(x, y)) return null;
+    var self = this;
+    return function (px, py) { return self.fenced(px, py); };
   };
 
   /** Naechstes Haus (fuer die Richtung, in die Tiere ausweichen). */
@@ -513,10 +543,26 @@
       shape: [this.rng.range(0.04, 0.1), this.rng.range(0, 6.28), this.rng.range(0.02, 0.05), this.rng.range(0, 6.28)]
     };
     for (var k = 0; k < cfg.sheep; k++) this.addSheep(p, k >= cfg.sheep - 2);
+    p.nextEscape = this.sim.day + BT.Time.years(cfg.escapeYears + this.rng.range(-cfg.escapeJitter, cfg.escapeJitter));
     this.pastures.push(p);
+    this.buildFence(p);
     if (this.sheepDay === null) this.sheepDay = this.sim.day;
     if (this.dogs.length) this.updateDisturbance();
     return { x: p.x, y: p.y, sheep: p.sheep.length };
+  };
+
+  /** Zaun: alle Rasterzellen der Weide markieren. */
+  Humans.prototype.buildFence = function (p) {
+    var w = this.world, cell = w.cellSize;
+    if (!this.fence) this.fence = new Uint8Array(w.cols * w.rows);
+    var R = p.r * 1.3, x0 = Math.max(0, Math.floor((p.x - R) / cell)), x1 = Math.min(w.cols - 1, Math.floor((p.x + R) / cell));
+    var y0 = Math.max(0, Math.floor((p.y - R) / cell)), y1 = Math.min(w.rows - 1, Math.floor((p.y + R) / cell));
+    for (var gy = y0; gy <= y1; gy++) {
+      for (var gx = x0; gx <= x1; gx++) {
+        var dx = (gx + 0.5) * cell - p.x, dy = (gy + 0.5) * cell - p.y;
+        if (Math.sqrt(dx * dx + dy * dy) <= this.pastureRadius(p, BT.M.atan2(dy, dx))) this.fence[gy * w.cols + gx] = 1;
+      }
+    }
   };
 
   Humans.prototype.addSheep = function (p, young) {
@@ -575,7 +621,10 @@
     var cfg = BT.HUMANS.dogs, c = this.center();
     for (var k = 0; k < cfg.perCard; k++) this.addDog(c);
     this.dogsKept += cfg.perCard;
-    if (this.dogDay === null) this.dogDay = this.sim.day;
+    if (this.dogDay === null) {
+      this.dogDay = this.sim.day;
+      this.dogEscape = this.sim.day + BT.Time.years(cfg.escapeYears);
+    }
     this.updateDisturbance();
     return { x: c.x, y: c.y, dogs: this.dogs.length };
   };
@@ -608,48 +657,68 @@
   };
 
   /**
-   * Einmal am Tag: Einige Jahre nach der ersten Weide brechen Schafe aus,
-   * einige Jahre nach den ersten Huetehunden verwildert ein kleines Rudel.
-   * Beides geschieht einmal; danach vermehren sie sich als eigene Art.
+   * Einmal am Tag: Etwa 4 Jahre nach jeder Weide brechen dort zum ersten Mal
+   * Schafe aus, danach immer wieder (HUMANS.pasture.escapeEvery). Ebenso
+   * verwildern 4 Jahre nach den ersten Huetehunden Hunde, danach alle paar
+   * Jahre wieder. Die Ausreisser laufen erst weit weg und leben dann als
+   * eigene Art; Hunde schliessen sich einem wilden Rudel an, wenn eines nah ist.
    */
   Humans.prototype.checkEscape = function () {
-    var day = this.sim.day, P = BT.HUMANS.pasture, D = BT.HUMANS.dogs;
-    if (this.sheepDay !== null && this.escaped.schaf == null && day >= this.sheepDay + BT.Time.years(P.escapeYears)) {
-      var p = this.pastures[0];
-      var n = Math.min(P.escape, p.sheep.length);
-      var at = this.release(BT.SPECIES.schaf, p, p.r + 25, n);
+    var day = this.sim.day, P = BT.HUMANS.pasture, D = BT.HUMANS.dogs, c, n, at;
+    for (var k = 0; k < this.pastures.length; k++) {
+      var p = this.pastures[k];
+      if (day < p.nextEscape || p.sheep.length < 2) continue;
+      n = Math.min(this.rng.intIn(P.escape), p.sheep.length);
+      c = this.center();
+      // ueber den Zaun auf der dem Dorf abgewandten Seite
+      var a = BT.M.atan2(p.y - c.y, p.x - c.x) + this.rng.range(-0.8, 0.8);
+      var gate = { x: p.x + BT.M.cos(a) * (this.pastureRadius(p, a) + 15), y: p.y + BT.M.sin(a) * (this.pastureRadius(p, a) + 15) };
+      at = this.release(BT.SPECIES.schaf, gate, n, P.runaway, null);
       p.sheep.splice(0, n);
-      this.escaped.schaf = day;
+      p.nextEscape = day + BT.Time.years(this.rng.rangeIn(P.escapeEvery));
+      if (this.escaped.schaf == null) this.escaped.schaf = day;
       this.sim.events.push({ day: day, tick: this.sim.tick, card: 'schafeAus', params: {},
         at: { x: at.x, y: at.y, text: n + ' Schafe sind ausgebüchst' } });
     }
-    if (this.dogDay !== null && this.escaped.hund == null && day >= this.dogDay + BT.Time.years(D.escapeYears)) {
-      var c = this.center();
-      var m = Math.min(D.escape, this.dogs.length);
-      var at2 = this.release(BT.SPECIES.hund, c, 220, m);
-      this.dogs.splice(0, m);
-      this.escaped.hund = day;
+    if (this.dogEscape !== null && day >= this.dogEscape && this.dogs.length) {
+      c = this.center();
+      var first = this.escaped.hund == null;
+      n = Math.min(Math.max(first ? 2 : 1, this.rng.intIn(D.escape)), this.dogs.length);
+      var pack = this.sim.nearestGroupOf(BT.SPECIES.hund, c, D.join, function (o) {
+        return o.members.length < o.spec.group.max;
+      });
+      var start = { x: this.dogs[0].x, y: this.dogs[0].y };
+      at = this.release(BT.SPECIES.hund, start, n, D.runaway, pack);
+      this.dogs.splice(0, n);
+      this.dogEscape = day + BT.Time.years(this.rng.rangeIn(D.escapeEvery));
+      if (first) this.escaped.hund = day;
       this.updateDisturbance();
       this.sim.events.push({ day: day, tick: this.sim.tick, card: 'hundeWild', params: {},
-        at: { x: at2.x, y: at2.y, text: m + ' Hunde sind verwildert' } });
+        at: { x: at.x, y: at.y, text: n + (n === 1 ? ' Hund ist' : ' Hunde sind') + ' verwildert' + (pack ? ' und schließen sich einem wilden Rudel an' : '') } });
     }
   };
 
-  /** Eine Gruppe der Art frei lassen, `dist` vom Ort entfernt (Weibchen zuerst, alle erwachsen). */
-  Humans.prototype.release = function (spec, from, dist, n) {
-    var sim = this.sim, w = this.world, pt = { x: from.x, y: from.y };
-    for (var t = 0; t < 12; t++) {
-      var a = this.rng.range(0, Math.PI * 2);
-      var x = from.x + BT.M.cos(a) * dist, y = from.y + BT.M.sin(a) * dist;
-      if (!BT.Move.blockedAt(w, spec, x, y) && spec.habitat[sim.biomeAt(x, y)] > 0) { pt = { x: x, y: y }; break; }
-    }
+  /**
+   * Eine Gruppe der Art bei `from` frei lassen (Weibchen zuerst, alle
+   * erwachsen, satt und ohne Durst: sie kommen ja aus der Obhut der Menschen).
+   * Sie laufen erst dist[0]..dist[1] vom Dorf weg bzw. zur Gruppe `join`.
+   */
+  Humans.prototype.release = function (spec, from, n, dist, join) {
+    var sim = this.sim, pt = { x: from.x, y: from.y };
+    if (BT.Move.blockedAt(this.world, spec, pt.x, pt.y)) pt = this.center();
     var g = sim.makeGroup(spec, pt.x, pt.y);
     if (spec.role === 'predator') g.state = 'wandern';
     for (var k = 0; k < n; k++) {
       var age = Math.round(this.rng.range(spec.maturity, spec.maxAge * 0.5));
-      var an = sim.makeAnimal(spec, pt.x, pt.y, age, k % 2 ? 'm' : 'f', 0.85);
+      var an = sim.makeAnimal(spec, pt.x, pt.y, age, k % 2 ? 'm' : 'f', 1);
+      an.thirst = 0;
       sim.addToGroup(g, an);
       an.x = pt.x + an.ox; an.y = pt.y + an.oy; an.px = an.x; an.py = an.y;
+    }
+    var to = join ? null : BT.Behavior.farPoint(sim, spec, this.center(), dist[0], dist[1]);
+    if (join || to) {
+      g.runaway = { x: to ? to.x : join.x, y: to ? to.y : join.y, join: join, state: 'ausgebuechst', ticks: sim.ticksPerDay * 8 };
+      g.state = 'ausgebuechst';
     }
     return pt;
   };

@@ -97,10 +97,36 @@
 
   Simulation.prototype.addToGroup = function (g, a) {
     a.group = g;
-    var r = g.spec.group.spread * Math.sqrt(this.rng.next());
+    var u = Math.sqrt(this.rng.next());
     var ang = this.rng.range(0, Math.PI * 2);
-    a.ox = BT.M.cos(ang) * r; a.oy = BT.M.sin(ang) * r;
+    if (g.spec.group.spacing) {
+      // Grosse Herden (spec.group.spacing): Versatz relativ zum Radius der Herde,
+      // der mit der Zahl der Tiere waechst (spreadOf)
+      a.nx = BT.M.cos(ang) * u; a.ny = BT.M.sin(ang) * u;
+      var R = spreadOf(g.spec, g.members.length + 1);
+      a.ox = a.nx * R; a.oy = a.ny * R;
+    } else {
+      var r = g.spec.group.spread * u;
+      a.ox = BT.M.cos(ang) * r; a.oy = BT.M.sin(ang) * r;
+    }
     g.members.push(a);
+  };
+
+  /**
+   * Radius einer Gruppe: spec.group.spread, bei grossen Herden mit
+   * spec.group.spacing so viel, dass jedes Tier etwa diesen Abstand hat.
+   */
+  function spreadOf(spec, n) {
+    var G = spec.group;
+    return G.spacing ? Math.max(G.spread, G.spacing * Math.sqrt(n)) : G.spread;
+  }
+
+  /** Tiere der Gruppe g schliessen sich der Gruppe other an, so viele dort Platz haben. */
+  Simulation.prototype.joinGroup = function (g, other) {
+    var room = other.spec.group.max - other.members.length;
+    var moving = g.members.slice(0, Math.max(0, room));
+    for (var k = 0; k < moving.length; k++) { this.removeFromGroup(moving[k]); this.addToGroup(other, moving[k]); }
+    return moving.length;
   };
 
   Simulation.prototype.removeFromGroup = function (a) {
@@ -310,24 +336,37 @@
 
   /** Die Tiere folgen dem Anker ihrer Gruppe, jedes mit eigenem, langsam wanderndem Versatz. */
   Simulation.prototype.moveMembers = function (g) {
-    var spread = g.spec.group.spread * (g.state === 'fliehen' || g.state === 'jagen' ? 0.6 : 1);
+    var spread = spreadOf(g.spec, g.members.length) * (g.state === 'fliehen' || g.state === 'jagen' ? 0.6 : 1);
+    var spaced = !!g.spec.group.spacing;
     var maxStep = Math.max(g.speedNow * 1.4, g.spec.speed * 0.6);
+    var H = this.humans;
     for (var i = 0; i < g.members.length; i++) {
       var a = g.members[i];
       a.px = a.x; a.py = a.y;
-      a.ox += this.rng.range(-2, 2); a.oy += this.rng.range(-2, 2);
-      var r = BT.M.hypot(a.ox, a.oy);
-      if (r > spread) { a.ox *= spread / r; a.oy *= spread / r; }
+      if (spaced) {
+        // Versatz relativ zum Radius: waechst die Herde, ruecken die Tiere auseinander
+        a.nx += this.rng.range(-2, 2) / spread; a.ny += this.rng.range(-2, 2) / spread;
+        var rn = BT.M.hypot(a.nx, a.ny);
+        if (rn > 1) { a.nx /= rn; a.ny /= rn; }
+        a.ox = a.nx * spread; a.oy = a.ny * spread;
+      } else {
+        a.ox += this.rng.range(-2, 2); a.oy += this.rng.range(-2, 2);
+        var r = BT.M.hypot(a.ox, a.oy);
+        if (r > spread) { a.ox *= spread / r; a.oy *= spread / r; }
+      }
       // Ruhende Tiere bleiben liegen, wo sie sind
       if (g.state === 'ruhen') continue;
       var tx = g.x + a.ox, ty = g.y + a.oy;
       // Brutvogel und Kueken bleiben im Horst
       if (g.horst && BT.Behavior.inHorst(g, a)) { tx = g.horst.x + a.ox * 0.25; ty = g.horst.y + a.oy * 0.25; }
-      if (BT.Move.blockedAt(this.world, g.spec, tx, ty)) { tx = g.x; ty = g.y; }
+      // Weidezaun: nur Huetehunde und jagende Raeuber gehen hinein
+      var fence = H.fence ? H.barrier(g, a.x, a.y) : null;
+      if (BT.Move.blockedAt(this.world, g.spec, tx, ty) || (fence && fence(tx, ty))) { tx = g.x; ty = g.y; }
       var dx = tx - a.x, dy = ty - a.y, d = BT.M.hypot(dx, dy);
       if (d > 0.01) {
         var s = Math.min(maxStep, d);
         var nx = a.x + dx / d * s, ny = a.y + dy / d * s;
+        if (fence && fence(nx, ny)) continue;
         if (!BT.Move.blockedAt(this.world, g.spec, nx, ny)) { a.x = nx; a.y = ny; }
         else { a.x = g.x; a.y = g.y; }
         if (s > 0.3) a.heading = BT.M.atan2(dy, dx);
@@ -624,6 +663,11 @@
       }
 
       if (spec.role === 'predator') { this.reorganizePredator(g); continue; }
+      // Unterwegs zu einem fernen Ziel: erst dort wird die Gruppe neu geordnet
+      if (g.runaway) continue;
+
+      // Zu wenig Futter fuer die grosse Herde -> ein Teil zieht weit weg (spec.group.split)
+      if (this.splitHungry(g)) continue;
 
       // Zu klein -> Anschluss an eine nahe Gruppe derselben Art
       if (g.members.length < spec.group.min) {
@@ -634,6 +678,27 @@
         }
       }
     }
+  };
+
+  /**
+   * Grosse Herde, zu wenig Futter (spec.group.split): Sind die Tiere im Mittel
+   * hungrig, zieht die Haelfte weit weg auf eine neue Weide. Danach ruhen beide
+   * Teile `rest` Tage, bevor sie sich wieder teilen. Ohne split nichts.
+   */
+  Simulation.prototype.splitHungry = function (g) {
+    var S = g.spec.group.split;
+    if (!S || g.members.length < S.min || (g.splitDay != null && this.day - g.splitDay < S.rest)) return false;
+    var e = 0;
+    for (var i = 0; i < g.members.length; i++) e += g.members[i].energy;
+    if (e / g.members.length >= S.energy) return false;
+    var to = BT.Behavior.farPoint(this, g.spec, g, S.dist[0], S.dist[1]);
+    if (!to) return false;
+    var ng = this.makeGroup(g.spec, g.x, g.y);
+    var half = g.members.slice(Math.floor(g.members.length / 2));
+    for (var k = 0; k < half.length; k++) { this.removeFromGroup(half[k]); this.addToGroup(ng, half[k]); }
+    ng.runaway = { x: to.x, y: to.y, ticks: this.ticksPerDay * 4 };
+    g.splitDay = ng.splitDay = this.day;
+    return true;
   };
 
   /**
@@ -657,6 +722,8 @@
       if (g.lonelyDays > T.DAYS_PER_YEAR) { g.home = null; g.lonelyDays = 0; }
       return;
     }
+    // Ausgebuechst und noch unterwegs: erst weit weg, dann ein Revier
+    if (g.runaway) return;
     var self = this;
     var k;
     if (pairs && g.members.length > 1 && !(f && m)) {

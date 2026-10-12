@@ -17,9 +17,10 @@
 
   /**
    * Bewegt `obj` (mit x, y, heading) hoechstens `speed` auf (tx, ty) zu.
-   * Liefert true, wenn ein Schritt moeglich war.
+   * Liefert true, wenn ein Schritt moeglich war. `fence(x, y)` (optional):
+   * weitere Sperre, z. B. der Zaun einer Weide (eco/humans.js barrier).
    */
-  function stepToward(world, spec, obj, tx, ty, speed) {
+  function stepToward(world, spec, obj, tx, ty, speed, fence) {
     var dx = tx - obj.x, dy = ty - obj.y;
     var d = Math.sqrt(dx * dx + dy * dy);
     if (d < 0.001) return true;
@@ -28,7 +29,7 @@
     for (var k = 0; k < DETOURS.length; k++) {
       var a = base + DETOURS[k];
       var nx = obj.x + BT.M.cos(a) * len, ny = obj.y + BT.M.sin(a) * len;
-      if (!blockedAt(world, spec, nx, ny)) {
+      if (!blockedAt(world, spec, nx, ny) && !(fence && fence(nx, ny))) {
         obj.x = nx; obj.y = ny; obj.heading = a;
         return true;
       }
@@ -37,8 +38,8 @@
   }
 
   /** Bewegt sich weg von (fx, fy). */
-  function stepAway(world, spec, obj, fx, fy, speed) {
-    return stepToward(world, spec, obj, obj.x * 2 - fx, obj.y * 2 - fy, speed);
+  function stepAway(world, spec, obj, fx, fy, speed, fence) {
+    return stepToward(world, spec, obj, obj.x * 2 - fx, obj.y * 2 - fy, speed, fence);
   }
 
   /**

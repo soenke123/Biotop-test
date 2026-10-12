@@ -65,6 +65,7 @@ js/ui/      app.js (Karte, Zeitregler, Reiter Tierbestand/Menschen, Kartenleiste
 data/       arten.md (fachliche Wahrheit für species.js)
 assets/     Tierbilder (Platzhalter aus Wild Clusters)
 tools/      load.js (Skripte in Node laden), smoketest.js, balance.js (Abstimmung),
+            invasion.js (fassen Schafe und Hunde Fuß? Vergleich mit/ohne Karten, parallel),
             shot.js (Playwright-Screenshot, optional nach N simulierten Tagen)
 ```
 
@@ -84,6 +85,7 @@ node tools/balance.js 8 30 --ohne=inselwolf,inseladler   # Vergleich ohne Räube
 node tools/shot.js /tmp/x.png 482917 mittel 1 0.5 0.5 300 [inselwolf,inseladler]
 node tools/shot.js /tmp/x.png 482917 mittel 4 0.2 0.46 300 --landung=0.17,0.5   # mit Dorf
 node tools/balance.js 8 30 --karten=schafe@1,hunde@1    # Menschen mit Karten
+node tools/invasion.js 8 30 --karten=schafe@1           # Schafe etabliert? heimische Arten im Vergleich
 ```
 
 `tools/shot.js` meldet Fehler aus der Browser-Konsole und endet dann mit Code 1. Nach

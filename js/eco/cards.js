@@ -65,16 +65,16 @@
       name: 'Hütehunde',
       text: 'Hunde bewachen Dorf und Weiden: Wölfe und Hirsche halten mehr Abstand. Nach einigen Jahren verwildern Hunde und bringen eine Krankheit zu den Wölfen.'
     },
-    // Folgekarten der Schafe und Hunde (eco/humans.js, einmal, einige Jahre nach der ersten Karte)
+    // Folgekarten der Schafe und Hunde (eco/humans.js, etwa 4 Jahre nach der Karte, dann immer wieder)
     schafeAus: {
       id: 'schafeAus', kind: 'folge', icon: '🐑',
       name: 'Schafe brechen aus',
-      text: 'Eine kleine Herde ist aus der Weide entwischt. Die Schafe leben jetzt wild auf der Insel.'
+      text: 'Schafe sind aus der Weide entwischt und weit weggelaufen. Sie leben jetzt wild auf der Insel.'
     },
     hundeWild: {
       id: 'hundeWild', kind: 'folge', icon: '🐕',
       name: 'Hunde verwildern',
-      text: 'Ein kleines Rudel Hunde ist verwildert. Sie leben wie Wölfe, aber die Laufvögel kennen sie nicht, und sie tragen eine Krankheit, an der Wölfe sterben.'
+      text: 'Hunde sind verwildert: Sie laufen weit weg und gründen ein Rudel oder schließen sich einem wilden an. Sie leben wie Wölfe, aber die Laufvögel kennen sie nicht, und sie tragen eine Krankheit, an der Wölfe sterben.'
     },
     // Folgekarte: Woelfe stecken sich bei verwilderten Hunden an (spec.disease, eco/simulation.js)
     krankheit: {

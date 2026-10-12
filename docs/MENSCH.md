@@ -224,8 +224,8 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 
 ### Schritt 4 und 5: Schafe und Hunde
 
-Vorgezogen vor die Ratten. Beide kommen **zuerst als Haustiere** und **brechen 4 Jahre später
-einmal aus**; danach leben sie als eingeschleppte Arten (`BT.SPECIES.schaf`, `.hund`,
+Vorgezogen vor die Ratten. Beide kommen **zuerst als Haustiere** und **brechen etwa 4 Jahre später
+zum ersten Mal aus, danach immer wieder**; sie leben dann als eingeschleppte Arten (`BT.SPECIES.schaf`, `.hund`,
 `introduced: true`, Startbestand 0) mit demselben Verhalten wie alle Arten. Werte und Begründung:
 `data/arten.md`.
 
@@ -235,14 +235,24 @@ einmal aus**; danach leben sie als eingeschleppte Arten (`BT.SPECIES.schaf`, `.h
   eine neue Weide an.
 - **Karte „Hütehunde“:** 3 Hunde laufen zwischen Dorf und Weiden. Störung: ums Dorf 20 % weiter,
   dazu um jede Weide (Umkreis 200).
-- **Folgekarten** (eco/humans.js `checkEscape`, einmal, 4 Jahre nach der ersten Karte der Sorte):
-  🐑 **Schafe brechen aus** (8 Schafe am Zaun), 🐕 **Hunde verwildern** (3 Hunde, 220 vom Dorf).
-  Im nächsten Frühjahr füllen die Siedler Weide und Hunde wieder auf.
+- **Folgekarten** (eco/humans.js `checkEscape`):
+  🐑 **Schafe brechen aus:** an jeder Weide zum ersten Mal 3,7 bis 4,3 Jahre nach ihrer Karte, danach
+  alle 2 bis 5 Jahre wieder, jedes Mal 2 bis 6 Schafe (über den Zaun auf der dem Dorf abgewandten
+  Seite). 🐕 **Hunde verwildern:** 4 Jahre nach den ersten Hütehunden 2 bis 3 Hunde, danach alle 3 bis
+  5 Jahre wieder 1 bis 3. Im nächsten Frühjahr füllen die Siedler Weide und Hunde wieder auf.
+- **Weglaufen:** Die Ausreißer sind satt und ohne Durst (Energie 1) und laufen erst weit weg
+  (Zustand „ist ausgebüchst“, `g.runaway`): Schafe 350 bis 600 vom Dorf zu einem Ort mit gutem
+  Gras nah am Wasser, Hunde 400 bis 700 vom Dorf. Erst dort suchen sie Weide bzw. Revier. Lebt ein
+  wildes Hunderudel mit Platz höchstens 700 vom Dorf, laufen die Hunde zu ihm und schließen sich an.
+- **Zaun:** Die Weiden sind eingezäunt (`humans.fence`, je Rasterzelle). Hinein kommen nur die
+  Hütehunde, fliegende Tiere (Adler) und Räuber, die gerade jagen. Wer beim Bau der Weide drinnen
+  stand, darf hinaus.
 - **Die vier heimischen Arten bleiben unverändert.** Die Beziehungen bringen die neuen Arten mit:
   `preyOf` beim Schaf (Wolf und Adler fressen Schafe), `unknownTo` beim Hund (der Laufvogel kennt
   ihn nicht und flieht nicht).
-- **Schafe** bilden Herden bis 50 und sind etwas stärker als der Hirsch: Sie nehmen ihm das
-  Grasland weg.
+- **Schafe** bilden Herden bis 100 mit Abstand zwischen den Tieren (der Radius der Herde wächst
+  mit der Zahl). Ist eine große Herde hungrig, zieht die Hälfte weit weg zu einer neuen Weide. Sie
+  sind früher erwachsen und haben mehr Lämmer als der Hirsch.
 - **Hunde** sind wie Wölfe (gleiche Werte), etwas stärker, und tragen **Staupe**: Wölfe in ihrer
   Nähe erkranken mit der Zeit, werden schwach und sterben oft daran (Folgekarte 🦠 „Wölfe
   erkranken“, Todesursache „Krankheit“, kranke Tiere mit grünem Punkt).

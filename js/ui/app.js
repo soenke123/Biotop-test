@@ -669,7 +669,8 @@
 
   var STATE_TEXT = {
     fressen: 'frisst', fliehen: 'flieht', meiden: 'meidet die Menschen', trinken: 'geht trinken', brueten: 'brütet',
-    streifen: 'streift durchs Revier', jagen: 'jagt', heimflug: 'bringt Beute zum Horst', ruhen: 'ruht', aas: 'frisst Aas', wandern: 'sucht ein Revier'
+    streifen: 'streift durchs Revier', jagen: 'jagt', heimflug: 'bringt Beute zum Horst', ruhen: 'ruht', aas: 'frisst Aas', wandern: 'sucht ein Revier',
+    ausgebuechst: 'ist ausgebüchst und läuft weit weg', weiterziehen: 'zieht zu einer neuen Weide'
   };
   var GROUP_TEXT = { herd: 'Herde', flock: 'Gruppe', pack: 'Rudel', pair: 'Paar' };
 

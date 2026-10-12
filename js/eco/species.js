@@ -278,7 +278,11 @@
     sprites: { name: 'hirsch', facing: 'right', lighten: '#8a8070', tint: '#e05ad8', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
     size: 21,
     color: '#e05ad8',
-    group: { kind: 'herd', min: 3, max: 50, spread: 34, start: [8, 8] },   // grosse Herden
+    // Grosse Herden bis 100, mit Abstand (spacing: Weltunits je Tier, der Radius waechst mit
+    // der Herde). split: Ist die Herde ab `min` Tieren im Mittel hungriger als `energy`, zieht
+    // die Haelfte dist[0]..dist[1] weit auf eine neue Weide; danach `rest` Tage Ruhe.
+    group: { kind: 'herd', min: 3, max: 100, spread: 30, spacing: 10, start: [8, 8],
+      split: { min: 24, energy: 0.5, rest: 90, dist: [250, 500] } },
     start: 0,
     scarce: 1.2,
     scarceMin: 40,                    // Beutewechsel ohne Startbestand: bei 40 Schafen halb so gefragt
@@ -295,8 +299,9 @@
     scheu: 0.4,                       // kennt Menschen, haelt aber Abstand
     searchRadius: 240,
     habitat: pref({ TUSSOCK: 1.0, MEADOW: 1.0, ROCK: 0.6, SCRUB: 0.5, BEACH: 0.4, THERMAL: 0.3, SWAMP: 0.2, FERN: 0.25, MOSS: 0.15, PEAK: 0.1, SOIL: 0.1, FIELD: 1.0 }),
-    maturity: Y(1), maxAge: Y(9),
-    breed: { kind: 'each-female', season: 0, day: 3, chance: 0.9, litter: [1, 2], minEnergy: 0.4, cost: 0.15 },
+    // Schneller erwachsen und mehr Laemmer als der Hirsch (reif mit 1 Jahr, 1 Kalb, Chance 0,85)
+    maturity: Y(0.5), maxAge: Y(9),
+    breed: { kind: 'each-female', season: 0, day: 3, chance: 0.95, litter: [1, 3], minEnergy: 0.4, cost: 0.15 },
     newbornEnergy: 0.6,
     meat: 1.3
   };

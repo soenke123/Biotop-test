@@ -49,6 +49,20 @@
 
   // ------------------------------------------------------------ gemeinsame Teile
 
+  /** Schritt der Gruppe; Weidezaeune halten auf (sim.humans.barrier). */
+  function go(sim, spec, g, tx, ty, sp) {
+    return BT.Move.stepToward(sim.world, spec, g, tx, ty, sp, sim.humans.barrier(g, g.x, g.y));
+  }
+
+  function away(sim, spec, g, fx, fy, sp) {
+    return BT.Move.stepAway(sim.world, spec, g, fx, fy, sp, sim.humans.barrier(g, g.x, g.y));
+  }
+
+  /** Liegt der Punkt fuer diese Art hinter einem Weidezaun? */
+  function fencedFor(sim, spec, x, y) {
+    return !!sim.humans.fence && !(spec && spec.flies) && sim.humans.fenced(x, y);
+  }
+
   /** Durst: zum Wasser gehen, am Wasser trinken. true, solange damit beschaeftigt. */
   function handleThirst(sim, g, speed) {
     var spec = g.spec;
@@ -63,7 +77,7 @@
     }
     var wp = BT.Move.waterWaypoint(sim.world, g.x, g.y, 10);
     if (!wp) { for (i = 0; i < g.members.length; i++) g.members[i].thirst = 0; return false; }
-    BT.Move.stepToward(sim.world, spec, g, wp.x, wp.y, speed * 2.5);
+    go(sim, spec, g, wp.x, wp.y, speed * 2.5);
     return true;
   }
 
@@ -81,7 +95,7 @@
     var sp = g.spec.speed * 2;
     g.state = 'meiden';
     g.tx = null;
-    BT.Move.stepAway(sim.world, g.spec, g, h.x, h.y, sp);
+    away(sim, g.spec, g, h.x, h.y, sp);
     g.speedNow = sp;
     return true;
   }
@@ -92,9 +106,55 @@
       var a = sim.rng.range(0, Math.PI * 2);
       var r = radius * Math.sqrt(sim.rng.next());
       var px = x + BT.M.cos(a) * r, py = y + BT.M.sin(a) * r;
-      if (!BT.Move.blockedAt(sim.world, spec, px, py)) return { x: px, y: py };
+      if (!BT.Move.blockedAt(sim.world, spec, px, py) && !fencedFor(sim, spec, px, py)) return { x: px, y: py };
     }
     return { x: x, y: y };
+  }
+
+  /**
+   * Weit weg ziehen (spec, ausgebuechst oder Herde geteilt): g.runaway = { x, y,
+   * ticks, join }. Die Gruppe laeuft zuegig zum Ziel und sucht erst dort
+   * Futter bzw. ein Revier; mit `join` schliesst sie sich dort dieser Gruppe an
+   * (so viele, wie Platz haben). true, solange damit beschaeftigt.
+   */
+  function runAway(sim, g) {
+    var r = g.runaway;
+    if (!r) return false;
+    var j = r.join && r.join.members.length ? r.join : null;
+    var tx = j ? j.x : r.x, ty = j ? j.y : r.y;
+    if (BT.M.hypot(tx - g.x, ty - g.y) < 30 || r.ticks-- <= 0) {
+      if (j && BT.M.hypot(j.x - g.x, j.y - g.y) < 120) sim.joinGroup(g, j);
+      g.runaway = null;
+      g.tx = null;
+      g.state = g.spec.role === 'predator' ? (g.home ? 'streifen' : 'wandern') : 'fressen';
+      return false;
+    }
+    var sp = g.spec.speed * 2.5;
+    g.state = r.state || 'weiterziehen';
+    go(sim, g.spec, g, tx, ty, sp);
+    g.speedNow = sp;
+    return true;
+  }
+
+  /**
+   * Ziel fuer eine Gruppe, die weit weg zieht: von einigen Punkten im Abstand
+   * dmin..dmax von `from` der mit dem besten Lebensraum (Pflanzenfresser: und
+   * dem meisten Futter), nah am Wasser, nicht hinter Zaeunen und nicht bei den Menschen.
+   */
+  function farPoint(sim, spec, from, dmin, dmax) {
+    var f = sim.fields, best = null, bestScore = -Infinity;
+    for (var t = 0; t < 16; t++) {
+      var a = sim.humans.rng.range(0, Math.PI * 2), r = sim.humans.rng.range(dmin, dmax);
+      var px = from.x + BT.M.cos(a) * r, py = from.y + BT.M.sin(a) * r;
+      if (BT.Move.blockedAt(sim.world, spec, px, py) || fencedFor(sim, spec, px, py)) continue;
+      var pref = spec.habitat[sim.biomeAt(px, py)];
+      if (pref <= 0 || sim.humans.avoids(spec, px, py)) continue;
+      var score = pref + (spec.diet && spec.role !== 'predator' ? f.energyAt(f.index(px, py), spec.diet) * pref : 0);
+      // nicht zu weit vom Wasser
+      score -= Math.max(0, sim.world.query.freshWaterDistance(px, py) - 120) * 0.004;
+      if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
+    }
+    return best;
   }
 
   // ------------------------------------------------------------ Pflanzenfresser
@@ -129,7 +189,7 @@
       var a = sim.rng.range(0, Math.PI * 2);
       var r = radius * Math.sqrt(sim.rng.next());
       var px = cx + BT.M.cos(a) * r, py = cy + BT.M.sin(a) * r;
-      if (BT.Move.blockedAt(w, spec, px, py)) continue;
+      if (BT.Move.blockedAt(w, spec, px, py) || fencedFor(sim, spec, px, py)) continue;
       var b = sim.biomeAt(px, py);
       var pref = spec.habitat[b];
       if (pref <= 0) continue;
@@ -149,7 +209,7 @@
         a = sim.rng.range(0, Math.PI * 2);
         r = BT.HUMANS.field.radius * 0.7 * Math.sqrt(sim.rng.next());
         px = fl.x + BT.M.cos(a) * r; py = fl.y + BT.M.sin(a) * r;
-        if (BT.Move.blockedAt(w, spec, px, py) || sim.humans.avoids(spec, px, py)) continue;
+        if (BT.Move.blockedAt(w, spec, px, py) || sim.humans.avoids(spec, px, py) || fencedFor(sim, spec, px, py)) continue;
         score = f.energyAt(f.index(px, py), spec.diet) * spec.habitat[sim.biomeAt(px, py)] - BT.M.hypot(px - g.x, py - g.y) * 0.0015;
         if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
       }
@@ -174,7 +234,7 @@
         // Ausdauer: nach einem kurzen Sprint nur noch Trab
         g.fleeTicks = (g.fleeTicks || 0) + 1;
         var fs = g.fleeTicks <= spec.sprintTicks ? spec.fleeSpeed : spec.fleeSpeed * 0.55;
-        BT.Move.stepAway(sim.world, spec, g, g.fleeFrom.x, g.fleeFrom.y, fs);
+        away(sim, spec, g, g.fleeFrom.x, g.fleeFrom.y, fs);
         g.speedNow = fs;
         return;
       }
@@ -186,7 +246,10 @@
     // 3. Durst
     if (handleThirst(sim, g, spec.speed)) { g.speedNow = spec.speed * 2.5; return; }
 
-    // 4. Fressen (beim Brueten nur rund ums Nest)
+    // 4. Weit weg ziehen (ausgebuechst, Herde geteilt)
+    if (runAway(sim, g)) return;
+
+    // 5. Fressen (beim Brueten nur rund ums Nest)
     g.state = g.nest ? 'brueten' : 'fressen';
     var cx = g.nest ? g.nest.x : g.x, cy = g.nest ? g.nest.y : g.y;
     var radius = g.nest ? 50 : spec.searchRadius;
@@ -200,7 +263,7 @@
     }
     // Auf abgeweideter Flaeche zuegig weiterziehen, am Futterplatz langsam grasen
     var sp = here < 0.4 && !g.nest ? spec.speed * 2.5 : spec.speed;
-    BT.Move.stepToward(sim.world, spec, g, g.tx, g.ty, sp);
+    go(sim, spec, g, g.tx, g.ty, sp);
     g.speedNow = sp;
     g.grazing = true;
   }
@@ -438,7 +501,7 @@
       if (best.meat < 0.05) sim.carcasses.splice(sim.carcasses.indexOf(best), 1);
       return true;
     }
-    BT.Move.stepToward(sim.world, spec, g, best.x, best.y, spec.speed * 1.3);
+    go(sim, spec, g, best.x, best.y, spec.speed * 1.3);
     g.speedNow = spec.speed * 1.3;
     return true;
   }
@@ -452,7 +515,7 @@
     if (!h) { g.carry = 0; g.state = 'streifen'; return false; }
     var sp = spec.speed * 1.5;
     if (BT.M.hypot(h.x - g.x, h.y - g.y) > 15) {
-      BT.Move.stepToward(sim.world, spec, g, h.x, h.y, sp);
+      go(sim, spec, g, h.x, h.y, sp);
       g.speedNow = sp;
       return true;
     }
@@ -496,6 +559,8 @@
 
     if (handleThirst(sim, g, spec.speed)) { g.speedNow = spec.speed * 2.5; return; }
 
+    if (runAway(sim, g)) return;
+
     // Jagd laeuft
     if (g.state === 'jagen') {
       var prey = g.prey;
@@ -509,7 +574,7 @@
         var sp = close ? spec.chaseSpeed : stalk;
         if (close) g.stateTicks--;
         else g.stateTicks++;           // Anschleichen verbraucht keine Sprintzeit
-        BT.Move.stepToward(sim.world, spec, g, prey.x, prey.y, sp);
+        go(sim, spec, g, prey.x, prey.y, sp);
         g.speedNow = sp;
         if (dist(g, prey) < 30) {
           if (attack(sim, g, prey)) {
@@ -556,7 +621,7 @@
       g.stateTicks = 40;
     }
     var sp = energy < hungry ? spec.speed * 1.3 : spec.speed;
-    BT.Move.stepToward(sim.world, spec, g, g.tx, g.ty, sp);
+    go(sim, spec, g, g.tx, g.ty, sp);
     g.speedNow = sp;
   }
 
@@ -564,6 +629,7 @@
     herbivore: herbivore,
     predator: predator,
     randomPointNear: randomPointNear,
+    farPoint: farPoint,
     inHorst: inHorst,
     COVER: COVER
   };
