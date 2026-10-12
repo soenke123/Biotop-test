@@ -132,7 +132,7 @@
       color: '#5d8fc9',
       group: { kind: 'flock', min: 2, max: 6, spread: 16, start: [2, 4] },
       start: 160,                     // Tiere zu Beginn
-      scarce: 0.8,
+      scarce: 1.2,
       diet: { frucht: 0.1, insekten: 0.11 },   // kein Gras: das Gras haengt allein an den Hirschen
       bite: 0.32,
       costPerDay: 0.055,
@@ -195,7 +195,7 @@
       group: { kind: 'pair', min: 1, max: 3, spread: 30, start: [2, 2] },
       start: 12,                      // Tiere, verteilt auf Paare
       // Greift Jungtiere des Hirschs und Laufvoegel an, sieht nicht unter Baeume
-      prey: { laufvogel: 1.0, zwerghirsch: 0.6 },
+      prey: { laufvogel: 1.0, zwerghirsch: 0.25 },   // Kaelber selten: sonst fehlen sie den Woelfen
       preyMaxAge: { zwerghirsch: Y(0.5) },
       costPerDay: 0.03,
       winterCost: 0.005,
