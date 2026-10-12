@@ -97,6 +97,7 @@
    * sprites: Bilder auf der Karte, assets/<name>_<f|m|j>_<Datei der Haltung>.png
    *          (j = Jungtier). Haltungen: move, stand, eat, rest; fehlt `stand`,
    *          wird `move` genommen. facing: Blickrichtung der Bilder.
+   *          lighten: hellt die Bilder auf (Farbe, mit der die dunklen Toene aufgehellt werden).
    */
   var Y = function (y) { return BT.Time.years(y); };
 
@@ -107,7 +108,7 @@
       plural: 'Zwerghirsche',
       role: 'herbivore',
       sprite: 'assets/hirsch_m_stehend.png',
-      sprites: { name: 'hirsch', facing: 'right', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
+      sprites: { name: 'hirsch', facing: 'right', lighten: '#5a3c23', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
       size: 24,                       // Weltunits (Darstellung)
       color: '#c9874a',
       group: { kind: 'herd', min: 2, max: 16, spread: 26, start: [5, 10] },

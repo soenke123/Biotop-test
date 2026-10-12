@@ -16,6 +16,25 @@
 
   function key(id, kind, pose) { return id + '_' + kind + '_' + pose; }
 
+  /**
+   * Hellt ein Bild einmalig auf: "screen" mit einer Farbe hebt die dunklen Toene
+   * stark in Richtung dieser Farbe, die hellen kaum; danach schneidet das Bild
+   * selbst den Umriss wieder aus.
+   * Liest keine Pixel zurueck, funktioniert also auch unter file://.
+   */
+  function lightened(img, color) {
+    var c = global.document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    var ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    ctx.globalCompositeOperation = 'screen';
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.drawImage(img, 0, 0);
+    return c;
+  }
+
   BT.Sprites = {
     preload: function (onLoad) {
       if (typeof global.Image === 'undefined') return;
@@ -23,14 +42,14 @@
         var sp = BT.SPECIES[id].sprites;
         if (!sp) return;
         KINDS.forEach(function (kind) {
-          for (var pose in sp.poses) load(key(id, kind, pose), 'assets/' + sp.name + '_' + kind + '_' + sp.poses[pose] + '.png');
+          for (var pose in sp.poses) load(key(id, kind, pose), 'assets/' + sp.name + '_' + kind + '_' + sp.poses[pose] + '.png', sp.lighten);
         });
       });
-      function load(k, src) {
+      function load(k, src, lighten) {
         if (images[k] !== undefined) return;
         images[k] = null;
         var img = new global.Image();
-        img.onload = function () { images[k] = img; if (onLoad) onLoad(k); };
+        img.onload = function () { images[k] = lighten ? lightened(img, lighten) : img; if (onLoad) onLoad(k); };
         img.src = src;
       }
     },

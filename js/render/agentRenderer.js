@@ -11,7 +11,7 @@
  * pose() aus dem Zustand der Gruppe und der Bewegung im letzten Tick.
  *
  * Hervorhebung (opts.highlight = Art-ID): alle Tiere dieser Art bekommen einen
- * farbigen Ring und liegen obenauf, die uebrigen werden blass gezeichnet. So
+ * farbigen Ring und liegen obenauf, die uebrigen bleiben unveraendert. So
  * sieht man auch in der Gesamtansicht, wo sich z. B. alle Woelfe aufhalten.
  */
 (function (global) {
@@ -47,7 +47,7 @@
     for (var i = 0; i < sim.groups.length; i++) {
       var g = sim.groups[i];
       if (!g.nest || !inView(g.nest, view, pad)) continue;
-      var nr = Math.max(5, 7 / scale);
+      var nr = Math.max(g.spec.size, MIN_PX / scale) * 0.4;
       ctx.fillStyle = '#8a6a3c';
       ctx.beginPath(); ctx.arc(g.nest.x, g.nest.y, nr, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#f6f0dc';
@@ -63,7 +63,7 @@
     for (i = 0; i < sim.predatorGroups.length; i++) {
       var h = sim.predatorGroups[i].horst;
       if (!h || !inView(h, view, pad)) continue;
-      var hr = Math.max(8, 11 / scale);
+      var hr = Math.max(sim.predatorGroups[i].spec.size, MIN_PX / scale) * 0.5;
       ctx.fillStyle = '#5e4526';
       ctx.beginPath(); ctx.arc(h.x, h.y, hr, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#7d5f37';
@@ -78,10 +78,8 @@
     }
 
     // Tiere: Pflanzenfresser zuerst, Raeuber obenauf, hervorgehobene Art ganz oben
-    if (hl) ctx.globalAlpha = 0.3;
     drawList(ctx, sim, sim.herbivoreGroups, view, scale, alpha, pad, hl, false);
     drawList(ctx, sim, sim.predatorGroups, view, scale, alpha, pad, hl, false);
-    ctx.globalAlpha = 1;
     if (hl) {
       drawRings(ctx, sim.groups, view, scale, alpha, pad, hl, hlColor);
       drawList(ctx, sim, sim.groups, view, scale, alpha, pad, hl, true);
@@ -128,20 +126,22 @@
     if (spec.flies) {
       if (g.horst && BT.Behavior.inHorst(g, a)) return 'rest';
       if (g.state === 'aas') return 'eat';
-      if (g.state === 'ruhen' && moved < 0.5) return 'stand';
+      if (g.state === 'ruhen') return 'stand';
       return moved > 0.3 ? 'move' : 'stand';
     }
     switch (g.state) {
       case 'fressen':
       case 'brueten':
         if (moved > 1.5) return 'move';
-        return turn === 0 ? (g.state === 'brueten' ? 'rest' : 'stand') : 'eat';
+        // Stehen und Sitzen nur, wenn das Tier gerade nicht weiterzieht
+        if (turn === 0 && moved < 0.3) return g.state === 'brueten' ? 'rest' : 'stand';
+        return 'eat';
       case 'aas':
         return 'eat';
       case 'trinken':
         return moved < 0.3 ? 'eat' : 'move';
       case 'ruhen':
-        return moved < 0.5 ? 'rest' : 'move';
+        return 'rest';
       default:
         return moved > 0.3 ? 'move' : 'stand';
     }

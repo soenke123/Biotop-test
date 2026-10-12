@@ -245,6 +245,8 @@
       a.ox += this.rng.range(-2, 2); a.oy += this.rng.range(-2, 2);
       var r = BT.M.hypot(a.ox, a.oy);
       if (r > spread) { a.ox *= spread / r; a.oy *= spread / r; }
+      // Ruhende Tiere bleiben liegen, wo sie sind
+      if (g.state === 'ruhen') continue;
       var tx = g.x + a.ox, ty = g.y + a.oy;
       // Brutvogel und Kueken bleiben im Horst
       if (g.horst && BT.Behavior.inHorst(g, a)) { tx = g.horst.x + a.ox * 0.25; ty = g.horst.y + a.oy * 0.25; }

@@ -12,7 +12,8 @@ Die Arten sind ausgedacht, haben aber reale Vorbilder. Die Zeit ist gestaucht: E
 Die Tierbilder liegen in `assets/` als `<name>_<f|m|j>_<haltung>.png` (Weibchen, Männchen,
 Jungtier). Format: PNG mit transparentem Hintergrund, Seitenansicht. Läuft ein Tier in die
 andere Richtung, wird gespiegelt. Jungtiere sind im Bild schon kleiner gezeichnet (gleiche
-Bildgröße wie die Erwachsenen).
+Bildgröße wie die Erwachsenen). `lighten` in `species.js` hellt zu dunkle Bilder beim Laden auf
+(Zwerghirsch: warmes Braun `#5a3c23`).
 
 | Art | Name | Blickrichtung | Gehen | Stehen | Fressen | Ruhen |
 |---|---|---|---|---|---|---|
@@ -26,7 +27,7 @@ Welche Haltung gezeigt wird (`js/render/agentRenderer.js`, `pose`):
 - **Fressen:** Die Tiere wechseln reihum zwischen Fressen und Stehen; ziehen sie schnell
   weiter, gehen sie. Trinken und Aas zeigen ebenfalls das Fressbild.
 - **Fliehen, Jagen, Streifen, Wandern:** Gehen (Adler: Fliegen), Stehen nur ohne Bewegung.
-- **Ruhen:** Liegen bzw. Sitzen; der Adler steht beim Ruhen.
+- **Ruhen:** Liegen bzw. Sitzen, ohne sich zu bewegen; der Adler steht beim Ruhen.
 - **Brüten:** Laufvögel am Nest wechseln zwischen Sitzen und Fressen. Brutvogel und Küken im
   Horst des Adlers sitzen.
 
