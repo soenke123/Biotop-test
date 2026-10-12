@@ -118,9 +118,9 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 | **1** | **Grundgerüst und Landung:** Karten als Ereignisse (`sim.play`, Chronik), Störungsfeld, Art-Merkmal `scheu`, Kartenleiste, Karte „Landung“ mit Schiff, erstem Haus und Siedlern, Tiere meiden das Dorf, Platzhalter-Grafiken | erledigt |
 | **2** | **Dorf vergrößern:** Schicht Nutzung (`js/eco/landuse.js`), Rodung zu Erde, nach Jahren Wiese, neue Häuser und Siedler, Pause zwischen den Karten | erledigt |
 | **3** | **Acker:** Ackerflächen mit Saison und Ernte, Hirsche fressen dort, Bilanz in der Chronik | erledigt |
-| 4 | **Ratten und Inselzahmheit:** Art-Merkmal `kennt`, Ratten als Feld, Gelegeraub, Ratten als Beute | |
-| 5 | **Schafe:** Weide mit Zaun, Schaf als Art, Wölfe reißen Schafe, Folgekarte „Schafe brechen aus“ | |
-| 6 | **Hunde:** Hütehunde (Störung), verwilderte Hunde als Art, Krankheit bei Wölfen | |
+| 4 | **Schafe:** Weide mit Zaun, Schaf als Art, Folgekarte „Schafe brechen aus“ (vorgezogen) | erledigt, ohne Wölfe an der Weide |
+| 5 | **Hunde:** Hütehunde (Störung), verwilderte Hunde als Art, Art-Merkmal `kennt` (vorgezogen) | erledigt, ohne Krankheit |
+| 6 | **Ratten:** Ratten als Feld, Gelegeraub, Ratten als Beute | |
 | 7 | **Jagd:** Wölfe jagen, Wild jagen, Siedler gegen Wolf | |
 | 8 | **Sammeln** | |
 | 9 | **Gegenmaßnahmen:** Katzen, Gift, Schutzgebiet (nach Absprache) | |
@@ -221,6 +221,39 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
   Acker am Grasland, fressen die Hirsche anfangs bis 45 %, liegt er im Wald, fast nichts. Mit dem
   Dorf wächst die Störung, dann bleiben die Hirsche meist weg. Auf 7 von 8 Inseln überleben alle
   Arten. Auf Insel 8919 sterben die Wölfe aus, das passiert dort auch ohne Menschen in 2 von 8 Läufen.
+
+### Schritt 4 und 5: Schafe und Hunde
+
+Vorgezogen vor die Ratten. Beide kommen **zuerst als Haustiere** und **brechen 4 Jahre später
+einmal aus**; danach leben sie als eingeschleppte Arten (`BT.SPECIES.schaf`, `.hund`,
+`introduced: true`, Startbestand 0) mit demselben Verhalten wie alle Arten. Werte und Begründung:
+`data/arten.md`.
+
+- **Karte „Schafweide“:** Von 30 Orten 130 bis 280 vom Dorf gewinnt der mit dem meisten Grasland
+  (Tussock, Wiese). Die Weide (Radius etwa 60, unregelmäßig) wird eingezäunt, das Land bleibt,
+  wie es ist. 12 Schafe ziehen darin umher und fressen tagsüber das Gras. Jede weitere Karte legt
+  eine neue Weide an.
+- **Karte „Hütehunde“:** 3 Hunde laufen zwischen Dorf und Weiden. Störung: ums Dorf 20 % weiter,
+  dazu um jede Weide (Umkreis 200).
+- **Folgekarten** (eco/humans.js `checkEscape`, einmal, 4 Jahre nach der ersten Karte der Sorte):
+  🐑 **Schafe brechen aus** (8 Schafe am Zaun), 🐕 **Hunde verwildern** (3 Hunde, 220 vom Dorf).
+  Im nächsten Frühjahr füllen die Siedler Weide und Hunde wieder auf.
+- **Inselzahmheit:** Art-Merkmal `kennt` (Räuber, vor denen eine Art flieht). Der Laufvogel kennt
+  nur Wolf und Adler, vor Hunden flieht er nicht.
+- **Platzhalter-Bilder:** Schafe sind eingefärbte Hirsche (pink-lila), Hunde eingefärbte Wölfe
+  (orange). Auch die Haustiere auf der Weide und im Dorf werden so gezeichnet.
+- **Oberfläche:** Kacheln für Schafe und Hunde erscheinen, sobald die Art auf der Insel ist; in
+  den Diagrammen stehen sie bei Pflanzenfressern bzw. Räubern. Keine Startregler für sie. Im
+  Reiter Menschen: Schafe auf den Weiden, Hütehunde.
+- `tools/balance.js … --karten=schafe@1,hunde@1` landet an der Westküste und spielt Karten zu
+  Jahresbeginn; `tools/shot.js … --landung=… --karten=schafe,hunde`.
+- **Noch nicht:** Wölfe reißen Schafe auf der Weide, Krankheit der Hunde bei Wölfen.
+- **Ergebnis** (8 Inseln × 30 Jahre, `--karten=schafe@1,hunde@1`): Die Insel kippt, und zwar
+  jedes Mal anders. Der **Adler stirbt auf 6 von 8 Inseln** aus (Jahr 21–30), weil die Hunde ihm
+  die Laufvögel wegnehmen. Die **Schafe** halten sich auf 3 von 8 Inseln; wo es kaum Wölfe gibt,
+  explodieren sie (bis 229). Die **Hunde** halten sich auf 5 von 8. Einmal sterben die Wölfe aus.
+  Nur mit Schafen überleben alle Arten auf 6 von 8 Inseln, nur mit Dorf auf 8 von 8.
+  **Ohne Karte läuft alles exakt wie vorher** (`balance.js 8 30` liefert dieselben Zahlen).
 
 ### Oberfläche: Reiter und Marken
 

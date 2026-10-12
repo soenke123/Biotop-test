@@ -108,6 +108,8 @@
     for (var i = 0; i < preds.length; i++) {
       var p = preds[i];
       if (!p.members.length || !p.spec.prey[spec.id]) continue;
+      // Inselzahm: vor fremden Raeubern (z. B. Hunden) flieht die Art nicht
+      if (spec.kennt && spec.kennt.indexOf(p.spec.id) < 0) continue;
       var d = dist(g, p);
       // Geflohen wird vor einem Raeuber, der genau diese Gruppe jagt, und vor
       // streifenden Landraeubern aus kurzer Distanz. Ruhende und

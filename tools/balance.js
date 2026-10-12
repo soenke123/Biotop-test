@@ -3,10 +3,12 @@
  * meldet, ob das Oekosystem haelt.
  *
  *   node tools/balance.js [seeds=6] [jahre=30] [--verlauf] [--size=mittel] [--seed=1000]
- *                         [--ohne=inselwolf,inseladler]
+ *                         [--ohne=inselwolf,inseladler] [--karten=schafe@1,hunde@3]
  *
  * --verlauf  zeigt fuer den ersten Seed die Bestaende am Ende jedes Jahres
  * --ohne     startet ohne diese Arten (z. B. Vergleich mit und ohne Raeuber)
+ * --karten   landet zu Beginn an der Kueste (nahe der Mitte der Westseite) und
+ *            spielt die Karten zu Beginn des angegebenen Jahres (ohne Pause)
  */
 const { load } = require('./load.js');
 const BT = load();
@@ -20,24 +22,56 @@ const pos = args.filter((a) => !a.startsWith('--'));
 const SEEDS = +(pos[0] || 6);
 const YEARS = +(pos[1] || 30);
 const size = flags.size || 'mittel';
-const ids = BT.SPECIES_ORDER;
+const cards = flags.karten ? String(flags.karten).split(',').map((c) => { const [id, y] = c.split('@'); return { id, year: +(y || 0) }; }) : [];
+// Eingeschleppte Arten (Schafe, Hunde) nur, wenn Karten gespielt werden
+const ids = BT.SPECIES_ORDER.filter((id) => !BT.SPECIES[id].introduced || cards.length);
 const without = flags.ohne ? String(flags.ohne).split(',') : [];
 const start = Object.fromEntries(without.map((id) => [id, 0]));
 const HEALTH = BT.FOOD_ORDER.filter((k) => BT.FOOD[k].damage);
-const short = { zwerghirsch: 'Hirsch', laufvogel: 'Vogel', inselwolf: 'Wolf', inseladler: 'Adler' };
+const short = { zwerghirsch: 'Hirsch', laufvogel: 'Vogel', inselwolf: 'Wolf', inseladler: 'Adler', schaf: 'Schaf', hund: 'Hund' };
+
+/** Landepunkt: die Kuestenzelle, die der Mitte der Westseite am naechsten liegt. */
+function coastPoint(world) {
+  let best = null, bestD = Infinity;
+  const tx = world.width * 0.1, ty = world.height * 0.5;
+  for (let gy = 0; gy < world.rows; gy++) {
+    for (let gx = 0; gx < world.cols; gx++) {
+      const i = gy * world.cols + gx;
+      if (!BT.BIOME_INFO[world.biome.data[i]].land || world.fields.distSea[i] > 1.5) continue;
+      const x = (gx + 0.5) * world.cellSize, y = (gy + 0.5) * world.cellSize;
+      const d = (x - tx) ** 2 + (y - ty) ** 2;
+      if (d < bestD) { bestD = d; best = { x, y }; }
+    }
+  }
+  return best;
+}
 
 const summary = [];
 for (let s = 0; s < SEEDS; s++) {
   const seed = flags.seed ? +flags.seed + s * 7919 : 1000 + s * 7919;
   const world = BT.World.generate(seed, { size });
   const t0 = Date.now();
-  const sim = new BT.Simulation(world, { start });
+  const sim = new BT.Simulation(world, cards.length ? { start, cardPause: 0 } : { start });
+  if (cards.length) {
+    const err = sim.play('landung', coastPoint(world));
+    if (err) console.log(`  ${seed}: Landung: ${err}`);
+    sim.runDays(10);
+  }
   const yearly = [];
   for (let y = 0; y < YEARS; y++) {
+    for (const c of cards) {
+      if (c.year !== y) continue;
+      const err = sim.play(c.id, {});
+      if (err) console.log(`  ${seed}: Karte ${c.id} in Jahr ${y}: ${err}`);
+    }
     sim.runDays(BT.Time.DAYS_PER_YEAR);
     const r = sim.stats.latest();
     yearly.push(r);
     if (ids.every((id) => r.count[id] === 0)) break;
+  }
+  if (cards.length) {
+    const ev = sim.events.filter((e) => BT.CARDS[e.card].kind !== 'info').map((e) => BT.CARDS[e.card].icon + ' J' + BT.Time.calendar(e.day).year + (e.at && e.at.text ? ' (' + e.at.text + ')' : ''));
+    console.log(`  ${seed}: ` + ev.join(' · '));
   }
   const ms = Date.now() - t0;
   const hist = sim.stats.history;

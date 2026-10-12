@@ -22,14 +22,28 @@
    * selbst den Umriss wieder aus.
    * Liest keine Pixel zurueck, funktioniert also auch unter file://.
    */
-  function lightened(img, color) {
+  /**
+   * tint: danach mit "color" einfaerben - Farbton und Saettigung kommen von der
+   * Farbe, die Helligkeit (Fell, Schatten, Konturen) bleibt vom Bild. So wird
+   * aus einem Hirsch ein bunter Platzhalter fuer eine andere Art.
+   */
+  function lightened(img, color, tint) {
     var c = global.document.createElement('canvas');
     c.width = img.width; c.height = img.height;
     var ctx = c.getContext('2d');
     ctx.drawImage(img, 0, 0);
-    ctx.globalCompositeOperation = 'screen';
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, c.width, c.height);
+    if (color) {
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, c.width, c.height);
+    }
+    if (tint) {
+      ctx.globalCompositeOperation = 'color';
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = tint;
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.globalAlpha = 1;
+    }
     ctx.globalCompositeOperation = 'destination-in';
     ctx.drawImage(img, 0, 0);
     return c;
@@ -42,14 +56,14 @@
         var sp = BT.SPECIES[id].sprites;
         if (!sp) return;
         KINDS.forEach(function (kind) {
-          for (var pose in sp.poses) load(key(id, kind, pose), 'assets/' + sp.name + '_' + kind + '_' + sp.poses[pose] + '.png', sp.lighten);
+          for (var pose in sp.poses) load(key(id, kind, pose), 'assets/' + sp.name + '_' + kind + '_' + sp.poses[pose] + '.png', sp.lighten, sp.tint);
         });
       });
-      function load(k, src, lighten) {
+      function load(k, src, lighten, tint) {
         if (images[k] !== undefined) return;
         images[k] = null;
         var img = new global.Image();
-        img.onload = function () { images[k] = lighten ? lightened(img, lighten) : img; if (onLoad) onLoad(k); };
+        img.onload = function () { images[k] = lighten || tint ? lightened(img, lighten, tint) : img; if (onLoad) onLoad(k); };
         img.src = src;
       }
     },

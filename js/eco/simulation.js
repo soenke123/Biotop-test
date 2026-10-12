@@ -697,12 +697,13 @@
   /**
    * Beutewechsel (Holling Typ III): Wird eine Beuteart selten, suchen die
    * Raeuber kaum noch gezielt nach ihr. Faktor 0..1 aus dem Bestand von gestern
-   * relativ zum Startbestand (bei spec.scarce mal Startbestand ist es 0,5).
+   * relativ zum Startbestand (bei spec.scarce mal Startbestand ist es 0,5,
+   * mindestens bei spec.scarceMin Tieren - fuer Arten ohne Startbestand).
    */
   Simulation.prototype.preyAvailability = function (id) {
     var row = this.stats.latest();
     var n = row ? row.count[id] : 0;
-    var h = Math.max(10, this.startCounts[id] * BT.SPECIES[id].scarce);
+    var h = Math.max(BT.SPECIES[id].scarceMin || 10, this.startCounts[id] * BT.SPECIES[id].scarce);
     return n * n / (n * n + h * h);
   };
 
@@ -722,7 +723,8 @@
     var out = {};
     for (var k = 0; k < BT.SPECIES_ORDER.length; k++) {
       var id = BT.SPECIES_ORDER[k];
-      out[id] = Math.max(2, Math.round(BT.SPECIES[id].start * factor));
+      // eingeschleppte Arten kommen erst mit den Menschen (Startbestand 0)
+      out[id] = BT.SPECIES[id].introduced ? 0 : Math.max(2, Math.round(BT.SPECIES[id].start * factor));
     }
     return out;
   };

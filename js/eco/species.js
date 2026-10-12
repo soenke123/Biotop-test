@@ -106,7 +106,10 @@
    *          (j = Jungtier). Haltungen: move, stand, eat, rest; fehlt `stand`,
    *          wird `move` genommen. facing: Blickrichtung der Bilder.
    *          lighten: hellt die Bilder auf (Farbe, mit der die dunklen Toene aufgehellt werden).
+   *          tint: faerbt die Bilder ein (Platzhalter: eine Art mit den Bildern einer anderen).
    * scheu:   wie stark die Art Menschen meidet (0..1, mal Stoerung, eco/humans.js)
+   * kennt:   Raeuber, vor denen die Art flieht (Inselzahmheit). Fehlt es, kennt sie alle.
+   * introduced: kommt erst mit den Menschen auf die Insel (Startbestand 0, eco/humans.js)
    */
   var Y = function (y) { return BT.Time.years(y); };
 
@@ -158,6 +161,7 @@
       speed: 3.2, fleeSpeed: 11, sprintTicks: 3,
       vision: 120,
       scheu: 0.2,                     // inselzahm: kennt keine Menschen
+      kennt: ['inselwolf', 'inseladler'],   // ... und keine Hunde: vor ihnen flieht er nicht
       searchRadius: 200,
       habitat: pref({ SCRUB: 1.0, FERN: 1.0, MOSS: 0.8, SWAMP: 0.9, TUSSOCK: 0.7, BEACH: 0.4, THERMAL: 0.3, ROCK: 0.1, PEAK: 0, MEADOW: 0.6, SOIL: 0.1, FIELD: 0.4 }),
       maturity: Y(1), maxAge: Y(7),
@@ -177,7 +181,7 @@
       color: '#7c7c86',
       group: { kind: 'pack', min: 1, max: 6, spread: 18, start: [3, 5] },
       start: 20,                      // Tiere, verteilt auf Rudel
-      prey: { zwerghirsch: 1.0, laufvogel: 0.15 },
+      prey: { zwerghirsch: 1.0, laufvogel: 0.15, schaf: 1.0 },
       // Wie sein Vorbild frisst er nebenher Insekten und Fruechte - das traegt
       // ihn durch Zeiten mit wenig Beute, reicht aber nicht fuer Nachwuchs
       diet: { frucht: 0.06, insekten: 0.06 },
@@ -214,8 +218,8 @@
       group: { kind: 'pair', min: 1, max: 3, spread: 30, start: [2, 2] },
       start: 12,                      // Tiere, verteilt auf Paare
       // Greift Jungtiere des Hirschs und Laufvoegel an, sieht nicht unter Baeume
-      prey: { laufvogel: 1.0, zwerghirsch: 0.25 },   // Kaelber selten: sonst fehlen sie den Woelfen
-      preyMaxAge: { zwerghirsch: Y(0.5) },
+      prey: { laufvogel: 1.0, zwerghirsch: 0.25, schaf: 0.25 },   // Kaelber selten: sonst fehlen sie den Woelfen
+      preyMaxAge: { zwerghirsch: Y(0.5), schaf: Y(0.5) },
       costPerDay: 0.03,
       winterCost: 0.005,
       thirstDays: 0,                  // trinkt nicht (Wasser aus der Beute)
@@ -255,7 +259,76 @@
     }
   };
 
-  BT.SPECIES_ORDER = ['zwerghirsch', 'laufvogel', 'inselwolf', 'inseladler'];
+  // ------------------------------------------------------------ mit den Menschen eingeschleppt
+  /*
+   * Startbestand 0. Sie kommen ueber die Karten "Schafweide" und "Huetehunde"
+   * auf die Insel und brechen nach einigen Jahren aus (eco/humans.js). Bis es
+   * eigene Bilder gibt, tragen sie die Bilder von Hirsch und Wolf, bunt eingefaerbt.
+   */
+  BT.SPECIES.schaf = {
+    id: 'schaf',
+    name: 'Schaf',
+    plural: 'Schafe',
+    role: 'herbivore',
+    introduced: true,
+    sprites: { name: 'hirsch', facing: 'right', lighten: '#8a8070', tint: '#e05ad8', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
+    size: 21,
+    color: '#e05ad8',
+    group: { kind: 'herd', min: 3, max: 24, spread: 24, start: [6, 6] },
+    start: 0,
+    scarce: 1.2,
+    scarceMin: 40,                    // Beutewechsel ohne Startbestand: bei 40 Schafen halb so gefragt
+    // Fressen das Gras sehr kurz und kommen mit wenig aus, Laub nur nebenher
+    diet: { gras: 0.12, laub: 0.05, korn: 0.12 },
+    bite: 0.42,
+    costPerDay: 0.045,
+    winterCost: 0.012,
+    thirstDays: 20,                   // braucht wenig Wasser (Tau, saftiges Gras)
+    speed: 3.5, fleeSpeed: 11.5, sprintTicks: 4,
+    vision: 150,
+    scheu: 0.4,                       // kennt Menschen, haelt aber Abstand
+    searchRadius: 240,
+    habitat: pref({ TUSSOCK: 1.0, MEADOW: 1.0, ROCK: 0.6, SCRUB: 0.5, BEACH: 0.4, THERMAL: 0.3, SWAMP: 0.2, FERN: 0.25, MOSS: 0.15, PEAK: 0.1, SOIL: 0.1, FIELD: 1.0 }),
+    maturity: Y(1), maxAge: Y(9),
+    breed: { kind: 'each-female', season: 0, day: 3, chance: 0.9, litter: [1, 2], minEnergy: 0.4, cost: 0.15 },
+    newbornEnergy: 0.6,
+    meat: 1.3
+  };
+
+  BT.SPECIES.hund = {
+    id: 'hund',
+    name: 'Hund',
+    plural: 'Hunde',
+    role: 'predator',
+    introduced: true,
+    sprites: { name: 'wolf', facing: 'left', lighten: '#5a4a30', tint: '#ff8c1a', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
+    size: 20,
+    color: '#ff8c1a',
+    group: { kind: 'pack', min: 1, max: 6, spread: 18, start: [3, 3] },
+    start: 0,
+    // Verwilderte Hunde jagen, was sie kriegen. Die Laufvoegel kennen sie nicht.
+    prey: { zwerghirsch: 0.8, schaf: 1.0, laufvogel: 0.3 },
+    diet: { frucht: 0.05, insekten: 0.05 },
+    bite: 0.15,
+    costPerDay: 0.045,
+    winterCost: 0.015,
+    thirstDays: 10,
+    speed: 6, chaseSpeed: 18,
+    vision: 220,
+    scheu: 0.3,                       // kennt die Menschen
+    huntChance: 0.3,
+    maxChaseTicks: 12,
+    territory: 340,
+    hungry: 0.7,
+    habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 0.9, MOSS: 0.8, SWAMP: 0.6, BEACH: 0.7, THERMAL: 0.6, ROCK: 0.6, PEAK: 0.1, MEADOW: 1, SOIL: 0.7, VILLAGE: 0.5, FIELD: 0.9 }),
+    maturity: Y(1), maxAge: Y(10),
+    breed: { kind: 'group-pair', season: 0, day: 6, chance: 0.85, litter: [2, 4], minEnergy: 0.5, cost: 0.15 },
+    newbornEnergy: 0.6,
+    disperse: { season: 2, minAge: Y(1), minGroup: 4, chance: 0.6 },
+    meat: 1.0
+  };
+
+  BT.SPECIES_ORDER = ['zwerghirsch', 'laufvogel', 'inselwolf', 'inseladler', 'schaf', 'hund'];
 
   function pref(byName) {
     var arr = new Array(BT.BIOME_INFO.length).fill(0);

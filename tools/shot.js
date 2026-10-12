@@ -10,6 +10,7 @@
  *
  *   --landung=fx,fy  vor dem Simulieren an dieser Stelle (Anteil der Welt) landen;
  *                    der Ausschnitt (cx, cy) kann dann z. B. auf das Dorf zeigen
+ *   --karten=schafe,hunde  nach der Landung (10 Tage spaeter) diese Karten spielen, ohne Pause
  */
 const path = require('path');
 let chromium;
@@ -42,6 +43,16 @@ try {
       return r;
     }, { fx, fy });
     if (err) errors.push('Landung: ' + err);
+  }
+  if (flags.karten) {
+    const errs = await page.evaluate((ids) => {
+      BT.app.runDays(10);
+      BT.app.sim.cardPause = 0;
+      const out = ids.map((id) => BT.app.play(id, {})).filter(Boolean);
+      BT.app.setRunning(false);
+      return out;
+    }, flags.karten.split(','));
+    errs.forEach((e) => errors.push('Karte: ' + e));
   }
   if (+days > 0) {
     const t0 = Date.now();

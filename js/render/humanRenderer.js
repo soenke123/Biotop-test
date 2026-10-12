@@ -1,5 +1,6 @@
 /**
- * Zeichnet die Menschen: Schiffe, Haeuser, Siedler.
+ * Zeichnet die Menschen: Schiffe, Haeuser, Siedler, Weiden mit Zaun,
+ * Schafe auf der Weide und Huetehunde (mit den Bildern der Arten schaf, hund).
  *
  * Bis es Bilder gibt, zeichnet das Programm einfache Platzhalter. Sobald eine
  * Grafik da ist, wird sie in FILES eingetragen (Pfad relativ zu index.html)
@@ -41,6 +42,10 @@
   function drawGround(ctx, sim, view, scale, alpha) {
     var H = sim && sim.humans;
     if (!H || !H.houses.length) return;
+    for (var k = 0; k < H.pastures.length; k++) {
+      var pa = H.pastures[k];
+      if (inView(pa, view, pa.r * 1.3)) drawPasture(ctx, sim, H, pa, view, scale, alpha);
+    }
     var hs = Math.max(HOUSE_SIZE, 18 / scale);
     for (var i = 0; i < H.houses.length; i++) {
       var h = H.houses[i];
@@ -53,6 +58,62 @@
       var q = lerp(p, alpha);
       if (inView(q, view, ps * 2)) drawSettler(ctx, p, q, ps);
     }
+    var hund = BT.SPECIES.hund, ds = Math.max(hund.size, 12 / scale);
+    for (i = 0; i < H.dogs.length; i++) {
+      var d = H.dogs[i], dq = lerp(d, alpha);
+      if (!inView(dq, view, ds * 2)) continue;
+      var moving = Math.abs(d.x - d.px) + Math.abs(d.y - d.py) > 0.5;
+      drawAnimal(ctx, hund, d.sex, moving ? 'move' : 'stand', d, dq, ds);
+    }
+  }
+
+  /** Weide: Zaun aus Pfosten und Latten, darin die Schafe. */
+  function drawPasture(ctx, sim, H, pa, view, scale, alpha) {
+    var N = 40, pts = [];
+    for (var k = 0; k < N; k++) {
+      var a = k / N * Math.PI * 2, r = H.pastureRadius(pa, a);
+      pts.push({ x: pa.x + Math.cos(a) * r, y: pa.y + Math.sin(a) * r });
+    }
+    ctx.lineWidth = Math.max(1.2, 1.6 / scale);
+    ctx.strokeStyle = '#6b4a2a';
+    for (var rail = 0; rail < 2; rail++) {
+      ctx.beginPath();
+      for (k = 0; k <= N; k++) {
+        var p = pts[k % N];
+        if (k === 0) ctx.moveTo(p.x, p.y - rail * 3); else ctx.lineTo(p.x, p.y - rail * 3);
+      }
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#4a3220';
+    var pw = Math.max(1.6, 2 / scale);
+    for (k = 0; k < N; k++) ctx.fillRect(pts[k].x - pw / 2, pts[k].y - 6, pw, 7);
+    var schaf = BT.SPECIES.schaf, ss = Math.max(schaf.size, 12 / scale);
+    for (k = 0; k < pa.sheep.length; k++) {
+      var s = pa.sheep[k], q = lerp(s, alpha);
+      if (!inView(q, view, ss * 2)) continue;
+      var moving = Math.abs(s.x - s.px) + Math.abs(s.y - s.py) > 0.4;
+      var pose = moving ? 'move' : s.eating ? 'eat' : H.night ? 'rest' : 'stand';
+      drawAnimal(ctx, schaf, s.young ? 'j' : s.sex, pose, s, q, s.young ? ss * 0.75 : ss);
+    }
+  }
+
+  /** Haustier mit dem Bild seiner Art (wie in agentRenderer), sonst ein farbiger Punkt. */
+  function drawAnimal(ctx, spec, kind, pose, o, q, size) {
+    var img = BT.Sprites && BT.Sprites.get(spec.id, kind, pose);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+    ctx.beginPath(); ctx.ellipse(q.x + size * 0.12, q.y + size * 0.42, size * 0.36, size * 0.14, 0, 0, Math.PI * 2); ctx.fill();
+    if (!img) {
+      ctx.fillStyle = spec.color;
+      ctx.beginPath(); ctx.arc(q.x, q.y, size * 0.3, 0, Math.PI * 2); ctx.fill();
+      return;
+    }
+    var facesRight = spec.sprites.facing !== 'left';
+    var h = size * img.height / img.width;
+    ctx.save();
+    ctx.translate(q.x, q.y);
+    if ((Math.cos(o.heading) < 0) === facesRight) ctx.scale(-1, 1);
+    ctx.drawImage(img, -size / 2, -h / 2, size, h);
+    ctx.restore();
   }
 
   /** Schiffe (ueber allem, sie fahren auf dem Meer). */
@@ -201,6 +262,17 @@
       var h = H.houses[i];
       d = Math.hypot(h.x - wx, h.y - wy);
       if (d < Math.max(bestD, HOUSE_SIZE * 0.6)) { bestD = d; best = { kind: 'haus', obj: h }; }
+    }
+    for (i = 0; i < H.dogs.length; i++) {
+      d = Math.hypot(H.dogs[i].x - wx, H.dogs[i].y - wy);
+      if (d < bestD) { bestD = d; best = { kind: 'hund', obj: H.dogs[i] }; }
+    }
+    for (var k = 0; k < H.pastures.length; k++) {
+      var pa = H.pastures[k];
+      for (i = 0; i < pa.sheep.length; i++) {
+        d = Math.hypot(pa.sheep[i].x - wx, pa.sheep[i].y - wy);
+        if (d < bestD) { bestD = d; best = { kind: 'schaf', obj: pa.sheep[i], pasture: pa }; }
+      }
     }
     for (i = 0; i < H.ships.length; i++) {
       var s = H.ships[i];

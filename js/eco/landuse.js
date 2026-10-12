@@ -171,5 +171,6 @@
     this.version++;
   };
 
+  Landuse.eachCell = eachCell;
   BT.Landuse = Landuse;
 })(typeof window !== 'undefined' ? window : globalThis);

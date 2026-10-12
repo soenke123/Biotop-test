@@ -56,14 +56,25 @@
       text: 'Mindestens ein Viertel des Getreides haben Tiere gefressen, bevor geerntet wurde.'
     },
     schafe: {
-      id: 'schafe', kind: 'aktiv', icon: '🐑', soon: true, needs: 'landung', repeat: true,
+      id: 'schafe', kind: 'aktiv', icon: '🐑', needs: 'landung', repeat: true,
       name: 'Schafweide',
-      text: 'Eine Weide mit Schafen. Wölfe lieben Schafe, und Schafe können ausbüchsen.'
+      text: 'Eine eingezäunte Weide mit Schafen nahe am Dorf. Die Schafe fressen das Gras kurz. Nach einigen Jahren büchsen Schafe aus.'
     },
     hunde: {
-      id: 'hunde', kind: 'aktiv', icon: '🐕', soon: true, needs: 'landung', repeat: true,
+      id: 'hunde', kind: 'aktiv', icon: '🐕', needs: 'landung', repeat: true,
       name: 'Hütehunde',
-      text: 'Hunde halten Wölfe und Hirsche fern. Aber Hunde können verwildern.'
+      text: 'Hunde bewachen Dorf und Weiden: Wölfe und Hirsche halten mehr Abstand. Nach einigen Jahren verwildern Hunde.'
+    },
+    // Folgekarten der Schafe und Hunde (eco/humans.js, einmal, einige Jahre nach der ersten Karte)
+    schafeAus: {
+      id: 'schafeAus', kind: 'folge', icon: '🐑',
+      name: 'Schafe brechen aus',
+      text: 'Eine kleine Herde ist aus der Weide entwischt. Die Schafe leben jetzt wild auf der Insel.'
+    },
+    hundeWild: {
+      id: 'hundeWild', kind: 'folge', icon: '🐕',
+      name: 'Hunde verwildern',
+      text: 'Ein kleines Rudel Hunde ist verwildert. Die Laufvögel kennen keine Hunde und fliehen nicht.'
     },
     woelfeJagen: {
       id: 'woelfeJagen', kind: 'aktiv', icon: '🏹', soon: true, needs: 'landung', repeat: true,

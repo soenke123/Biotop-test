@@ -23,6 +23,7 @@
       this.eggs[id] = 0;
     }
     this.extinct = {};
+    this.seen = {};             // Arten, die schon einmal auf der Insel waren
   }
 
   Stats.prototype.birth = function (id) { this.births[id]++; };
@@ -51,7 +52,8 @@
     }
     for (k = 0; k < BT.SPECIES_ORDER.length; k++) {
       id = BT.SPECIES_ORDER[k];
-      if (row.count[id] === 0 && this.extinct[id] == null && sim.startCounts[id] > 0) this.extinct[id] = sim.day;
+      if (row.count[id] > 0) this.seen[id] = true;
+      if (row.count[id] === 0 && this.extinct[id] == null && (sim.startCounts[id] > 0 || this.seen[id])) this.extinct[id] = sim.day;
     }
     this.history.push(row);
   };

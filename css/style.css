@@ -97,6 +97,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 .tile:hover { border-color: #2d6684; }
 .tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .tile.active { border-color: var(--accent); background: #1d5878; }
+.tile[hidden] { display: none; }
 
 .chart { margin-bottom: 12px; }
 .chart-head h3 { font-size: 12px; margin: 0 0 3px; font-weight: 600; opacity: 0.9; }

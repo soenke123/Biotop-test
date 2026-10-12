@@ -22,6 +22,13 @@ Bilder (Männchen, stehend).
 | Laufvogel | `laufvogel` | rechts | gehend | – (gehend) | essend | sitzend |
 | Inselwolf | `wolf` | links | gehend | stehend | essend | liegend |
 | Inseladler | `adler` | rechts | fliegend | stehend | essend | sitzend |
+| Schaf | `hirsch` (Platzhalter) | rechts | gehend | stehend | essend | liegend |
+| Hund | `wolf` (Platzhalter) | links | gehend | stehend | essend | liegend |
+
+Schaf und Hund haben noch keine eigenen Bilder. Sie tragen die Bilder von Hirsch und Wolf,
+bunt eingefärbt (`tint` in `species.js`, Füllmodus „color“: Farbton aus der Farbe, Helligkeit
+aus dem Bild): Schafe pink-lila `#e05ad8`, Hunde orange `#ff8c1a`. Sobald es Bilder gibt,
+`name` umstellen und `tint` entfernen.
 
 Welche Haltung gezeigt wird (`js/render/agentRenderer.js`, `pose`):
 
@@ -221,6 +228,44 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   einem Jahr ohne Partner. Höchstalter etwa 14 Jahre.
 - **Trinkt nicht** (Wasser aus der Beute).
 
+## Schaf (eingeschleppt)
+
+- **Vorbild:** verwilderte Hausschafe (Neuseeland, Hawaii).
+- **Kommt mit den Menschen:** Startbestand 0. Mit der Karte „Schafweide“ stehen 12 Schafe auf
+  einer eingezäunten Weide. Die gehören den Siedlern und zählen nicht zum Tierbestand, fressen
+  aber das Gras der Weide (0,25 je Tick und Schaf, tagsüber). **4 Jahre nach der ersten Weide**
+  brechen einmal 8 Schafe aus (Folgekarte 🐑 „Schafe brechen aus“). Die Siedler ersetzen sie im
+  nächsten Frühjahr, die Weide bleibt voll.
+- **Gruppe:** Herde (3–24). **Nahrung:** vor allem Gras (Energie 0,12), wenig Laub (0,05),
+  Getreide (0,12). Frisst kräftiger als der Hirsch (0,42 je Schritt), braucht weniger
+  (0,045 am Tag). Trinkt seltener (20 Tage ohne Wasser).
+- **Lebensraum:** Grasland und Wiese, auch Fels (0,6); Wald kaum. Geht dem Hirsch also genau dort
+  ins Gehege, wo der am liebsten weidet.
+- **Fortpflanzung:** jedes Weibchen, 1–2 Lämmer, Chance 0,9. Reif mit 1 Jahr, Höchstalter 9.
+- **Flucht:** 11,5, kürzer ausdauernd als der Hirsch. `scheu` 0,4 (kennt Menschen).
+- **Feinde:** Wolf (Gewicht 1,0), Hund (1,0), Adler (Lämmer bis ½ Jahr, 0,25).
+- **Beutewechsel ohne Startbestand:** `scarceMin` 40 – bei 40 Schafen sind sie für die Räuber
+  halb so gefragt. Mit 10 statt 40 wurde die kleine Herde fast immer aufgefressen, bevor sie
+  wachsen konnte.
+
+## Hund (eingeschleppt)
+
+- **Vorbild:** verwilderte Hunde, Dingo.
+- **Kommt mit den Menschen:** Startbestand 0. Mit der Karte „Hütehunde“ laufen 3 Hunde zwischen
+  Dorf und Weiden umher (jede weitere Karte 3 mehr). Sie stören stärker als die Menschen allein:
+  Die Störung ums Dorf reicht 20 % weiter, und um jede Weide liegt Störung im Umkreis von 200.
+  **4 Jahre nach den ersten Hütehunden** verwildern einmal 3 Hunde (Weibchen, Männchen, Weibchen;
+  Folgekarte 🐕 „Hunde verwildern“). Sie tauchen 220 vom Dorf entfernt auf und gründen ein Revier.
+  Die Siedler ersetzen die Hunde im nächsten Frühjahr.
+- **Wie der Wolf** (Rudel, Revier 340, Fortpflanzung nur das ranghöchste Paar, 2–4 Welpen), aber
+  reif schon mit 1 Jahr, `scheu` nur 0,3, und sie jagen auch nahe am Dorf.
+- **Beute:** Schaf 1,0, Hirsch 0,8, Laufvogel 0,3. **Die Laufvögel kennen keine Hunde**
+  (`kennt` beim Laufvogel: nur Wolf und Adler) und fliehen nicht vor ihnen.
+- **Folge:** Auf vielen Inseln stirbt einige Jahre danach der Adler aus – die Hunde nehmen
+  ihm die Laufvögel weg. Das ist gewollt (Neuseeland). Mit Laufvogel 0,15 verhungerten die
+  Hunde dagegen überall nach 2–3 Jahren.
+- Krankheit bei Wölfen: noch nicht umgesetzt.
+
 ## Scheu vor Menschen
 
 Seit Stufe 3 (`docs/MENSCH.md`) gibt es Menschen auf der Insel. Um jedes Haus liegt eine Störung
@@ -233,6 +278,8 @@ wo `Störung · scheu ≥ 0,3` ist.
 | Inselwolf | 0,9 | 170 ums Haus | meidet Menschen, jagt dort nicht |
 | Inseladler | 0,5 | 100 ums Haus | überfliegt das Dorf, jagt aber nicht direkt daneben |
 | Laufvogel | 0,2 | nie | **inselzahm**: kennt keine Menschen (Vorbild Dodo, Takahē) |
+| Schaf | 0,4 | 65 ums Haus | Haustier, hält aber Abstand |
+| Hund | 0,3 | nie | Haustier |
 
 Ohne Menschen hat `scheu` keine Wirkung.
 

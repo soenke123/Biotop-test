@@ -100,8 +100,11 @@
   }
 
   /** Regler und Anzeigen an startValues/recommended angleichen. */
+  // Startbestand gibt es nur fuer die Arten der Insel; Schafe und Hunde kommen mit den Menschen
+  var NATIVE = BT.SPECIES_ORDER.filter(function (id) { return !BT.SPECIES[id].introduced; });
+
   function syncStartSliders() {
-    BT.SPECIES_ORDER.forEach(function (id) {
+    NATIVE.forEach(function (id) {
       var rec = recommended[id] || BT.SPECIES[id].start;
       var max = Math.max(6, Math.ceil(rec * 3 / 2) * 2);
       var inp = doc.querySelector('#startInputs input[data-id="' + id + '"]');
@@ -312,6 +315,7 @@
   // ---------------------------------------------------------------- Seitenleiste
   var SERIES_COLOR = {
     zwerghirsch: '#d95926', laufvogel: '#3987e5', inselwolf: '#9085e9', inseladler: '#c98500',
+    schaf: '#d03fc8', hund: '#e07b00',
     gras: '#199e70', frucht: '#e66767', laub: '#008300', insekten: '#d55181'
   };
   var charts = [], bigCharts = [], chartView = null;
@@ -325,8 +329,8 @@
     }
     var count = function (id) { return function (r) { return r.count[id]; }; };
     return [
-      new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Pflanzenfresser', series: series(['zwerghirsch', 'laufvogel'], count) }),
-      new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Räuber', series: series(['inselwolf', 'inseladler'], count) }),
+      new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Pflanzenfresser', series: series(['zwerghirsch', 'laufvogel', 'schaf'], count) }),
+      new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Räuber', series: series(['inselwolf', 'inseladler', 'hund'], count) }),
       new BT.LineChart(box, {
         view: chartView, allowMean: allowMean, title: 'Nahrung (Anteil am Höchststand)', percent: true,
         series: ['gras', 'frucht', 'laub', 'insekten'].map(function (k) {
@@ -383,6 +387,12 @@
     }).join('');
   }
 
+  function sheepOnPastures(H) {
+    var n = 0;
+    for (var i = 0; i < H.pastures.length; i++) n += H.pastures[i].sheep.length;
+    return n;
+  }
+
   function updateCards() {
     if (!sim) return;
     BT.CARD_ORDER.forEach(function (id) {
@@ -401,6 +411,8 @@
       [H.people.length, 'Siedler'],
       [H.houses.length, H.houses.length === 1 ? 'Haus' : 'Häuser'],
       [H.fields.length, H.fields.length === 1 ? 'Acker' : 'Äcker'],
+      [sheepOnPastures(H), 'Schafe auf ' + (H.pastures.length === 1 ? 'der Weide' : H.pastures.length + ' Weiden')],
+      [H.dogs.length, 'Hütehunde'],
       [pct(lu.counts.gerodet / lu.woodyCells), 'des Waldes gerodet'],
       [last ? pct(last.share) : '–', 'der letzten Ernte von Tieren gefressen']
     ];
@@ -503,7 +515,7 @@
     buildCards();
 
     // Startbestand: ein Regler je Art, die Empfehlung ist als Strich markiert
-    $('startInputs').innerHTML = BT.SPECIES_ORDER.map(function (id) {
+    $('startInputs').innerHTML = NATIVE.map(function (id) {
       return '<div class="sv"><span class="sv-name"><i style="background:' + SERIES_COLOR[id] + '"></i>' + BT.SPECIES[id].plural + '</span>' +
         '<small id="rec-' + id + '" class="sv-rec"></small><b id="sv-' + id + '" class="sv-value"></b>' +
         '<div class="sv-track"><input type="range" min="0" step="1" data-id="' + id + '" aria-label="Startbestand ' + BT.SPECIES[id].plural + '">' +
@@ -521,11 +533,14 @@
     lastPanelUpdate = now;
     var row = sim.stats.latest();
     BT.SPECIES_ORDER.forEach(function (id) {
+      // Eingeschleppte Arten erscheinen erst, wenn sie auf der Insel sind
+      var tile = doc.querySelector('#tiles .tile[data-id="' + id + '"]');
+      tile.hidden = !!BT.SPECIES[id].introduced && !sim.stats.seen[id];
       $('count-' + id).textContent = row.count[id];
       var g = row.groups[id];
       var kind = { herd: ['Herde', 'Herden'], flock: ['Gruppe', 'Gruppen'], pack: ['Rudel', 'Rudel'], pair: ['Paar/Revier', 'Paare/Reviere'] }[BT.SPECIES[id].group.kind];
       $('sub-' + id).textContent = row.count[id] ? row.young[id] + ' Jungtiere · ' + g + ' ' + kind[g === 1 ? 0 : 1]
-        : sim.startCounts[id] ? 'ausgestorben in ' + BT.Time.label(sim.stats.extinct[id]).replace(/,.*/, '') : 'nicht auf der Insel';
+        : sim.stats.extinct[id] != null ? 'ausgestorben in ' + BT.Time.label(sim.stats.extinct[id]).replace(/,.*/, '') : 'nicht auf der Insel';
     });
     updateCharts();
     updateDeaths();
@@ -535,9 +550,10 @@
   }
 
   function updateDeaths() {
-    var causes = [['hunger', 'Hunger'], ['durst', 'Durst'], ['alter', 'Alter'], ['inselwolf', 'Wolf'], ['inseladler', 'Adler']];
+    var causes = [['hunger', 'Hunger'], ['durst', 'Durst'], ['alter', 'Alter'], ['inselwolf', 'Wolf'], ['inseladler', 'Adler'], ['hund', 'Hund']];
     var html = '<tr><th></th>' + causes.map(function (c) { return '<th>' + c[1] + '</th>'; }).join('') + '</tr>';
     BT.SPECIES_ORDER.forEach(function (id) {
+      if (BT.SPECIES[id].introduced && !sim.stats.seen[id]) return;
       var d = sim.stats.deaths[id];
       html += '<tr><td>' + BT.SPECIES[id].plural + '</td>' + causes.map(function (c) {
         return '<td>' + (d[c[0]] || '·') + '</td>';
@@ -672,6 +688,8 @@
     var hp = !a && sim ? BT.HumanRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale)) : null;
     if (hp) {
       text = hp.kind === 'haus' ? 'Haus · gebaut ' + BT.Time.label(hp.obj.day)
+        : hp.kind === 'schaf' ? 'Schaf auf der Weide (gehört den Siedlern)' + (sim.humans.escaped.schaf == null ? '' : ' · ein Teil der Herde ist ausgebüchst')
+        : hp.kind === 'hund' ? 'Hütehund (gehört den Siedlern)'
         : hp.kind === 'schiff' ? 'Schiff · ' + ({ anfahrt: 'fährt zur Küste', liegt: 'liegt vor Anker', abfahrt: 'fährt zurück' })[hp.obj.phase]
         : 'Siedler · ' + (hp.obj.working ? 'arbeitet' : 'unterwegs');
     } else if (a) {

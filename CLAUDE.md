@@ -8,7 +8,7 @@ beobachten und greifen ein. Das Konzept mit den Ausbaustufen und der Begründung
 Architektur steht in `docs/KONZEPT.md`. **Vor größeren Änderungen lesen.**
 
 Stand: Stufe 1 steht – Insel, Nahrungsfelder und vier Arten (Zwerghirsch, Laufvogel,
-Inselwolf, Inseladler) mit Herden, Rudeln, Revieren, Nestern, Adlerhorsten, Aas, Jahreszeiten.
+Inselwolf, Inseladler; dazu eingeschleppt über Karten: Schaf, Hund) mit Herden, Rudeln, Revieren, Nestern, Adlerhorsten, Aas, Jahreszeiten.
 **Vor jeder Arbeit an Tieren `data/arten.md` lesen** – dort stehen die Arten, ihre Werte und die
 Mechanismen, die das Ökosystem stabil halten. Werte, die im Code geändert werden, wandern
 zurück in die Datei.
@@ -83,6 +83,7 @@ node tools/balance.js 8 30
 node tools/balance.js 8 30 --ohne=inselwolf,inseladler   # Vergleich ohne Räuber
 node tools/shot.js /tmp/x.png 482917 mittel 1 0.5 0.5 300 [inselwolf,inseladler]
 node tools/shot.js /tmp/x.png 482917 mittel 4 0.2 0.46 300 --landung=0.17,0.5   # mit Dorf
+node tools/balance.js 8 30 --karten=schafe@1,hunde@1    # Menschen mit Karten
 ```
 
 `tools/shot.js` meldet Fehler aus der Browser-Konsole und endet dann mit Code 1. Nach
