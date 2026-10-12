@@ -106,6 +106,7 @@
     this.dogEscapes = [];           // Tage, an denen Hunde verwildern (einer je Karte "Huetehunde")
     this.escaped = {};              // { schaf: Tag, hund: Tag } des ersten Ausbruchs
     this.fence = null;              // Weidezaeune: 1 je Rasterzelle innerhalb einer Weide
+    this.waterDist = null;          // Abstand zum Suesswasser um die Zaeune herum (Zellen), sonst null
     var f = sim.fields;
     this.disturb = new Float32Array(f.cols * f.rows);
   }
@@ -544,9 +545,45 @@
     p.nextEscape = this.sim.day + BT.Time.years(cfg.escapeYears + this.rng.range(-cfg.escapeJitter, cfg.escapeJitter));
     this.pastures.push(p);
     this.buildFence(p);
+    this.buildWaterDist();
     if (this.sheepDay === null) this.sheepDay = this.sim.day;
     if (this.dogs.length) this.updateDisturbance();
     return { x: p.x, y: p.y, sheep: p.sheep.length };
+  };
+
+  /**
+   * Abstand zum Suesswasser, wenn die Weiden eingezaeunt sind: Wasser in einer
+   * Weide zaehlt nicht, und der Weg fuehrt um die Zaeune herum (Chamfer wie
+   * world.fields.distFresh, wiederholt, bis sich nichts mehr aendert).
+   */
+  Humans.prototype.buildWaterDist = function () {
+    var w = this.world, cols = w.cols, rows = w.rows, fresh = w.fields.distFresh, fence = this.fence;
+    var INF = 1e9, d = new Float32Array(cols * rows), D = 1.4142;
+    for (var i = 0; i < d.length; i++) d[i] = fence[i] ? INF : fresh[i] === 0 ? 0 : INF;
+    for (var pass = 0, changed = true; changed && pass < 40; pass++) {
+      changed = false;
+      for (var y = 0; y < rows; y++) for (var x = 0; x < cols; x++) {
+        i = y * cols + x;
+        if (fence[i] || d[i] === 0) continue;
+        var v = d[i];
+        if (x > 0) v = Math.min(v, d[i - 1] + 1);
+        if (y > 0) v = Math.min(v, d[i - cols] + 1);
+        if (x > 0 && y > 0) v = Math.min(v, d[i - cols - 1] + D);
+        if (x < cols - 1 && y > 0) v = Math.min(v, d[i - cols + 1] + D);
+        if (v < d[i]) { d[i] = v; changed = true; }
+      }
+      for (y = rows - 1; y >= 0; y--) for (x = cols - 1; x >= 0; x--) {
+        i = y * cols + x;
+        if (fence[i] || d[i] === 0) continue;
+        v = d[i];
+        if (x < cols - 1) v = Math.min(v, d[i + 1] + 1);
+        if (y < rows - 1) v = Math.min(v, d[i + cols] + 1);
+        if (x < cols - 1 && y < rows - 1) v = Math.min(v, d[i + cols + 1] + D);
+        if (x > 0 && y < rows - 1) v = Math.min(v, d[i + cols - 1] + D);
+        if (v < d[i]) { d[i] = v; changed = true; }
+      }
+    }
+    this.waterDist = d;
   };
 
   /** Zaun: alle Rasterzellen der Weide markieren. */

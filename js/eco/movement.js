@@ -44,11 +44,13 @@
 
   /**
    * Naechstes Suesswasser: dem Abstandsfeld bergab folgen und einen Punkt
-   * einige Zellen voraus liefern. null, wenn schon am Wasser.
+   * einige Zellen voraus liefern. null, wenn schon am Wasser. `field`
+   * (optional): ein anderes Abstandsfeld in Zellen, z. B. um Weidezaeune herum
+   * (eco/humans.js waterDist).
    */
-  function waterWaypoint(world, x, y, lookahead) {
+  function waterWaypoint(world, x, y, lookahead, field) {
     var cell = world.cellSize, cols = world.cols, rows = world.rows;
-    var dist = world.fields.distFresh;
+    var dist = field || world.fields.distFresh;
     var cx = Math.floor(x / cell), cy = Math.floor(y / cell);
     if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) return null;
     if (dist[cy * cols + cx] <= 1.5) return null;
@@ -69,8 +71,10 @@
     return { x: (cx + 0.5) * cell, y: (cy + 0.5) * cell };
   }
 
-  function atWater(world, x, y) {
-    return world.query.freshWaterDistance(x, y) <= world.cellSize * 2;
+  function atWater(world, x, y, field) {
+    if (!field) return world.query.freshWaterDistance(x, y) <= world.cellSize * 2;
+    var i = world.query.index(x, y);
+    return i >= 0 && field[i] <= 2;
   }
 
   BT.Move = {

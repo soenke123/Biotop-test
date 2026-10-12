@@ -125,8 +125,10 @@
    *               (wird beim Laden in deren prey eingetragen; ohne die Art wirkungslos)
    *   preyMaxAgeOf: { raeuber: Alter } - nur Jungtiere bis zu diesem Alter
    *   unknownTo:  [arten] - diese Arten kennen den Raeuber nicht und fliehen nicht (Inselzahmheit)
-   *   fallbackPrey: true - Raeuber jagen diese Art erst, wenn sie keine andere Beute sehen
-   * fleeToWater: so durstig (0..1), flieht die Gruppe zum Wasser, wenn das vom Raeuber weg liegt
+   *   easyPrey:   so viel leichter gelingt ein Angriff auf diese Art (Faktor auf den Jagderfolg)
+   * fleeToWater: [durstig, verzweifelt] (0..1): gejagt flieht die Gruppe zum Wasser, durstig nur vom
+   *          Raeuber weg, verzweifelt auch seitlich (nur nicht direkt auf ihn zu). Verzweifelt flieht
+   *          sie nur vor Raeubern naeher als 60 und geht sonst trinken
    */
   var Y = function (y) { return BT.Time.years(y); };
 
@@ -298,9 +300,11 @@
     start: 0,
     scarce: 1.2,
     scarceMin: 40,                    // Beutewechsel ohne Startbestand: bei 40 Schafen halb so gefragt
-    preyOf: { inselwolf: 1.0, inseladler: 0.25 },   // Woelfe reissen Schafe, Adler nur Laemmer
+    // Leichte Beute: Woelfe (und Hunde) nehmen Schafe lieber als Hirsche, Adler nur Laemmer.
+    // Wenige Schafe schuetzt der Beutewechsel (scarceMin): Ausreisser werden kaum gejagt.
+    preyOf: { inselwolf: 1.3, inseladler: 0.25 },
     preyMaxAgeOf: { inseladler: Y(0.5) },
-    fallbackPrey: true,               // erst Hirsche und Laufvoegel, dann Schafe
+    easyPrey: 1.4,                    // langsam, wenig wachsam, auf Zahmheit gezuechtet
     // Fressen das Gras bis auf die Grasnarbe (narbe: nur Schafe) und kommen mit wenig aus,
     // Laub nur nebenher
     diet: { gras: 0.12, laub: 0.05, korn: 0.12, narbe: 0.1 },
@@ -308,7 +312,7 @@
     costPerDay: 0.035,                // genuegsam: Hirsch 0,05
     winterCost: 0.008,                // Wolle: Hirsch 0,015
     thirstDays: 20,                   // braucht wenig Wasser (Tau, saftiges Gras)
-    fleeToWater: 0.6,
+    fleeToWater: [0.5, 0.7],         // gejagt und durstig: zum Wasser fliehen (eco/behavior.js)
     speed: 3.5, fleeSpeed: 11.5, sprintTicks: 4,
     vision: 150,
     scheu: 0.4,                       // kennt Menschen, haelt aber Abstand
@@ -335,7 +339,7 @@
     start: 0,
     scheu: 0.3,                       // kennt die Menschen
     huntChance: 0.36,                 // Wolf 0,32
-    prey: { zwerghirsch: 1.0, schaf: 1.0, laufvogel: 0.6 },   // Laufvoegel: leichte Beute, sie fliehen nicht
+    prey: { zwerghirsch: 1.0, schaf: 1.3, laufvogel: 0.6 },   // Laufvoegel: leichte Beute, sie fliehen nicht
     unknownTo: ['laufvogel'],
     /*
      * Krankheit (Vorbild Staupe): Die Hunde selbst erkranken nicht. Jeden Tag steckt

@@ -311,7 +311,7 @@
       this.moveMembers(g);
       var spec = g.spec;
       // Wer am Wasser vorbeikommt, trinkt
-      var drinks = spec.thirstDays && BT.Move.atWater(this.world, g.x, g.y);
+      var drinks = spec.thirstDays && BT.Move.atWater(this.world, g.x, g.y, this.humans.waterDist);
       var onThermal = this.biomeAt(g.x, g.y) === BT.BIOME.THERMAL;
       var cost = (spec.costPerDay + (winter ? spec.winterCost * this.weatherNow.winter * (onThermal ? 0.3 : 1) : 0)) * perTick;
       var thirst = spec.thirstDays ? perTick / spec.thirstDays : 0;
