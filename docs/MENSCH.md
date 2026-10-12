@@ -264,21 +264,20 @@ zum ersten Mal aus, danach immer wieder**; sie leben dann als eingeschleppte Art
 - `tools/balance.js … --karten=schafe@1,hunde@1` landet an der Westküste und spielt Karten zu
   Jahresbeginn; `tools/shot.js … --landung=… --karten=schafe,hunde`.
 - **Fassen sie Fuß?** (`node tools/invasion.js 8 30 --karten=…`, Vergleich: dieselbe Insel nur
-  mit Landung; Mittel der letzten 10 Jahre, Median über 8 Inseln)
+  mit Landung; Mittel der letzten 10 Jahre, Median über 8 Inseln). Stand nach der zweiten
+  Abstimmung (genügsame Schafe, Grasnarbe, 1–2 Lämmer, Flucht zum Wasser, Schafe als
+  Ausweichbeute, Hunde jagen Laufvögel 0,6):
 
   | Karten | Schafe etabliert (≥ 20 am Ende) | Hunde etabliert (Rudel mit Revier) | Hirsch | Laufvogel | Wolf | Adler |
   |---|---|---|---|---|---|---|
-  | nur Schafe | 8 von 8 (23–98, Spitzen bis 375) | – | 97 % | 95 % | 93 % | stark schwankend |
-  | nur Hunde | – | 8 von 8 (3–11 Rudel) | mehr | 100 % | **Wölfe sterben auf 7 von 8 Inseln aus** | 62 % |
-  | Schafe und Hunde | 6 von 8 | 8 von 8 | 75 % | 71 % | **0 %** (alle 8 Inseln) | 45 % |
+  | nur Schafe | 8 von 8 (24–484, Spitzen 130–935) | – | **69 %** | 84 % | 65 % | schwankt stark |
+  | nur Hunde | – | 8 von 8 (6–11 Rudel) | 79 % | 72 % | **0 %** (7 von 8 ausgestorben) | **2 %** (6 von 8) |
+  | Schafe und Hunde | 6 von 8 | 8 von 8 | **47 %** | **44 %** | **2 %** | **10 %** |
 
-  Die Hunde verdrängen die Wölfe immer (Staupe und Konkurrenz, nach 12 bis 30 Jahren). Die Schafe
-  halten sich, verdrängen die Hirsche aber nicht: Sie vermehren sich stark, fressen das Grasland
-  kahl und brechen ein (viele verhungern; gehetzt von Hunden und Wölfen kommen viele nicht zum
-  Trinken). Die Hirsche weichen in Busch und Wald aus. Probeläufe nur mit Schafen: genügsamere
-  Schafe (`costPerDay` 0,035, `winterCost` 0,008) → Hirsch 73 %; mehr Laub und Busch (Laub 0,08,
-  Busch 0,9, Farnwald 0,5, Moos 0,4) → 79 %; beides zusammen → 95 % (Rauschen: 8 Inseln reichen
-  für kleine Unterschiede nicht).
+  Vorher (erste Fassung): nur Schafe Hirsch 97 %; Schafe und Hunde Hirsch 75 %, Laufvogel 71 %,
+  Wolf 0 %, Adler 45 %. Die Hunde verdrängen jetzt Wölfe und Adler (sie fressen die Laufvögel weg),
+  Schafe und Hunde zusammen drücken Hirsche und Laufvögel auf etwa die Hälfte. Die Schafe schwanken
+  stark: Sie vermehren sich auf mehrere Hundert, fressen das Grasland kahl und brechen wieder ein.
 - **Noch nicht:** Wölfe reißen Schafe auf der Weide.
 - **Mit Schafen und Hunden darf das Ökosystem kippen.** Die Werte sind noch nicht abgestimmt
   (das Testen übernimmt die Projektleitung). **Ohne Karte läuft alles exakt wie vorher.**
