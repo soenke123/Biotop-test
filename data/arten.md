@@ -271,7 +271,7 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   ½ Jahr** (Hirsch 1 Jahr), Höchstalter 9.
 - **Flucht:** 11,5. `scheu` 0,4 (kennt Menschen).
 - **Feinde** (`preyOf`): **Wolf 1,3**, Hund 1,3 (lieber als Hirsch, 1,0), Adler 0,25 (nur Lämmer
-  bis ½ Jahr). **Leichte Beute** (`easyPrey` 1,4): Ein Angriff auf Schafe gelingt 1,4-mal so oft
+  bis ½ Jahr). **Leichte Beute** (`easyPrey` 1,2; mit 1,4 hielten die Wölfe die Schafe bei etwa 70): Ein Angriff auf Schafe gelingt 1,2-mal so oft
   (langsam, wenig wachsam). Wenige Schafe schützt der Beutewechsel (`scarceMin`), deshalb werden
   frisch ausgebrochene Schafe kaum gejagt. Erst wenn es viele gibt, fressen die Räuber sie bevorzugt –
   und vermehren sich dabei, was auch die Hirsche trifft (scheinbare Konkurrenz).

@@ -304,7 +304,7 @@
     // Wenige Schafe schuetzt der Beutewechsel (scarceMin): Ausreisser werden kaum gejagt.
     preyOf: { inselwolf: 1.3, inseladler: 0.25 },
     preyMaxAgeOf: { inseladler: Y(0.5) },
-    easyPrey: 1.4,                    // langsam, wenig wachsam, auf Zahmheit gezuechtet
+    easyPrey: 1.2,                    // langsam, wenig wachsam, auf Zahmheit gezuechtet
     // Fressen das Gras bis auf die Grasnarbe (narbe: nur Schafe) und kommen mit wenig aus,
     // Laub nur nebenher
     diet: { gras: 0.12, laub: 0.05, korn: 0.12, narbe: 0.1 },

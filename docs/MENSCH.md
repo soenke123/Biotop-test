@@ -289,6 +289,11 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
 
   Die Wölfe halten die Schafe jetzt klein (sie reißen 200 bis 600 Schafe in 30 Jahren) und werden
   dabei etwas zahlreicher; die Hirsche sinken um etwa 10 % (scheinbare Konkurrenz, schwach).
+- **Vierte Abstimmung:** Schafe weniger leichte Beute (`easyPrey` 1,2 statt 1,4), nur Schafe, 24 Inseln:
+  auf 11 Inseln halten sich die Schafe (Mittel 104), dort Hirsch 74 %, Laufvogel 98 %, Wolf 122 %,
+  Adler 82 %. Auf den 13 Inseln, wo sie aussterben: Hirsch 116 %, Wolf 70 %. Die meisten Schafe
+  verhungern im Sommer nach der Lammzeit (4 Inseln: Frühling 556, Sommer 991, Herbst 494, Winter
+  668), nicht im Winter; robustere Schafe im Winter würden wenig ändern.
 - **Noch nicht:** Wölfe reißen Schafe auf der Weide.
 - **Mit Schafen und Hunden darf das Ökosystem kippen.** Die Werte sind noch nicht abgestimmt
   (das Testen übernimmt die Projektleitung). **Ohne Karte läuft alles exakt wie vorher.**
