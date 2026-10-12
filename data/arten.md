@@ -13,7 +13,8 @@ Die Tierbilder liegen in `assets/` als `<name>_<f|m|j>_<haltung>.png` (Weibchen,
 Jungtier). Format: PNG mit transparentem Hintergrund, Seitenansicht. Läuft ein Tier in die
 andere Richtung, wird gespiegelt. Jungtiere sind im Bild schon kleiner gezeichnet (gleiche
 Bildgröße wie die Erwachsenen). `lighten` in `species.js` hellt zu dunkle Bilder beim Laden auf
-(Zwerghirsch: warmes Braun `#5a3c23`).
+(Zwerghirsch: dunkles Graubraun `#3c322a`). Die Kacheln in der Seitenleiste zeigen dieselben
+Bilder (Männchen, stehend).
 
 | Art | Name | Blickrichtung | Gehen | Stehen | Fressen | Ruhen |
 |---|---|---|---|---|---|---|

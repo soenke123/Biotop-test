@@ -93,7 +93,6 @@
 
   // ------------------------------------------------------------ Arten
   /*
-   * sprite:  Bild fuer die Kachel in der Seitenleiste
    * sprites: Bilder auf der Karte, assets/<name>_<f|m|j>_<Datei der Haltung>.png
    *          (j = Jungtier). Haltungen: move, stand, eat, rest; fehlt `stand`,
    *          wird `move` genommen. facing: Blickrichtung der Bilder.
@@ -107,8 +106,7 @@
       name: 'Zwerghirsch',
       plural: 'Zwerghirsche',
       role: 'herbivore',
-      sprite: 'assets/hirsch_m_stehend.png',
-      sprites: { name: 'hirsch', facing: 'right', lighten: '#5a3c23', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
+      sprites: { name: 'hirsch', facing: 'right', lighten: '#3c322a', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
       size: 24,                       // Weltunits (Darstellung)
       color: '#c9874a',
       group: { kind: 'herd', min: 2, max: 16, spread: 26, start: [5, 10] },
@@ -135,7 +133,6 @@
       name: 'Laufvogel',
       plural: 'Laufvögel',
       role: 'herbivore',
-      sprite: 'assets/laufvogel_m_gehend.png',
       sprites: { name: 'laufvogel', facing: 'right', poses: { move: 'gehend', eat: 'essend', rest: 'sitzend' } },
       size: 18,
       color: '#5d8fc9',
@@ -163,7 +160,6 @@
       name: 'Inselwolf',
       plural: 'Inselwölfe',
       role: 'predator',
-      sprite: 'assets/wolf_m_stehend.png',
       sprites: { name: 'wolf', facing: 'left', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
       size: 22,
       color: '#7c7c86',
@@ -198,7 +194,6 @@
       name: 'Inseladler',
       plural: 'Inseladler',
       role: 'predator',
-      sprite: 'assets/adler_m_stehend.png',
       sprites: { name: 'adler', facing: 'right', poses: { move: 'fliegend', stand: 'stehend', eat: 'essend', rest: 'sitzend' } },
       size: 22,
       color: '#b0703a',
