@@ -156,7 +156,12 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   eingeschaltet werden.
 - **Abwanderung:** Im Herbst verlassen junge Wölfe Rudel ab 4 Tieren (jeder mit 60 %). Wanderer suchen Artgenossen,
   schließen sich Rudeln an, denen ein Geschlecht fehlt, und gründen mit Partner ein Revier, wo
-  Platz ist. Wanderer werden aus fremden Revieren vertrieben.
+  Platz ist. Wanderer mit Partner steuern gezielt freien Platz an. Aus fremden Revieren werden
+  Wanderer vertrieben und jagen dort nicht. Anders als bei Adlern ist das auch in der Natur so:
+  Wolfsrudel verteidigen ihr ganzes Revier, und Kämpfe mit fremden Rudeln sind bei Wölfen eine
+  der häufigsten natürlichen Todesursachen. Getestet wurde, Wanderer in den Randzonen fremder
+  Reviere jagen zu lassen (außerhalb von 270 um die Reviermitte). Das war deutlich schlechter
+  (35 statt 42 von 48 Läufen überleben).
 
 ## Inseladler
 
@@ -181,8 +186,17 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   Am Horst jagen die Adler fast ununterbrochen (unter 95 % Energie) und erfolgreicher (× 1,3,
   sie kennen die Umgebung genau), aber nur im Umkreis von 300 um den Horst. Die Brutzeit fällt
   auf die Zeit, in der die Laufvögel ihre Küken haben.
-- **Revier gründen:** Junge Adler ohne Revier tun sich mit einem Partner des anderen Geschlechts
-  zusammen, nie mit Artgenossen desselben Geschlechts. Ein junges Paar besetzt ein freies Revier
+- **Junge Adler ohne Revier (Floater)** werden geduldet, wie bei echten Steinadlern. Sie jagen
+  überall, auch in fremden Revieren, und werden nur aus der Nähe eines fremden Horsts
+  vertrieben (Umkreis 150). Bis sie erwachsen sind, jagen sie ungeübt (Jagderfolg × 0,6).
+- **Konkurrenz:** Jagen andere Adler im Umkreis von 250 um die Beute, gelingt ein Angriff
+  seltener (Erfolg geteilt durch 1 + 0,4 × Zahl der anderen Adler). Die Beute wird früher
+  gewarnt, Beute wird streitig gemacht. Ohne diese Bremse sammeln sich in guten Jahren bis zu
+  20 Floater an, fressen die Laufvögel leer und verhungern danach alle.
+- **Revier gründen:** Junge Adler ohne Revier suchen einen Partner des anderen Geschlechts.
+  Sie fliegen nur zu Artgenossen, denen genau ihr Geschlecht fehlt, und tun sich nie mit
+  Artgenossen desselben Geschlechts zusammen. Hat ein Wanderer einen Partner, steuert das Paar
+  gezielt freien Platz an. Ein junges Paar besetzt ein freies Revier
   und brütet, sobald beide erwachsen sind (2 Jahre). Wer ein Revier hat, verliert es erst nach
   einem Jahr ohne Partner. Höchstalter etwa 14 Jahre.
 - **Trinkt nicht** (Wasser aus der Beute).
@@ -236,6 +250,16 @@ Hirsche, das Grasland leidet. Erholen sich die Wölfe, sinken die Hirsche, und d
 Adler, Laufvögel und Insekten zusammen.
 
 ## Abstimmung (Stand)
+
+**Floater, Konkurrenz, Partnersuche** (48 Inseln, gleiche Läufe wie unten):
+
+- alle Arten überleben: 42 von 48 (wie vorher); Adler sterben aus: 4-mal (wie vorher), alle erst
+  nach Jahr 16, meist nach Jahr 27
+- Adler im Mittel 13–16, Laufvögel 230–250, Zustand der Insekten 89–93 %
+- Größere Adlerreviere (400 statt 330) oder stärkere Konkurrenz (0,7) brachten keine Verbesserung,
+  die Unterschiede lagen im Zufallsrauschen.
+- Die Simulation ist chaotisch: Ob eine Art auf einer Insel ausstirbt, hängt stark vom Zufall
+  ab. Unterschiede von 1–2 Läufen in 48 sind kein Beleg.
 
 **Horst-System der Adler** (48 Inseln über 30 Jahre: `balance.js 8 30`, `16 30 --seed=5000`,
 `24 30 --seed=9000`; vorher → nachher):
