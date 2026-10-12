@@ -205,6 +205,12 @@
       huntChance: 0.3,
       maxChaseTicks: 6,
       territory: 330,
+      // Junge Adler ohne Revier (Floater) werden geduldet: sie jagen ueberall,
+      // nur nicht naeher als `core` am Horst eines Paares, und sind bis zum
+      // Erwachsenenalter ungeuebt (Jagderfolg mal `skill`)
+      floater: { core: 150, skill: 0.6 },
+      // Je mehr andere Adler im Umkreis jagen, desto seltener gelingt ein Angriff
+      crowding: { radius: 250, k: 0.4 },
       hungry: 0.65,
       habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 1, BEACH: 1, THERMAL: 1, ROCK: 1, PEAK: 1 }),
       maturity: Y(2), maxAge: Y(14),

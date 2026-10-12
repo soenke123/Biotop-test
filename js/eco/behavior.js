@@ -196,11 +196,19 @@
     return preyGroup.members.filter(function (m) { return m.age <= maxAge; });
   }
 
+  /**
+   * Liegt der Punkt in einem fremden Revier, aus dem der Wanderer vertrieben
+   * wird? Woelfe verteidigen das ganze Revier. Adler dulden junge Artgenossen
+   * ohne Revier (spec.floater) und vertreiben sie nur aus der Naehe des Horsts.
+   */
   function insideForeignTerritory(sim, g, x, y) {
+    var spec = g.spec;
+    var r = spec.floater ? spec.floater.core : spec.territory;
     for (var i = 0; i < sim.predatorGroups.length; i++) {
       var o = sim.predatorGroups[i];
-      if (o === g || o.spec !== g.spec || !o.home || !o.members.length) continue;
-      if (BT.M.hypot(o.home.x - x, o.home.y - y) < g.spec.territory) return true;
+      if (o === g || o.spec !== spec || !o.home || !o.members.length) continue;
+      var c = o.horst || o.home;
+      if (BT.M.hypot(c.x - x, c.y - y) < r) return true;
     }
     return false;
   }
@@ -253,8 +261,21 @@
     hunters = Math.max(1, Math.min(hunters, 5));
     var p = 1 - BT.M.pow(1 - spec.huntChance, hunters);
     if (g.horst) p = Math.min(1, p * spec.horst.huntBonus);
+    // Junge Wanderer sind ungeuebt und erwischen seltener etwas
+    if (spec.floater && !g.home && maxOf(g.members, 'age') < spec.maturity) p *= spec.floater.skill;
     p *= 1 - COVER[sim.world.query.biomeAt(prey.x, prey.y)] * (spec.flies ? 0.9 : 0.4);
     p /= 1 + 0.03 * (prey.members.length - 1);           // Wachsamkeit der Gruppe
+    // Konkurrenz: Jagen viele Artgenossen in der Naehe, wird die Beute frueher
+    // gewarnt und Beute streitig gemacht - der Jagderfolg sinkt
+    var crowd = spec.crowding;
+    if (crowd) {
+      var near = 0;
+      for (i = 0; i < sim.predatorGroups.length; i++) {
+        var o = sim.predatorGroups[i];
+        if (o !== g && o.spec === spec && o.members.length && BT.M.hypot(o.x - prey.x, o.y - prey.y) < crowd.radius) near++;
+      }
+      p /= 1 + crowd.k * near;
+    }
     // Gut genaehrte Beute entkommt leichter, ausgehungerte kaum: Raeuber
     // haben es leicht, wenn die Pflanzenfresser ihre Weiden kahl gefressen haben
     p *= 1.1 - 0.3 * avg(victims, 'energy');
@@ -306,17 +327,55 @@
    * Wanderer ohne Revier suchen Artgenossen: Ziel ist die naechste Gruppe der
    * eigenen Art, der ein Geschlecht fehlt, oder ein anderer Wanderer.
    */
+  function isF(a) { return a.sex === 'f'; }
+  function isM(a) { return a.sex === 'm'; }
+
   function mateSearchPoint(sim, g) {
     var best = null, bestD = Infinity;
+    var pairs = g.spec.group.kind === 'pair';
+    var hasF = g.members.some(isF), hasM = g.members.some(isM);
+    if (pairs && hasF && hasM) return null;
     for (var i = 0; i < sim.predatorGroups.length; i++) {
       var o = sim.predatorGroups[i];
       if (o === g || o.spec !== g.spec || !o.members.length) continue;
-      var lacks = !o.home || o.members.length < 2 || o.members.every(function (a) { return a.sex === o.members[0].sex; });
+      var lacks;
+      if (pairs) {
+        // Paare: nur dorthin, wo genau das eigene Geschlecht fehlt - sonst
+        // folgen sich zwei junge Maennchen gegenseitig ueber die Insel
+        if (o.horst) continue;
+        lacks = (hasF && !o.members.some(isF)) || (hasM && !o.members.some(isM));
+      } else {
+        lacks = !o.home || o.members.length < 2 || o.members.every(function (a) { return a.sex === o.members[0].sex; });
+      }
       if (!lacks) continue;
       var d = BT.M.hypot(o.x - g.x, o.y - g.y);
       if (d < bestD) { bestD = d; best = o; }
     }
     return best ? { x: best.x, y: best.y } : null;
+  }
+
+  /**
+   * Wanderer mit Partner suchen gezielt freien Platz fuer ein Revier: der
+   * naechste von einigen Punkten, der weit genug von allen Revieren liegt.
+   */
+  function freeHomePoint(sim, g) {
+    var spec = g.spec;
+    var mature = spec.group.kind === 'pair' ? 0 : spec.maturity;
+    var f = false, m = false;
+    for (var i = 0; i < g.members.length; i++) {
+      var a = g.members[i];
+      if (a.age < mature) continue;
+      if (a.sex === 'f') f = true; else m = true;
+    }
+    if (!f || !m) return null;
+    var best = null, bestD = Infinity;
+    for (var t = 0; t < 12; t++) {
+      var p = randomPointNear(sim, spec, g.x, g.y, spec.territory * 3);
+      if (spec.habitat[sim.world.query.biomeAt(p.x, p.y)] <= 0 || !sim.homeIsFree(spec, p.x, p.y)) continue;
+      var d = BT.M.hypot(p.x - g.x, p.y - g.y);
+      if (d < bestD) { bestD = d; best = p; }
+    }
+    return best;
   }
 
   /** Zum naechsten Aas gehen und fressen. true, solange damit beschaeftigt. */
@@ -446,7 +505,7 @@
     if (g.tx === null || BT.M.hypot(g.tx - g.x, g.ty - g.y) < 20 || g.stateTicks-- <= 0) {
       var area = huntArea(g);
       var p;
-      if (!area) p = mateSearchPoint(sim, g) || randomPointNear(sim, spec, g.x, g.y, spec.territory * 2.5);
+      if (!area) p = mateSearchPoint(sim, g) || freeHomePoint(sim, g) || randomPointNear(sim, spec, g.x, g.y, spec.territory * 2.5);
       else if (energy < hungry * 1.15) p = preyRichPoint(sim, g, area, area.r);
       else p = randomPointNear(sim, spec, area.x, area.y, area.r);
       g.tx = p.x; g.ty = p.y;
