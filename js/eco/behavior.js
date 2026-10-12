@@ -324,29 +324,22 @@
   }
 
   /**
-   * Wanderer ohne Revier suchen Artgenossen: Ziel ist die naechste Gruppe der
-   * eigenen Art, der ein Geschlecht fehlt, oder ein anderer Wanderer.
+   * Wanderer ohne Revier suchen einen Partner: Ziel ist die naechste Gruppe
+   * der eigenen Art, der genau das eigene Geschlecht fehlt. Wanderer desselben
+   * Geschlechts suchen sich nicht gegenseitig - sonst folgen sich zwei junge
+   * Maennchen ueber die Insel, oder es bilden sich Trupps ohne Nachwuchs.
    */
   function isF(a) { return a.sex === 'f'; }
   function isM(a) { return a.sex === 'm'; }
 
   function mateSearchPoint(sim, g) {
     var best = null, bestD = Infinity;
-    var pairs = g.spec.group.kind === 'pair';
     var hasF = g.members.some(isF), hasM = g.members.some(isM);
-    if (pairs && hasF && hasM) return null;
+    if (hasF && hasM) return null;
     for (var i = 0; i < sim.predatorGroups.length; i++) {
       var o = sim.predatorGroups[i];
-      if (o === g || o.spec !== g.spec || !o.members.length) continue;
-      var lacks;
-      if (pairs) {
-        // Paare: nur dorthin, wo genau das eigene Geschlecht fehlt - sonst
-        // folgen sich zwei junge Maennchen gegenseitig ueber die Insel
-        if (o.horst) continue;
-        lacks = (hasF && !o.members.some(isF)) || (hasM && !o.members.some(isM));
-      } else {
-        lacks = !o.home || o.members.length < 2 || o.members.every(function (a) { return a.sex === o.members[0].sex; });
-      }
+      if (o === g || o.spec !== g.spec || !o.members.length || o.horst) continue;
+      var lacks = (hasF && !o.members.some(isF)) || (hasM && !o.members.some(isM));
       if (!lacks) continue;
       var d = BT.M.hypot(o.x - g.x, o.y - g.y);
       if (d < bestD) { bestD = d; best = o; }

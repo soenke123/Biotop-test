@@ -548,12 +548,10 @@
         ng.state = 'wandern';
       }
     }
-    var other = this.nearestGroupOf(spec, g, 260, function (o) {
+    if (!pairs && this.joinPack(g)) return;
+    var other = pairs && !(f && m) && this.nearestGroupOf(spec, g, 260, function (o) {
       if (o.members.length + g.members.length > spec.group.max || o.horst) return false;
-      var of = count(o, 'f'), om = count(o, 'm');
-      var completes = (!of && count(g, 'f')) || (!om && count(g, 'm'));
-      if (pairs) return completes && !(f && m);
-      return completes || !o.home || o.members.length < 2;
+      return (!count(o, 'f') && count(g, 'f')) || (!count(o, 'm') && count(g, 'm'));
     });
     if (other) {
       var moving = g.members.slice();
@@ -565,6 +563,28 @@
       g.horstSite = null;
       g.state = 'streifen';
     }
+  };
+
+  /**
+   * Rudel: Ein Wanderer-Trupp schliesst sich einer nahen Gruppe an, der ein
+   * erwachsenes Tier seines Geschlechts fehlt. Wechseln muessen nur die Tiere,
+   * die dort fehlen und Platz haben - sonst blieben grosse Trupps aus lauter
+   * Maennchen (oder Weibchen) fuer immer unter sich und bekaemen nie Junge.
+   * Hat der Trupp selbst schon beide Geschlechter, sucht er ein eigenes Revier.
+   */
+  Simulation.prototype.joinPack = function (g) {
+    var spec = g.spec;
+    var f = adults(g, 'f'), m = adults(g, 'm');
+    if ((f && m) || (!f && !m)) return false;
+    var sex = f ? 'f' : 'm';
+    var other = this.nearestGroupOf(spec, g, 260, function (o) {
+      return o.members.length < spec.group.max && !adults(o, sex);
+    });
+    if (!other) return false;
+    var room = spec.group.max - other.members.length;
+    var moving = g.members.filter(function (a) { return a.sex === sex && a.age >= spec.maturity; }).slice(0, room);
+    for (var k = 0; k < moving.length; k++) { this.removeFromGroup(moving[k]); this.addToGroup(other, moving[k]); }
+    return true;
   };
 
   Simulation.prototype.nearestGroupOf = function (spec, from, maxDist, filter) {
