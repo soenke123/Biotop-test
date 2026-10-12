@@ -156,7 +156,7 @@
     for (var i = 0; i < this.predatorGroups.length; i++) {
       var o = this.predatorGroups[i];
       if (o.spec !== spec || !o.home || !o.members.length) continue;
-      if (BT.M.hypot(o.home.x - x, o.home.y - y) < spec.territory * 1.1) return false;
+      if (BT.M.hypot(o.home.x - x, o.home.y - y) < spec.territory * (spec.spacing || 1.1)) return false;
     }
     return true;
   };
