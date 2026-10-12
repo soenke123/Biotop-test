@@ -234,17 +234,15 @@ Insektenbestände können übernutzt werden und erholen sich dann jahrelang nich
 - Ohne Adler (und Wölfe) vermehren sich die Laufvögel, bis sie die Insekten ganzer Gegenden
   ausgeräumt haben. Danach überlebt nur ein Rest – weniger als mit Räubern.
 
-Vergleich (`node tools/balance.js 8 30` und `… --ohne=inselwolf,inseladler`, mittlere Insel,
-Mittel ab Jahr 10):
+Vergleich (mittlere Insel, 8 Inseln; Mittel ab Jahr 11; mit Räubern über 100 Jahre, ohne über 60):
 
 | | mit Räubern | ohne Räuber |
 |---|---|---|
-| Zwerghirsche, Jahr 2–3 | etwa 100–200 | etwa 310–400 (Massenvermehrung) |
-| Zwerghirsche, ab Jahr 10 | etwa 130, schwankend | etwa 115, viele sterben an Hunger |
-| Laufvögel, Jahr 3–4 | etwa 250–350 | etwa 500–640 (Massenvermehrung) |
-| Laufvögel, ab Jahr 10 | etwa 260 | etwa 120 (Insekten ausgeräumt) |
-| Zustand Grasland / Laub / Insekten | etwa 87 % / 97 % / 80 % | etwa 27 % / 68 % / 42 % |
-| alle Arten überleben | 7 von 8 Läufen | – |
+| Zwerghirsche, Spitze in Jahr 1–5 | etwa 200 | etwa 640 (Massenvermehrung) |
+| Zwerghirsche, ab Jahr 11 | etwa 120, schwankend | etwa 160, viele sterben an Hunger |
+| Laufvögel, Spitze in Jahr 1–5 | etwa 320 | etwa 570 (Massenvermehrung) |
+| Laufvögel, ab Jahr 11 | etwa 215 | etwa 110–140 (Insekten ausgeräumt) |
+| Zustand Grasland / Laub / Insekten (`balance.js 8 30`) | etwa 94 % / 99 % / 91 % | etwa 22 % / 50 % / 55 % |
 
 Ohne Räuber verläuft es wie auf dem Kaibab-Plateau: erst viel mehr Pflanzenfresser, dann
 kahl gefressene Weiden, ausgeräumte Böden und Hungersnot. Die Insel bleibt danach verarmt, weil
@@ -256,6 +254,33 @@ Hirsche, das Grasland leidet. Erholen sich die Wölfe, sinken die Hirsche, und d
 Adler, Laufvögel und Insekten zusammen.
 
 ## Abstimmung (Stand)
+
+**Mehr Beute, stabilere Räuber** (Ziel: Räuber halten die Pflanzenfresser deutlich unter dem,
+was das Futter trägt, und überleben auch 100 Jahre). Vorher trug das Futter nur ~120 Hirsche, und
+unter ~100 Hirschen jagten die Wölfe kaum noch Hirsche (Beutewechsel bei 80 % des Startbestands).
+Die Wölfe lebten damit in einem schmalen Band und hatten kaum Einfluss: Mittel 99 Hirsche mit
+Räubern, 119 ohne. Geändert:
+
+- Fehler behoben: Wolfs-Wanderer desselben Geschlechts bildeten Trupps, die nie Junge bekamen
+  (siehe Inselwolf, Abwanderung). Das allein senkte die Hirsche mit Räubern auf ~76.
+- Gras × 2, Laub × 1,6; Beutewechsel bei Hirschen erst unter 120 % des Startbestands.
+- Adler: 1–3 statt 2–3 Eier (vorher schossen sie in guten Jahren auf 24 Tiere hoch, fraßen die
+  Laufvögel leer und verhungerten), Jungadler geschickter (0,85 statt 0,6), weniger Konkurrenz
+  (0,25 statt 0,4).
+
+Ergebnis über 100 Jahre (16 Inseln, `run.js` mit Seeds ab 1000 und 5000): Wölfe überleben 14-mal,
+Adler 10-mal, alle Arten 9-mal (vorher über nur 60 Jahre 5 von 8, Wölfe 7, Adler 5).
+`balance.js 8 30`: 6 von 8. Auf einer Insel rotten die Wölfe die Hirsche aus (Jahr 17).
+
+Verworfen: Zwillinge bei Hirschen (starke Räuber-Beute-Zyklen, Hirsche 20–600), Beutewechsel
+erst bei wenigen Hirschen (Wölfe drücken die Hirsche auf 20–40 und verhungern dann), Wölfe mit
+1–3 Welpen, Adler mit weniger Verbrauch (0,025: sie vermehren sich stärker und brechen ein).
+
+Offen: Die Adler sind der schwächste Teil. Sie sterben langsam aus, wenn das Geschlechterverhältnis
+durch Zufall kippt (am Ende ziehen nur noch Weibchen oder nur Männchen umher), oder nachdem
+Hirsch-Booms die Büsche verbissen haben (weniger Früchte, weniger Laufvögel). Ohne Räuber
+pendeln sich die Hirsche nach dem Boom bei ~160 ein, statt stark zu schwanken.
+
 
 **Floater, Konkurrenz, Partnersuche** (48 Inseln, gleiche Läufe wie unten):
 
