@@ -118,6 +118,8 @@ button:disabled { opacity: 0.5; cursor: default; }
 .range-bar button:last-child { border-radius: 0 6px 6px 0; }
 .range-bar button[aria-pressed="true"] { background: #2a7f86; border-color: #52c2c0; position: relative; }
 #openBig { padding: 3px 8px; font-size: 12px; }
+.mean-toggle { padding: 3px 8px; font-size: 12px; margin-left: 10px; }
+.mean-toggle[aria-pressed="true"] { background: #2a7f86; border-color: #52c2c0; }
 .chart-legend.at-cursor b { color: #f2c94c; }
 
 .big-view {

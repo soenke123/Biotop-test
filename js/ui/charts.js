@@ -34,6 +34,7 @@
   /** Zeitraum und Fadenkreuz, gemeinsam fuer alle angemeldeten Diagramme. */
   function ChartView() {
     this.years = 0;          // 0 = ganzer Verlauf
+    this.mean = false;       // Jahresmittel statt Tageswerte (nur Diagramme mit `allowMean`)
     this.hoverDay = null;    // Tag unter dem Zeiger (in irgendeinem Diagramm)
     this.hoverChart = null;  // Diagramm, ueber dem der Zeiger steht (bekommt den Tooltip)
     this.charts = [];
@@ -61,6 +62,31 @@
   };
 
   ChartView.prototype.onRange = function (fn) { this.listeners.push(fn); };
+
+  ChartView.prototype.setMean = function (on) {
+    this.mean = on;
+    this.drawAll();
+  };
+
+  /**
+   * Umschalter "Jahresmittel": glaettet die Jahreszeiten weg, damit langsame
+   * Veraenderungen ueber die Jahre leichter zu erkennen sind.
+   */
+  ChartView.prototype.meanButton = function (container) {
+    var self = this;
+    var b = doc.createElement('button');
+    b.type = 'button';
+    b.className = 'mean-toggle';
+    b.textContent = 'Jahresmittel';
+    b.title = 'Jeden Tag als Mittel über ein Jahr zeigen (ohne die Schwankungen der Jahreszeiten)';
+    b.setAttribute('aria-pressed', String(this.mean));
+    b.addEventListener('click', function () {
+      self.setMean(!self.mean);
+      b.setAttribute('aria-pressed', String(self.mean));
+    });
+    container.appendChild(b);
+    return b;
+  };
 
   ChartView.prototype.setHover = function (day, chart) {
     if (day === this.hoverDay && chart === this.hoverChart) return;
@@ -106,7 +132,7 @@
 
   /**
    * @param container  Element, in das Titel, Legende und Canvas kommen
-   * @param opts       { title, series: [{label, color, get(row)}], percent, view }
+   * @param opts       { title, series: [{label, color, get(row)}], percent, view, allowMean }
    */
   function LineChart(container, opts) {
     this.opts = opts;
@@ -162,10 +188,35 @@
     this.draw();
   };
 
+  /**
+   * Jahresmittel je Reihe ueber den ganzen Verlauf: Mittel ueber ein Jahr,
+   * zentriert auf den Tag (am Rand ueber das, was da ist). Ueber
+   * Praefixsummen; neu gerechnet nur, wenn der Verlauf gewachsen ist.
+   */
+  LineChart.prototype.yearMeans = function () {
+    var h = this.history, series = this.opts.series;
+    var c = this._means;
+    if (c && c.history === h && c.length === h.length) return c.values;
+    var n = h.length, half = Math.floor(BT.Time.DAYS_PER_YEAR / 2);
+    var values = [];
+    for (var s = 0; s < series.length; s++) {
+      var sum = new Float64Array(n + 1);
+      for (var i = 0; i < n; i++) sum[i + 1] = sum[i] + series[s].get(h[i]);
+      var out = new Float32Array(n);
+      for (i = 0; i < n; i++) {
+        var a = Math.max(0, i - half), b = Math.min(n, i + half);
+        out[i] = (sum[b] - sum[a]) / (b - a);
+      }
+      values.push(out);
+    }
+    this._means = { history: h, length: n, values: values };
+    return values;
+  };
+
   /** Legendenwerte: am Fadenkreuz der Wert dieses Tages, sonst der aktuelle. */
-  LineChart.prototype.updateLegend = function (row, hovered) {
-    if (!row) return;
-    for (var i = 0; i < this.opts.series.length; i++) this.values[i].textContent = this.fmt(this.opts.series[i].get(row));
+  LineChart.prototype.updateLegend = function (k, hovered) {
+    if (k < 0) return;
+    for (var i = 0; i < this.opts.series.length; i++) this.values[i].textContent = this.fmt(this.val(i, k));
     this.legend.classList.toggle('at-cursor', !!hovered);
   };
 
@@ -184,14 +235,19 @@
     var L = 34, R = 8, Tp = 6, Bt = 18;
     var pw = W - L - R, ph = H - Tp - Bt;
     var n = hist.length;
+    // Werte: Tageswert oder Jahresmittel (k = Index im Ausschnitt)
+    var mean = this.opts.allowMean && this.view.mean;
+    var means = mean ? this.yearMeans() : null, off = this.history.length - n;
+    this.val = mean ? function (s, k) { return means[s][off + k]; } : function (s, k) { return series[s].get(hist[k]); };
+    this.root.classList.toggle('is-mean', !!mean);
     this.layout = null;
     this.tip.hidden = true;
-    if (n < 2) { this.updateLegend(hist[n - 1], false); return; }
+    if (n < 2) { this.updateLegend(n - 1, false); return; }
     var d0 = hist[0].day;
     this.layout = { L: L, pw: pw, n: n, d0: d0 };
 
     var max = 0;
-    for (var i = 0; i < n; i++) for (var s = 0; s < series.length; s++) max = Math.max(max, series[s].get(hist[i]));
+    for (var i = 0; i < n; i++) for (var s = 0; s < series.length; s++) max = Math.max(max, this.val(s, i));
     max = this.opts.percent ? 1 : niceMax(Math.max(2, max * 1.05));
 
     var x = function (k) { return L + (k / (n - 1)) * pw; };
@@ -263,17 +319,17 @@
       ctx.strokeStyle = series[s].color;
       ctx.beginPath();
       for (i = 0; i < n; i += stride) {
-        var lx = x(i), ly = y(series[s].get(hist[i]));
+        var lx = x(i), ly = y(this.val(s, i));
         if (i === 0) ctx.moveTo(lx, ly); else ctx.lineTo(lx, ly);
       }
-      ctx.lineTo(x(n - 1), y(series[s].get(hist[n - 1])));
+      ctx.lineTo(x(n - 1), y(this.val(s, n - 1)));
       ctx.stroke();
     }
 
     // Fadenkreuz: derselbe Tag in allen Diagrammen
     var hd = this.view.hoverDay;
     var idx = hd === null ? -1 : hd - d0;
-    if (idx < 0 || idx >= n) { this.updateLegend(hist[n - 1], false); return; }
+    if (idx < 0 || idx >= n) { this.updateLegend(n - 1, false); return; }
     var row = hist[idx];
     var cx = Math.round(x(idx)) + 0.5;
     ctx.strokeStyle = INK.cross; ctx.lineWidth = 1;
@@ -282,16 +338,17 @@
     ctx.setLineDash([]);
     for (s = 0; s < series.length; s++) {
       ctx.fillStyle = series[s].color;
-      ctx.beginPath(); ctx.arc(x(idx), y(series[s].get(row)), 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x(idx), y(this.val(s, idx)), 3.5, 0, Math.PI * 2); ctx.fill();
     }
-    this.updateLegend(row, true);
+    this.updateLegend(idx, true);
 
     // Tooltip nur im Diagramm unter dem Zeiger
     if (this.view.hoverChart !== this) return;
     var html = '<div class="tt-head">' + BT.Time.label(row.day) +
-      (row.weather ? '<br>' + BT.Weather.describe(row.weather) : '') + '</div>';
+      (row.weather ? '<br>' + BT.Weather.describe(row.weather) : '') +
+      (mean ? '<br>Mittel über ein Jahr' : '') + '</div>';
     for (s = 0; s < series.length; s++) {
-      html += '<div><i style="background:' + series[s].color + '"></i>' + series[s].label + ' <b>' + this.fmt(series[s].get(row)) + '</b></div>';
+      html += '<div><i style="background:' + series[s].color + '"></i>' + series[s].label + ' <b>' + this.fmt(this.val(s, idx)) + '</b></div>';
     }
     this.tip.innerHTML = html;
     this.tip.hidden = false;

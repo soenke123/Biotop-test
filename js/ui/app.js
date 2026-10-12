@@ -304,22 +304,22 @@
   var HEALTH_KEYS = BT.FOOD_ORDER.filter(function (k) { return BT.FOOD[k].damage; });
   var lastPanelUpdate = 0;
 
-  function makeCharts(box) {
+  function makeCharts(box, allowMean) {
     function series(ids, get) {
       return ids.map(function (id) { return { label: (BT.SPECIES[id] || BT.FOOD[id]).plural || BT.FOOD[id].name, color: SERIES_COLOR[id], get: get(id) }; });
     }
     var count = function (id) { return function (r) { return r.count[id]; }; };
     return [
-      new BT.LineChart(box, { view: chartView, title: 'Pflanzenfresser', series: series(['zwerghirsch', 'laufvogel'], count) }),
-      new BT.LineChart(box, { view: chartView, title: 'Räuber', series: series(['inselwolf', 'inseladler'], count) }),
+      new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Pflanzenfresser', series: series(['zwerghirsch', 'laufvogel'], count) }),
+      new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Räuber', series: series(['inselwolf', 'inseladler'], count) }),
       new BT.LineChart(box, {
-        view: chartView, title: 'Nahrung (Anteil am Höchststand)', percent: true,
+        view: chartView, allowMean: allowMean, title: 'Nahrung (Anteil am Höchststand)', percent: true,
         series: ['gras', 'frucht', 'laub', 'insekten'].map(function (k) {
           return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.food[k]; } };
         })
       }),
       new BT.LineChart(box, {
-        view: chartView, title: 'Zustand der Pflanzen (100 % = gesund, sinkt bei Übernutzung)', percent: true,
+        view: chartView, allowMean: allowMean, title: 'Zustand der Pflanzen (100 % = gesund, sinkt bei Übernutzung)', percent: true,
         series: HEALTH_KEYS.map(function (k) {
           return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.health && r.health[k] != null ? r.health[k] : 1; } };
         })
@@ -361,7 +361,8 @@
     chartView.rangeButtons($('chartTools'));
     chartView.rangeButtons($('bigTools'));
     charts = makeCharts($('charts'));
-    bigCharts = makeCharts($('bigCharts'));
+    bigCharts = makeCharts($('bigCharts'), true);
+    chartView.meanButton($('bigTools'));
     // Bei geaendertem Zeitraum stehen die neuen Werte sofort in der Legende
     chartView.onRange(function () { updateCharts(); });
 
