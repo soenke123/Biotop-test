@@ -51,7 +51,7 @@
       growth: 0.13, seed: 0.05,
       season: [1.5, 1.0, 0.7, 0.3],
       damage: { below: 0.25, loss: 0.05, recover: 0.006, rest: 60, dead: 0.02 },
-      capacity: cap({ TUSSOCK: 5.5, SCRUB: 2.75, SWAMP: 3.3, BEACH: 0.83, FERN: 0.83, MOSS: 0.55, THERMAL: 0.83, ROCK: 0.55 })
+      capacity: cap({ TUSSOCK: 11, SCRUB: 5.5, SWAMP: 6.6, BEACH: 1.66, FERN: 1.66, MOSS: 1.1, THERMAL: 1.66, ROCK: 1.1 })
     },
     laub: {
       name: 'Triebe und Laub',
@@ -59,7 +59,7 @@
       growth: 0.1, seed: 0.05,
       season: [1.4, 1.0, 0.6, 0.25],
       damage: { below: 0.3, loss: 0.03, recover: 0.004, rest: 60, dead: 0.02 },
-      capacity: cap({ FERN: 4.4, MOSS: 3.3, SCRUB: 3.85, SWAMP: 1.1, TUSSOCK: 0.55 })
+      capacity: cap({ FERN: 7.04, MOSS: 5.28, SCRUB: 6.16, SWAMP: 1.76, TUSSOCK: 0.88 })
     },
     frucht: {
       name: 'Früchte und Samen',
@@ -105,7 +105,7 @@
       color: '#c9874a',
       group: { kind: 'herd', min: 2, max: 16, spread: 26, start: [5, 10] },
       start: 160,                     // Tiere zu Beginn
-      scarce: 0.8,                    // Beutewechsel: als Beute halb so gefragt bei diesem Anteil des Startbestands
+      scarce: 1.2,                    // Beutewechsel: als Beute halb so gefragt bei diesem Anteil des Startbestands
       // Nahrung: Energie je verzehrter Einheit
       diet: { gras: 0.11, laub: 0.09 },
       bite: 0.38,                     // Einheiten je Fressschritt und Tier
@@ -208,16 +208,16 @@
       // Junge Adler ohne Revier (Floater) werden geduldet: sie jagen ueberall,
       // nur nicht naeher als `core` am Horst eines Paares, und sind bis zum
       // Erwachsenenalter ungeuebt (Jagderfolg mal `skill`)
-      floater: { core: 150, skill: 0.6 },
+      floater: { core: 150, skill: 0.85 },
       // Je mehr andere Adler im Umkreis jagen, desto seltener gelingt ein Angriff
-      crowding: { radius: 250, k: 0.4 },
+      crowding: { radius: 250, k: 0.25 },
       hungry: 0.65,
       habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 1, BEACH: 1, THERMAL: 1, ROCK: 1, PEAK: 1 }),
       maturity: Y(2), maxAge: Y(14),
       // Horst: Ein Paar mit Revier legt im Fruehling 2-3 Eier. Brut: einer sitzt,
       // der andere jagt, bei jeder Beute wird gewechselt. Nestlinge: beide jagen
       // und fuettern. Flugge Junge verlassen den Horst und suchen sich ein Revier.
-      breed: { kind: 'horst', season: 0, day: 1, chance: 0.85, litter: [2, 3], minEnergy: 0.55, cost: 0.1 },
+      breed: { kind: 'horst', season: 0, day: 1, chance: 0.85, litter: [1, 3], minEnergy: 0.55, cost: 0.1 },
       horst: {
         incubation: 10,               // Tage Brut
         nestling: 15,                 // Tage, bis die Kueken fluegge sind
@@ -226,7 +226,7 @@
         huntBonus: 1.3,               // kennt die Umgebung des Horsts genau
         abandon: 0.25,                // sinkt die Energie des Brutvogels (oder beider Eltern) darunter, wird die Brut aufgegeben
         chickCost: 0.045,              // Kueken wachsen: zusaetzlicher Verbrauch je Tag
-        selfFirst: 0.4,               // so weit fressen die Eltern sich zuerst satt                 // sinkt die Energie des Brutvogels darunter, gibt er das Gelege auf
+        selfFirst: 0.4,               // so weit fressen die Eltern sich zuerst satt
         sites: pref({ FERN: 1, MOSS: 1, ROCK: 1, PEAK: 0.8, SCRUB: 0.5 })   // Baeume und Felsen
       },
       newbornEnergy: 0.6,

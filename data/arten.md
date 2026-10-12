@@ -31,6 +31,10 @@ blickend (läuft das Tier nach rechts, wird gespiegelt), Seitenverhältnis etwa 
 
 Eine Weidezelle fasst 4 × 4 Rasterzellen zusammen (24 × 24 Einheiten).
 
+**Kapazität** je Weidezelle (Gras: Tussock 11, Sumpf 6,6, Buschland 5,5; Laub: Farnwald 7,04,
+Buschland 6,16, Moosnebelwald 5,28). Gras und Laub wurden verdoppelt bzw. um 60 % erhöht, damit die
+Insel deutlich mehr Hirsche trägt, als die Wölfe übrig lassen (siehe „Wozu die Räuber da sind“).
+
 **Nachwachsen:** Pflanzen wachsen aus ihren Blättern. Halb abgefressen wächst am meisten nach,
 kahl gefressen kaum noch (nur aus Wurzeln und Samen, 5 % der Kapazität). Pro Tag:
 `v += Rate · Jahreszeit · (v + 0,05·K) · (1 − v/K)`. Raten: Gras 0,13, Laub 0,1, Früchte 0,18,
@@ -154,9 +158,11 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   als sie brauchen, und sterben danach häufiger aus (in 48 Testläufen 4–6-mal statt 1–2-mal). Der
   Mechanismus steht noch im Code (`rearing` in der Artentabelle) und kann zum Experimentieren
   eingeschaltet werden.
-- **Abwanderung:** Im Herbst verlassen junge Wölfe Rudel ab 4 Tieren (jeder mit 60 %). Wanderer suchen Artgenossen,
-  schließen sich Rudeln an, denen ein Geschlecht fehlt, und gründen mit Partner ein Revier, wo
-  Platz ist. Wanderer mit Partner steuern gezielt freien Platz an. Aus fremden Revieren werden
+- **Abwanderung:** Im Herbst verlassen junge Wölfe Rudel ab 4 Tieren (jeder mit 60 %). Wanderer suchen
+  Gruppen, denen ihr Geschlecht fehlt. Von einem Trupp wechseln nur die Tiere, die dort fehlen und
+  Platz haben; Wanderer desselben Geschlechts suchen sich nicht gegenseitig. (Vorher zogen Trupps
+  aus 4–5 Männchen jahrelang umher, weil sie als Ganzes in kein Rudel passten.) Mit Partner gründen
+  sie ein Revier, wo Platz ist. Wanderer mit Partner steuern gezielt freien Platz an. Aus fremden Revieren werden
   Wanderer vertrieben und jagen dort nicht. Anders als bei Adlern ist das auch in der Natur so:
   Wolfsrudel verteidigen ihr ganzes Revier, und Kämpfe mit fremden Rudeln sind bei Wölfen eine
   der häufigsten natürlichen Todesursachen. Getestet wurde, Wanderer in den Randzonen fremder
@@ -172,7 +178,7 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
 - **Horst:** Jedes Paar hat einen festen Horst nahe der Reviermitte, am liebsten auf Bäumen oder
   Felsen, und nutzt ihn jedes Jahr wieder. Auf der Karte ist er ein Reisignest, während der Brut
   mit Eiern.
-  1. **Brut** (10 Tage ab Frühlingstag 1): Das Paar legt 2–3 Eier, wenn das Weibchen gut genährt
+  1. **Brut** (10 Tage ab Frühlingstag 1): Das Paar legt 1–3 Eier, wenn das Weibchen gut genährt
      ist (≥ 55 %, Chance 85 %). Ein Vogel sitzt immer im Horst, der andere jagt. Jede Beute wird
      zum Horst gebracht, dann wechseln sie sich ab. Sinkt der Brutvogel unter 25 % Energie oder
      stirbt ein Partner, wird das Gelege aufgegeben.
@@ -188,9 +194,9 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   auf die Zeit, in der die Laufvögel ihre Küken haben.
 - **Junge Adler ohne Revier (Floater)** werden geduldet, wie bei echten Steinadlern. Sie jagen
   überall, auch in fremden Revieren, und werden nur aus der Nähe eines fremden Horsts
-  vertrieben (Umkreis 150). Bis sie erwachsen sind, jagen sie ungeübt (Jagderfolg × 0,6).
+  vertrieben (Umkreis 150). Bis sie erwachsen sind, jagen sie ungeübt (Jagderfolg × 0,85).
 - **Konkurrenz:** Jagen andere Adler im Umkreis von 250 um die Beute, gelingt ein Angriff
-  seltener (Erfolg geteilt durch 1 + 0,4 × Zahl der anderen Adler). Die Beute wird früher
+  seltener (Erfolg geteilt durch 1 + 0,25 × Zahl der anderen Adler). Die Beute wird früher
   gewarnt, Beute wird streitig gemacht. Ohne diese Bremse sammeln sich in guten Jahren bis zu
   20 Floater an, fressen die Laufvögel leer und verhungern danach alle.
 - **Revier gründen:** Junge Adler ohne Revier suchen einen Partner des anderen Geschlechts.
@@ -209,8 +215,8 @@ stirbt in der Simulation fast immer eine Art aus.
 1. **Reviere:** Räuber ohne Revier dürfen nicht in fremden Revieren jagen und bekommen keinen
    Nachwuchs, volle Rudel auch nicht. Das begrenzt die Zahl der Räuber auf die Zahl der Reviere.
 2. **Beutewechsel (Holling Typ III):** Wird eine Beuteart selten, wird sie seltener gewählt und
-   seltener verfolgt. Die Räuber hungern dann, bevor die Beute verschwindet (Bezug: 80 % des
-   Startbestands, `scarce` in der Artentabelle). Die vergebliche Suche nach seltener Beute kostet
+   seltener verfolgt. Die Räuber hungern dann, bevor die Beute verschwindet (Bezug: Laufvogel
+   80 % des Startbestands, Zwerghirsch 120 %, `scarce` in der Artentabelle). Die vergebliche Suche nach seltener Beute kostet
    einen Tag – sonst würde ein hungriger Räuber es einfach gleich wieder versuchen.
 3. **Rückzugsräume:** Im Wald werden Beutetiere schlechter entdeckt und erwischt.
 4. **Aas:** Verhungerte Tiere und Reste von Rissen ernähren die Räuber in schlechten Zeiten.
