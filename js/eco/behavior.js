@@ -234,7 +234,10 @@
         // Ausdauer: nach einem kurzen Sprint nur noch Trab
         g.fleeTicks = (g.fleeTicks || 0) + 1;
         var fs = g.fleeTicks <= spec.sprintTicks ? spec.fleeSpeed : spec.fleeSpeed * 0.55;
-        away(sim, spec, g, g.fleeFrom.x, g.fleeFrom.y, fs);
+        // Durstig: zum Wasser fliehen, wenn es vom Raeuber weg liegt (spec.fleeToWater)
+        var wp = spec.fleeToWater && maxOf(g.members, 'thirst') > spec.fleeToWater ? BT.Move.waterWaypoint(sim.world, g.x, g.y, 10) : null;
+        if (wp && (wp.x - g.x) * (g.x - g.fleeFrom.x) + (wp.y - g.y) * (g.y - g.fleeFrom.y) > 0) go(sim, spec, g, wp.x, wp.y, fs);
+        else away(sim, spec, g, g.fleeFrom.x, g.fleeFrom.y, fs);
         g.speedNow = fs;
         return;
       }
@@ -322,27 +325,30 @@
     var spec = g.spec, w = sim.world;
     var best = null, bestScore = 0, bestWeight = 0;
     var groups = sim.herbivoreGroups;
-    for (var i = 0; i < groups.length; i++) {
-      var p = groups[i];
-      var weight = spec.prey[p.spec.id];
-      if (!weight || !p.members.length) continue;
-      weight *= sim.preyAvailability(p.spec.id);
-      if (weight < 0.12) continue;      // sehr seltene Beute lohnt die Suche nicht
-      var cover = COVER[sim.biomeAt(p.x, p.y)];
-      var vision = spec.vision * (1 - cover * (spec.flies ? 1.3 : 0.6));
-      if (vision <= 0) continue;
-      var d = dist(g, p);
-      if (d > vision) continue;
-      // Der Revierbesitzer jagt im eigenen Revier; Wanderer ohne Revier werden
-      // aus fremden Revieren vertrieben und jagen nur dazwischen
-      // Am Horst nur in dessen Umkreis
-      if (g.horst && BT.M.hypot(p.x - g.horst.x, p.y - g.horst.y) > spec.horst.radius) continue;
-      if (g.home && BT.M.hypot(p.x - g.home.x, p.y - g.home.y) > spec.territory * 1.4) continue;
-      if (!g.home && insideForeignTerritory(sim, g, p.x, p.y)) continue;
-      if (!eligibleVictims(g, p).length) continue;
-      if (sim.humans.avoids(spec, p.x, p.y)) continue;
-      var score = weight * (1 - d / vision);
-      if (score > bestScore) { bestScore = score; best = p; bestWeight = weight; }
+    // Ausweichbeute (spec.fallbackPrey) erst im zweiten Durchgang: nur, wenn sonst nichts in Sicht ist
+    for (var pass = 0; pass < 2 && !best; pass++) {
+      for (var i = 0; i < groups.length; i++) {
+        var p = groups[i];
+        var weight = spec.prey[p.spec.id];
+        if (!weight || !p.members.length || !!p.spec.fallbackPrey !== (pass === 1)) continue;
+        weight *= sim.preyAvailability(p.spec.id);
+        if (weight < 0.12) continue;      // sehr seltene Beute lohnt die Suche nicht
+        var cover = COVER[sim.biomeAt(p.x, p.y)];
+        var vision = spec.vision * (1 - cover * (spec.flies ? 1.3 : 0.6));
+        if (vision <= 0) continue;
+        var d = dist(g, p);
+        if (d > vision) continue;
+        // Der Revierbesitzer jagt im eigenen Revier; Wanderer ohne Revier werden
+        // aus fremden Revieren vertrieben und jagen nur dazwischen
+        // Am Horst nur in dessen Umkreis
+        if (g.horst && BT.M.hypot(p.x - g.horst.x, p.y - g.horst.y) > spec.horst.radius) continue;
+        if (g.home && BT.M.hypot(p.x - g.home.x, p.y - g.home.y) > spec.territory * 1.4) continue;
+        if (!g.home && insideForeignTerritory(sim, g, p.x, p.y)) continue;
+        if (!eligibleVictims(g, p).length) continue;
+        if (sim.humans.avoids(spec, p.x, p.y)) continue;
+        var score = weight * (1 - d / vision);
+        if (score > bestScore) { bestScore = score; best = p; bestWeight = weight; }
+      }
     }
     // Seltene Beute wird nicht nur seltener gewaehlt, sondern auch seltener
     // verfolgt (Holling Typ III): die Raeuber hungern, bevor die Beute verschwindet.

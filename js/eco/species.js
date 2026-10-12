@@ -90,9 +90,19 @@
       growth: 0.2, seed: 0.1,         // seed: die Saat
       season: [1.4, 1.1, 0, 0],
       capacity: cap({ FIELD: 14 })
+    },
+    // Grasnarbe: der unterste Teil des Grases, so kurz, dass nur Schafe ihn abbeissen
+    // (kein heimisches Tier frisst ihn). Haengt am Zustand des Grases.
+    narbe: {
+      name: 'Grasnarbe',
+      water: 0.02,
+      growth: 0.05, seed: 0.1,
+      season: [1.5, 1.0, 0.7, 0.3],
+      healthOf: 'gras',
+      capacity: cap({ TUSSOCK: 2.75, SCRUB: 1.4, SWAMP: 1.65, BEACH: 0.4, FERN: 0.4, MOSS: 0.3, THERMAL: 0.4, ROCK: 0.3, MEADOW: 2.2 })
     }
   };
-  BT.FOOD_ORDER = ['gras', 'laub', 'frucht', 'insekten', 'korn'];
+  BT.FOOD_ORDER = ['gras', 'laub', 'frucht', 'insekten', 'korn', 'narbe'];
 
   function cap(byName) {
     var arr = new Array(BT.BIOME_INFO.length).fill(0);
@@ -115,6 +125,8 @@
    *               (wird beim Laden in deren prey eingetragen; ohne die Art wirkungslos)
    *   preyMaxAgeOf: { raeuber: Alter } - nur Jungtiere bis zu diesem Alter
    *   unknownTo:  [arten] - diese Arten kennen den Raeuber nicht und fliehen nicht (Inselzahmheit)
+   *   fallbackPrey: true - Raeuber jagen diese Art erst, wenn sie keine andere Beute sehen
+   * fleeToWater: so durstig (0..1), flieht die Gruppe zum Wasser, wenn das vom Raeuber weg liegt
    */
   var Y = function (y) { return BT.Time.years(y); };
 
@@ -288,12 +300,15 @@
     scarceMin: 40,                    // Beutewechsel ohne Startbestand: bei 40 Schafen halb so gefragt
     preyOf: { inselwolf: 1.0, inseladler: 0.25 },   // Woelfe reissen Schafe, Adler nur Laemmer
     preyMaxAgeOf: { inseladler: Y(0.5) },
-    // Fressen das Gras sehr kurz und kommen mit wenig aus, Laub nur nebenher
-    diet: { gras: 0.12, laub: 0.05, korn: 0.12 },
+    fallbackPrey: true,               // erst Hirsche und Laufvoegel, dann Schafe
+    // Fressen das Gras bis auf die Grasnarbe (narbe: nur Schafe) und kommen mit wenig aus,
+    // Laub nur nebenher
+    diet: { gras: 0.12, laub: 0.05, korn: 0.12, narbe: 0.1 },
     bite: 0.42,
-    costPerDay: 0.045,
-    winterCost: 0.012,
+    costPerDay: 0.035,                // genuegsam: Hirsch 0,05
+    winterCost: 0.008,                // Wolle: Hirsch 0,015
     thirstDays: 20,                   // braucht wenig Wasser (Tau, saftiges Gras)
+    fleeToWater: 0.6,
     speed: 3.5, fleeSpeed: 11.5, sprintTicks: 4,
     vision: 150,
     scheu: 0.4,                       // kennt Menschen, haelt aber Abstand
@@ -301,7 +316,7 @@
     habitat: pref({ TUSSOCK: 1.0, MEADOW: 1.0, ROCK: 0.6, SCRUB: 0.5, BEACH: 0.4, THERMAL: 0.3, SWAMP: 0.2, FERN: 0.25, MOSS: 0.15, PEAK: 0.1, SOIL: 0.1, FIELD: 1.0 }),
     // Schneller erwachsen und mehr Laemmer als der Hirsch (reif mit 1 Jahr, 1 Kalb, Chance 0,85)
     maturity: Y(0.5), maxAge: Y(9),
-    breed: { kind: 'each-female', season: 0, day: 3, chance: 0.95, litter: [1, 3], minEnergy: 0.4, cost: 0.15 },
+    breed: { kind: 'each-female', season: 0, day: 3, chance: 0.95, litter: [1, 2], minEnergy: 0.4, cost: 0.15 },
     newbornEnergy: 0.6,
     meat: 1.3
   };
@@ -320,7 +335,7 @@
     start: 0,
     scheu: 0.3,                       // kennt die Menschen
     huntChance: 0.36,                 // Wolf 0,32
-    prey: { zwerghirsch: 1.0, schaf: 1.0, laufvogel: 0.3 },
+    prey: { zwerghirsch: 1.0, schaf: 1.0, laufvogel: 0.6 },   // Laufvoegel: leichte Beute, sie fliehen nicht
     unknownTo: ['laufvogel'],
     /*
      * Krankheit (Vorbild Staupe): Die Hunde selbst erkranken nicht. Jeden Tag steckt

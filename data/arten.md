@@ -256,13 +256,20 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   0,5, zieht die Hälfte 250–500 weit zu einer neuen Weide. Danach teilen sich beide Teile 90 Tage
   nicht.
 - **Nahrung:** vor allem Gras (Energie 0,12, Hirsch 0,11), wenig Laub (0,05), Getreide (0,12).
-  Frisst kräftiger als der Hirsch (0,42 je Schritt, Hirsch 0,38), braucht weniger (0,045 am Tag,
-  Hirsch 0,05). Trinkt seltener (20 Tage ohne Wasser).
+  **Frisst kürzer als der Hirsch:** Unter dem Gras liegt die **Grasnarbe** (eigene Nahrungsschicht
+  `narbe`, etwa ein Viertel der Graskapazität, wächst langsam, hängt am Zustand des Grases). Nur
+  Schafe beißen so tief (Energie 0,1); auf kahl gefressenem Grasland finden sie so noch Futter, der
+  Hirsch nicht. Frisst kräftiger als der Hirsch (0,42 je Schritt, Hirsch 0,38).
+- **Genügsam:** Verbrauch 0,035 am Tag (Hirsch 0,05), im Winter 0,008 mehr (Wolle; Hirsch 0,015).
+  Trinkt seltener (20 Tage ohne Wasser). Ist die Herde durstiger als 0,6 und wird gejagt, flieht
+  sie zum Wasser, wenn es vom Räuber weg liegt (`fleeToWater`).
 - **Lebensraum:** Grasland und Wiese, auch Fels (0,6); Wald kaum.
-- **Fortpflanzung:** jedes Weibchen, **1–3 Lämmer**, Chance 0,95 (Hirsch: 1 Kalb, 0,85). **Reif mit
+- **Fortpflanzung:** jedes Weibchen, **1–2 Lämmer**, Chance 0,95 (Hirsch: 1 Kalb, 0,85). **Reif mit
   ½ Jahr** (Hirsch 1 Jahr), Höchstalter 9.
 - **Flucht:** 11,5. `scheu` 0,4 (kennt Menschen).
-- **Feinde** (`preyOf`): Wolf 1,0, Adler 0,25 (nur Lämmer bis ½ Jahr), Hund 1,0.
+- **Feinde** (`preyOf`): Wolf 1,0, Adler 0,25 (nur Lämmer bis ½ Jahr), Hund 1,0. **Ausweichbeute**
+  (`fallbackPrey`): Die Räuber jagen Schafe erst, wenn sie keinen Hirsch und keinen Laufvogel in
+  Sicht haben.
 - **Beutewechsel ohne Startbestand:** `scarceMin` 40 – bei 40 Schafen sind sie für die Räuber
   halb so gefragt.
 
@@ -277,7 +284,8 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   vom Dorf weg und suchen dann ein Revier. Lebt ein wildes Hunderudel mit Platz höchstens 700 vom
   Dorf, laufen sie zu ihm und schließen sich an. Die Siedler ersetzen die Hunde im nächsten Frühjahr.
 - **Wie der Wolf:** Alle Werte kommen vom Inselwolf (`Object.assign`), nur etwas stärker:
-  Jagderfolg 0,36 (Wolf 0,32), `scheu` 0,3 (Wolf 0,9), Beute Hirsch 1,0, Schaf 1,0, Laufvogel 0,3.
+  Jagderfolg 0,36 (Wolf 0,32), `scheu` 0,3 (Wolf 0,9), Beute Hirsch 1,0, Laufvogel 0,6 (leichte Beute), Schaf 1,0
+  (Ausweichbeute, siehe Schaf).
   **Die Laufvögel kennen keine Hunde** (`unknownTo`) und fliehen nicht vor ihnen.
 - **Krankheit (Staupe):** Die Hunde tragen sie, erkranken aber nicht. Jeden Tag steckt sich jeder
   gesunde Wolf mit 3 % an, wenn ein Hunderudel näher als 300 ist, und mit 3 % je krankem Tier im
