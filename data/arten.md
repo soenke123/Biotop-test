@@ -221,6 +221,21 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   einem Jahr ohne Partner. Höchstalter etwa 14 Jahre.
 - **Trinkt nicht** (Wasser aus der Beute).
 
+## Scheu vor Menschen
+
+Seit Stufe 3 (`docs/MENSCH.md`) gibt es Menschen auf der Insel. Um jedes Haus liegt eine Störung
+(1 am Haus, 0 im Abstand 260). Wie stark eine Art sie meidet, steht in `scheu`. Gemieden wird,
+wo `Störung · scheu ≥ 0,3` ist.
+
+| Art | `scheu` | gemieden bis etwa | Begründung |
+|---|---|---|---|
+| Zwerghirsch | 1,0 | 180 ums Haus | Fluchttier, meidet alles Fremde |
+| Inselwolf | 0,9 | 170 ums Haus | meidet Menschen, jagt dort nicht |
+| Inseladler | 0,5 | 100 ums Haus | überfliegt das Dorf, jagt aber nicht direkt daneben |
+| Laufvogel | 0,2 | nie | **inselzahm**: kennt keine Menschen (Vorbild Dodo, Takahē) |
+
+Ohne Menschen hat `scheu` keine Wirkung.
+
 ## Was das Ökosystem stabil hält
 
 Diese Mechanismen sind bewusst eingebaut, weil sie auch in der Natur stabilisieren. Ohne sie

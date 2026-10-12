@@ -7,6 +7,9 @@
  *   zoom  Vergroesserung relativ zur Gesamtansicht (Standard 1)
  *   cx,cy Mittelpunkt des Ausschnitts als Anteil der Welt (0..1)
  *   ohne  Arten ohne Startbestand, z. B. inselwolf,inseladler
+ *
+ *   --landung=fx,fy  vor dem Simulieren an dieser Stelle (Anteil der Welt) landen;
+ *                    der Ausschnitt (cx, cy) kann dann z. B. auf das Dorf zeigen
  */
 const path = require('path');
 let chromium;
@@ -17,7 +20,9 @@ try {
 }
 
 (async () => {
-  const [out = 'shot.png', seed = '482917', size = 'mittel', zoom = '1', cx = '0.5', cy = '0.5', days = '0', ohne = ''] = process.argv.slice(2);
+  const argv = process.argv.slice(2);
+  const flags = Object.fromEntries(argv.filter((a) => a.startsWith('--')).map((a) => a.replace(/^--/, '').split('=')));
+  const [out = 'shot.png', seed = '482917', size = 'mittel', zoom = '1', cx = '0.5', cy = '0.5', days = '0', ohne = ''] = argv.filter((a) => !a.startsWith('--'));
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1400, height: 950 } });
   const errors = [];
@@ -28,6 +33,15 @@ try {
   await page.waitForFunction(() => window.BT && BT.app && BT.app.world && BT.app.sim, null, { timeout: 30000 });
   if (ohne) {
     await page.evaluate((ids) => BT.app.restartWith(Object.fromEntries(ids.map((id) => [id, 0]))), ohne.split(','));
+  }
+  if (flags.landung) {
+    const [fx, fy] = flags.landung.split(',').map(Number);
+    const err = await page.evaluate(({ fx, fy }) => {
+      const r = BT.app.play('landung', { x: BT.app.world.width * fx, y: BT.app.world.height * fy });
+      BT.app.setRunning(false);
+      return r;
+    }, { fx, fy });
+    if (err) errors.push('Landung: ' + err);
   }
   if (+days > 0) {
     const t0 = Date.now();

@@ -24,6 +24,8 @@
   var seasonBadge = $('season'), hlBadge = $('highlight');
   var SEASON_ICON = ['🌸', '☀️', '🍂', '❄️'];
   var highlight = null;   // Art-ID, deren Tiere auf der Karte markiert sind
+  var aiming = null;      // Karte, fuer die gerade ein Ziel auf der Karte gewaehlt wird
+  var aimBadge = $('aim');
   // Karte: Weidezustand (Standard), reine Landschaft oder eine Nahrungsschicht
   var mapMode = $('mapMode');
   function showPlants() { return mapMode.value === 'weide'; }
@@ -89,6 +91,8 @@
     if (!customStart) startValues = Object.assign({}, recommended);
     syncStartSliders();
     sim = new BT.Simulation(world, { start: startValues });
+    if (chartView) chartView.events = sim.events;
+    setAim(null);
     tickAcc = 0;
     $('restart').classList.remove('primary');
     updatePanel(true);
@@ -122,6 +126,14 @@
   /** Regler 0..100 -> Ticks pro Sekunde, logarithmisch von 2 bis 2000 (~5 Jahre/s). */
   function ticksPerSecond() {
     return 2 * Math.pow(10, speedInput.value / 100 * 3);
+  }
+
+  // Zeitlupe, solange ein Schiff faehrt: Es soll zu sehen sein. Aendert nur das
+  // Tempo, nicht den Verlauf.
+  var SLOW_TPS = 8;
+  function tickRate() {
+    var tps = ticksPerSecond();
+    return sim && sim.humans.busy() ? Math.min(tps, SLOW_TPS) : tps;
   }
 
   function updateSpeedLabel() {
@@ -266,7 +278,7 @@
     if (running && sim && !skipping) {
       if (lastFrame) {
         var dt = Math.min(0.25, (now - lastFrame) / 1000);
-        tickAcc += dt * ticksPerSecond();
+        tickAcc += dt * tickRate();
         var t0 = global.performance.now();
         var dayBefore = sim.day;
         // Rechnen mit Zeitbudget: reicht die Zeit nicht, laeuft es langsamer, aber gleich
@@ -283,13 +295,15 @@
       ctx.fillStyle = BT.PALETTE.background;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       drawTerrain();
-      var alpha = running && ticksPerSecond() <= 90 ? Math.min(1, tickAcc) : 1;
+      var alpha = running && tickRate() <= 90 ? Math.min(1, tickAcc) : 1;
       if (sim) BT.SeasonRenderer.draw(ctx, world, seasonPos(alpha));
       // nach den Jahreszeiten, sonst faerbt der Fruehling den kahlen Boden gruen
       if (sim && showPlants()) BT.PlantRenderer.draw(ctx, world, sim);
       else if (sim) BT.FoodOverlay.draw(ctx, sim, mapMode.value);
+      BT.HumanRenderer.drawGround(ctx, sim, camera.visibleRect(0), camera.scale, alpha);
       BT.AgentRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale, alpha,
         { highlight: highlight, highlightColor: highlight && SERIES_COLOR[highlight] });
+      BT.HumanRenderer.drawSea(ctx, sim, camera.visibleRect(0), camera.scale, alpha);
     }
     global.requestAnimationFrame(frame);
   }
@@ -358,6 +372,77 @@
     }
   }
 
+  // ---------------------------------------------------------------- Karten (Menschen)
+  function buildCards() {
+    $('cards').innerHTML = BT.CARD_ORDER.map(function (id) {
+      var c = BT.CARDS[id];
+      return '<button type="button" class="card ' + c.kind + (c.soon ? ' soon' : '') + '" data-id="' + id + '">' +
+        '<span class="card-icon">' + c.icon + '</span><span class="card-name">' + c.name + '</span>' +
+        '<span class="card-count" id="cc-' + id + '"></span></button>';
+    }).join('');
+  }
+
+  function updateCards() {
+    if (!sim) return;
+    BT.CARD_ORDER.forEach(function (id) {
+      var c = BT.CARDS[id];
+      var btn = doc.querySelector('#cards .card[data-id="' + id + '"]');
+      var blocked = sim.cardBlocked(id);
+      btn.disabled = !!blocked;
+      btn.title = c.name + ': ' + c.text + (blocked ? ' (' + blocked + ')' : '');
+      btn.classList.toggle('aiming', aiming === id);
+      var n = sim.played(id);
+      $('cc-' + id).textContent = !n ? '' : c.repeat ? '×' + n : '✓';
+    });
+    var H = sim.humans;
+    $('peopleInfo').textContent = H.people.length || H.houses.length
+      ? H.people.length + ' Siedler · ' + H.houses.length + (H.houses.length === 1 ? ' Haus' : ' Häuser')
+      : H.ships.length ? 'ein Schiff ist unterwegs' : 'noch keine auf der Insel';
+  }
+
+  function updateChronicle() {
+    if (!sim) return;
+    var items = sim.events.map(function (ev) {
+      var c = BT.CARDS[ev.card];
+      return '<li><span class="when">' + BT.Time.label(ev.day).replace(' · ', ', ') + '</span><span>' + c.icon + ' ' + c.name + '</span></li>';
+    }).reverse();
+    sim.pending.forEach(function (ev) {
+      items.unshift('<li class="pending"><span class="when">gleich</span><span>' + BT.CARDS[ev.card].icon + ' ' + BT.CARDS[ev.card].name + '</span></li>');
+    });
+    $('chronicle').innerHTML = items.join('');
+  }
+
+  /** Karte waehlen: mit Ziel auf der Karte erst zielen, sonst sofort spielen. */
+  function chooseCard(id) {
+    if (!sim || sim.cardBlocked(id)) return;
+    if (aiming === id) { setAim(null); return; }
+    if (BT.CARDS[id].target) setAim(id);
+    else playCard(id, {});
+  }
+
+  function setAim(id, error) {
+    aiming = id;
+    canvas.classList.toggle('aiming', !!id);
+    if (id) {
+      var c = BT.CARDS[id];
+      aimBadge.innerHTML = c.icon + ' ' + (error || c.hint) + '<small>Esc oder Karte nochmal antippen: abbrechen</small>';
+      aimBadge.classList.toggle('error', !!error);
+    }
+    aimBadge.hidden = !id;
+    updateCards();
+  }
+
+  function playCard(id, params) {
+    var err = sim.play(id, params);
+    if (err) { setAim(id, err); return err; }
+    setAim(null);
+    // Das Schiff soll man fahren sehen: die Zeit laeuft los
+    if (!running && !skipping) setRunning(true);
+    updateCards();
+    updateChronicle();
+    return null;
+  }
+
   function buildPanel() {
     // Kacheln je Art
     var tiles = $('tiles');
@@ -379,6 +464,7 @@
     chartView.meanButton($('bigTools'));
     // Bei geaendertem Zeitraum stehen die neuen Werte sofort in der Legende
     chartView.onRange(function () { updateCharts(); });
+    buildCards();
 
     // Startbestand: ein Regler je Art, die Empfehlung ist als Strich markiert
     $('startInputs').innerHTML = BT.SPECIES_ORDER.map(function (id) {
@@ -408,6 +494,8 @@
     updateCharts();
     updateDeaths();
     updateHighlightCount();
+    updateCards();
+    updateChronicle();
   }
 
   function updateDeaths() {
@@ -495,8 +583,11 @@
       var pos = localPos(e);
       if (Math.abs(pos.x - clickStart.x) + Math.abs(pos.y - clickStart.y) < 5) {
         var w = camera.screenToWorld(pos.x, pos.y);
-        var a = BT.AgentRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale));
-        if (a) setHighlight(a.spec.id);
+        if (aiming) playCard(aiming, { x: w.x, y: w.y });
+        else {
+          var a = BT.AgentRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale));
+          if (a) setHighlight(a.spec.id);
+        }
       }
     }
     clickStart = null;
@@ -524,7 +615,7 @@
   });
 
   var STATE_TEXT = {
-    fressen: 'frisst', fliehen: 'flieht', trinken: 'geht trinken', brueten: 'brütet',
+    fressen: 'frisst', fliehen: 'flieht', meiden: 'meidet die Menschen', trinken: 'geht trinken', brueten: 'brütet',
     streifen: 'streift durchs Revier', jagen: 'jagt', heimflug: 'bringt Beute zum Horst', ruhen: 'ruht', aas: 'frisst Aas', wandern: 'sucht ein Revier'
   };
   var GROUP_TEXT = { herd: 'Herde', flock: 'Gruppe', pack: 'Rudel', pair: 'Paar' };
@@ -541,7 +632,12 @@
     if (w.x < 0 || w.y < 0 || w.x >= world.width || w.y >= world.height) { tooltip.hidden = true; return; }
     var a = sim ? BT.AgentRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale)) : null;
     var text;
-    if (a) {
+    var hp = !a && sim ? BT.HumanRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale)) : null;
+    if (hp) {
+      text = hp.kind === 'haus' ? 'Haus · gebaut ' + BT.Time.label(hp.obj.day)
+        : hp.kind === 'schiff' ? 'Schiff · ' + ({ anfahrt: 'fährt zur Küste', liegt: 'liegt vor Anker', abfahrt: 'fährt zurück' })[hp.obj.phase]
+        : 'Siedler · ' + (hp.obj.working ? 'arbeitet' : 'unterwegs');
+    } else if (a) {
       var years = a.age / BT.Time.DAYS_PER_YEAR;
       var g = a.group;
       text = a.spec.name + (a.sex === 'f' ? ' ♀' : ' ♂') + ' · ' +
@@ -599,6 +695,10 @@
     dirty = true;
   });
   $('skip').addEventListener('click', function () { skipYears(5); });
+  $('cards').addEventListener('click', function (e) {
+    var card = e.target.closest('.card');
+    if (card && !card.disabled) chooseCard(card.dataset.id);
+  });
   $('tiles').addEventListener('click', function (e) {
     var tile = e.target.closest('.tile');
     if (tile) setHighlight(tile.dataset.id);
@@ -640,7 +740,7 @@
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
     if (e.key === 'r' || e.key === 'R') { if (camera) { camera.reset(); interacted(); } }
     if (e.key === ' ') { e.preventDefault(); setRunning(!running); }
-    if (e.key === 'Escape') { if (bigOpen()) setBig(false); else setHighlight(null); }
+    if (e.key === 'Escape') { if (bigOpen()) setBig(false); else if (aiming) setAim(null); else setHighlight(null); }
   });
   global.addEventListener('resize', function () {
     resize();
@@ -671,6 +771,8 @@
       customStart = true;
       restart();
     },
-    setRunning: setRunning
+    setRunning: setRunning,
+    /** Karte spielen, z. B. play('landung', { x: 400, y: 800 }); liefert null oder einen Fehlertext */
+    play: function (id, params) { return playCard(id, params || {}); }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

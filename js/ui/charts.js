@@ -288,6 +288,21 @@
       }
     }
 
+    // Gespielte Karten (Menschen) als senkrechte Marke mit Symbol
+    var events = this.view.events || [];
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (var e = 0; e < events.length; e++) {
+      var ek = events[e].day - d0;
+      if (ek < 0 || ek > n - 1) continue;
+      var ex = Math.round(x(ek)) + 0.5;
+      ctx.strokeStyle = 'rgba(255, 170, 90, 0.85)'; ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(ex, Tp); ctx.lineTo(ex, Tp + ph); ctx.stroke();
+      ctx.setLineDash([]);
+      var card = BT.CARDS && BT.CARDS[events[e].card];
+      if (card) { ctx.font = '13px system-ui, sans-serif'; ctx.fillText(card.icon, ex, Tp + 2); ctx.font = '10px system-ui, sans-serif'; }
+    }
+
     // Zeitmarken: Jahre, bei kurzem Zeitraum auch Jahreszeiten
     var years = (n - 1) / DPY;
     var maxLabels = Math.max(2, Math.floor(pw / 46));

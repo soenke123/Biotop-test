@@ -246,3 +246,25 @@ button:disabled { opacity: 0.5; cursor: default; }
 .highlight-badge[hidden] { display: none; }
 .highlight-badge i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
 .highlight-badge button { padding: 1px 7px; border-radius: 999px; font-size: 12px; }
+
+/* Menschen: Kartenleiste, Chronik, Zielhinweis auf der Karte */
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+.card { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 3px 5px; border-radius: 8px;
+  background: #1a4d69; border: 2px solid #2d6684; position: relative; min-height: 58px; font-size: 11px; line-height: 1.15; text-align: center; }
+.card .card-icon { font-size: 20px; line-height: 1.1; }
+.card .card-count { position: absolute; top: 2px; right: 4px; font-size: 10px; font-weight: 700; color: #f2c94c; }
+.card.start { border-color: #e08a3c; background: #5a3b22; }
+.card.start:not(:disabled) { animation: card-pulse 1.6s ease-in-out infinite; }
+.card.aiming { border-color: #f2c94c; background: #6b5320; animation: none; }
+.card.soon { opacity: 0.38; }
+.card:disabled { cursor: default; }
+@keyframes card-pulse { 50% { box-shadow: 0 0 0 3px rgba(224, 138, 60, 0.45); } }
+.chronicle { list-style: none; margin: 8px 0 0; padding: 0; font-size: 11.5px; max-height: 110px; overflow-y: auto; }
+.chronicle li { padding: 2px 0; border-top: 1px solid #1d4a63; display: flex; gap: 6px; }
+.chronicle li .when { opacity: 0.65; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chronicle li.pending { opacity: 0.6; font-style: italic; }
+.aim-badge { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: rgba(90, 59, 34, 0.94);
+  border: 2px solid #e08a3c; border-radius: 10px; padding: 8px 14px; font-size: 14px; pointer-events: none; max-width: 80%; text-align: center; }
+.aim-badge.error { border-color: #e66767; }
+.aim-badge small { display: block; opacity: 0.75; font-size: 11px; margin-top: 2px; }
+#map.aiming { cursor: crosshair; }

@@ -13,6 +13,9 @@ Inselwolf, Inseladler) mit Herden, Rudeln, Revieren, Nestern, Adlerhorsten, Aas,
 Mechanismen, die das Ökosystem stabil halten. Werte, die im Code geändert werden, wandern
 zurück in die Datei.
 
+Stufe 3 läuft: Der Mensch kommt mit Karten auf die Insel. **Plan, Karten und Stand in
+`docs/MENSCH.md`.** Ohne gespielte Karte muss die Simulation exakt wie vorher laufen.
+
 Soll später ein Skill in MPSkills werden (wie Wild Clusters in `newTablet-Schulung`).
 
 ## Regeln
@@ -46,10 +49,13 @@ js/world/   config.js (alle Stellschrauben, Lebensräume), island.js (Generator)
             decor.js (Streudetails), world.js (world-Objekt, query)
 js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefschattierung),
             seasonRenderer (Jahreszeiten als Farbschicht), plantRenderer (Weidezustand:
-            entsättigt die Textur, abgefressen blasser, überweidet grau), sprites, agentRenderer (Tiere, Hervorhebung einer Art)
+            entsättigt die Textur, abgefressen blasser, überweidet grau), sprites, agentRenderer (Tiere, Hervorhebung einer Art),
+            humanRenderer (Schiff, Häuser, Siedler; Platzhalter bis Bilder da sind)
 js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung und
-            Pflanzenzustand je Weidezelle, Überweidung), movement, behavior (Gruppen-Entscheidungen), stats, simulation (Tick/Tag)
-js/ui/      app.js (Karte, Zeitregler, Seitenleiste, Bildpuffer, Großansicht der Diagramme),
+            Pflanzenzustand je Weidezelle, Überweidung), movement, cards (Kartentabelle),
+            humans (Schiffe, Häuser, Siedler, Störungsfeld), behavior (Gruppen-Entscheidungen),
+            stats, simulation (Tick/Tag, sim.play für Karten)
+js/ui/      app.js (Karte, Zeitregler, Seitenleiste, Kartenleiste und Chronik, Bildpuffer, Großansicht der Diagramme),
             charts.js (LineChart; ChartView: gemeinsamer Zeitraum und Fadenkreuz)
 data/       arten.md (fachliche Wahrheit für species.js)
 assets/     Tierbilder (Platzhalter aus Wild Clusters)
@@ -57,7 +63,7 @@ tools/      load.js (Skripte in Node laden), smoketest.js, balance.js (Abstimmun
             shot.js (Playwright-Screenshot, optional nach N simulierten Tagen)
 ```
 
-Simulation: Entschieden wird je **Gruppe** (Herde, Rudel …), die Tiere folgen dem Anker der
+Simulation: Pro Tick zuerst gespielte Karten und Menschen, dann die Tiere. Entschieden wird je **Gruppe** (Herde, Rudel …), die Tiere folgen dem Anker der
 Gruppe mit eigenem Versatz. Pro Tick: Verhalten, Bewegung, Fressen, Energie, Durst. Pro Tag:
 Wachstum, Alter, Geburt, Nester und Horste, Abwanderung, Gruppen teilen/zusammenlegen, Statistik.
 
@@ -71,6 +77,7 @@ node tools/smoketest.js 20
 node tools/balance.js 8 30
 node tools/balance.js 8 30 --ohne=inselwolf,inseladler   # Vergleich ohne Räuber
 node tools/shot.js /tmp/x.png 482917 mittel 1 0.5 0.5 300 [inselwolf,inseladler]
+node tools/shot.js /tmp/x.png 482917 mittel 4 0.2 0.46 300 --landung=0.17,0.5   # mit Dorf
 ```
 
 `tools/shot.js` meldet Fehler aus der Browser-Konsole und endet dann mit Code 1. Nach

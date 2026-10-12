@@ -97,6 +97,7 @@
    *          (j = Jungtier). Haltungen: move, stand, eat, rest; fehlt `stand`,
    *          wird `move` genommen. facing: Blickrichtung der Bilder.
    *          lighten: hellt die Bilder auf (Farbe, mit der die dunklen Toene aufgehellt werden).
+   * scheu:   wie stark die Art Menschen meidet (0..1, mal Stoerung, eco/humans.js)
    */
   var Y = function (y) { return BT.Time.years(y); };
 
@@ -120,6 +121,7 @@
       thirstDays: 14,                 // so lange ohne Wasser, dann Tod
       speed: 4.5, fleeSpeed: 13, sprintTicks: 4,
       vision: 180,                    // erkennt Raeuber
+      scheu: 1.0,                     // meidet Menschen (0..1, eco/humans.js)
       searchRadius: 260,              // sucht Futter
       habitat: pref({ TUSSOCK: 1.0, SCRUB: 1.0, FERN: 0.8, SWAMP: 0.5, MOSS: 0.5, BEACH: 0.3, THERMAL: 0.3, ROCK: 0.15, PEAK: 0 }),
       maturity: Y(1), maxAge: Y(8),
@@ -146,6 +148,7 @@
       thirstDays: 14,
       speed: 3.2, fleeSpeed: 11, sprintTicks: 3,
       vision: 120,
+      scheu: 0.2,                     // inselzahm: kennt keine Menschen
       searchRadius: 200,
       habitat: pref({ SCRUB: 1.0, FERN: 1.0, MOSS: 0.8, SWAMP: 0.9, TUSSOCK: 0.7, BEACH: 0.4, THERMAL: 0.3, ROCK: 0.1, PEAK: 0 }),
       maturity: Y(1), maxAge: Y(7),
@@ -175,6 +178,7 @@
       thirstDays: 10,
       speed: 6, chaseSpeed: 19,
       vision: 230,
+      scheu: 0.9,
       huntChance: 0.32,               // je Angriff und Jaeger, steigt mit der Rudelgroesse
       maxChaseTicks: 12,
       territory: 380,                 // Radius des Reviers
@@ -208,6 +212,7 @@
       thirstDays: 0,                  // trinkt nicht (Wasser aus der Beute)
       speed: 8, chaseSpeed: 22,
       vision: 300,
+      scheu: 0.5,
       huntChance: 0.3,
       maxChaseTicks: 6,
       territory: 330,

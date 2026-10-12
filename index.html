@@ -42,6 +42,7 @@
       <canvas id="map"></canvas>
       <div id="season" class="season-badge"></div>
       <div id="highlight" class="highlight-badge" hidden></div>
+      <div id="aim" class="aim-badge" hidden></div>
       <div id="tooltip" class="tooltip" hidden></div>
       <aside id="legend" class="legend" hidden></aside>
     </main>
@@ -59,6 +60,12 @@
           <input id="speed" type="range" min="0" max="100" value="38">
           <span id="speedLabel"></span>
         </label>
+      </section>
+
+      <section class="people">
+        <h2>Menschen <small id="peopleInfo">noch keine auf der Insel</small></h2>
+        <div id="cards" class="cards"></div>
+        <ol id="chronicle" class="chronicle"></ol>
       </section>
 
       <section class="startvalues">
@@ -126,6 +133,8 @@
   <script src="js/eco/fields.js"></script>
   <script src="js/eco/movement.js"></script>
   <script src="js/eco/weather.js"></script>
+  <script src="js/eco/cards.js"></script>
+  <script src="js/eco/humans.js"></script>
   <script src="js/eco/behavior.js"></script>
   <script src="js/eco/stats.js"></script>
   <script src="js/eco/simulation.js"></script>
@@ -138,6 +147,7 @@
   <script src="js/render/sprites.js"></script>
   <script src="js/render/foodOverlay.js"></script>
   <script src="js/render/agentRenderer.js"></script>
+  <script src="js/render/humanRenderer.js"></script>
   <script src="js/ui/charts.js"></script>
   <script src="js/ui/app.js"></script>
 </body>

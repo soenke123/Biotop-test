@@ -41,6 +41,9 @@
       var id = BT.SPECIES_ORDER[k];
       this.startCounts[id] = opts.start && opts.start[id] != null ? opts.start[id] : defaults[id];
     }
+    this.humans = new BT.Humans(this);
+    this.events = [];               // gespielte Karten: { day, tick, card, params, at }
+    this.pending = [];              // gespielt, wird beim naechsten Tick ausgefuehrt
     this.stats = new BT.Stats(this);
     this.populate();
     this.stats.record();
@@ -191,9 +194,55 @@
     }
   };
 
+  // ------------------------------------------------------------ Karten (Menschen)
+
+  /** Wie oft wurde diese Karte schon gespielt (einschliesslich wartender)? */
+  Simulation.prototype.played = function (id) {
+    var n = 0, i;
+    for (i = 0; i < this.events.length; i++) if (this.events[i].card === id) n++;
+    for (i = 0; i < this.pending.length; i++) if (this.pending[i].card === id) n++;
+    return n;
+  };
+
+  /** Darf die Karte jetzt gespielt werden? Fehlertext oder null. */
+  Simulation.prototype.cardBlocked = function (id) {
+    var c = BT.CARDS[id];
+    if (!c) return 'Unbekannte Karte';
+    if (c.soon) return 'Kommt bald';
+    if (c.needs && !this.played(c.needs)) return 'Erst „' + BT.CARDS[c.needs].name + '“ spielen';
+    if (!c.repeat && this.played(id)) return 'Schon gespielt';
+    return null;
+  };
+
+  /**
+   * Karte spielen. Ausgefuehrt wird beim naechsten Tick (oder bei params.tick),
+   * damit der Verlauf nicht davon abhaengt, wann im Bild geklickt wurde.
+   * Liefert null oder einen Fehlertext.
+   */
+  Simulation.prototype.play = function (id, params) {
+    var err = this.cardBlocked(id);
+    if (!err && id === 'landung') err = this.humans.checkLanding(params);
+    if (err) return err;
+    var p = params || {};
+    this.pending.push({ card: id, params: p, tick: p.tick != null ? p.tick : this.tick });
+    return null;
+  };
+
+  Simulation.prototype.applyPending = function () {
+    for (var i = 0; i < this.pending.length; i++) {
+      var ev = this.pending[i];
+      if (ev.tick > this.tick) continue;
+      this.pending.splice(i--, 1);
+      var at = this.humans.apply(ev.card, ev.params);
+      this.events.push({ day: this.day, tick: this.tick, card: ev.card, params: ev.params, at: at });
+    }
+  };
+
   // ------------------------------------------------------------ Ablauf
 
   Simulation.prototype.step = function () {
+    if (this.pending.length) this.applyPending();
+    this.humans.step();
     var groups = this.groups;
     var winter = this.calendar.season === 3;
     var perTick = 1 / this.ticksPerDay;

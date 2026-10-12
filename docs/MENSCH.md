@@ -1,0 +1,159 @@
+# Biotop – Der Mensch kommt auf die Insel
+
+Stand: Plan zur gemeinsamen Ausarbeitung (Stufen 3 und 4 aus `KONZEPT.md`). Die Zahlen sind
+Startwerte für die Abstimmung, keine kalibrierten Daten.
+
+## 1. Die Idee
+
+Die Insel läuft zunächst ohne Menschen im Gleichgewicht. Irgendwann sagt die Lehrkraft (oder
+eine Gruppe von Lernenden): **Jetzt kommen Menschen.** Man klickt an die Küste, ein Schiff
+erscheint, fährt dorthin, das erste Haus entsteht, Siedler laufen umher. Schon jetzt sieht man
+die erste Veränderung: Die Tiere meiden die Gegend um das Dorf.
+
+Danach wird mit **Karten** gespielt:
+
+- **Aktive Karten** wählt man frei, wie Spielkarten, und zwar so oft man will. Jede weitere
+  Karte derselben Sorte verstärkt den Eingriff (größeres Dorf, mehr Äcker, mehr Jäger).
+- **Folgekarten** spielt niemand. Sie treten von selbst ein, mit einer Wahrscheinlichkeit, die
+  aus dem Zustand der Simulation folgt (Schafe brechen aus, Hunde verwildern). Sie erscheinen
+  in der Chronik und als Marke im Diagramm, damit man Ursache und Wirkung verbinden kann.
+
+**Was man im Unterricht sieht:** Eingriff → Folge über Jahre. Und weil die Simulation
+deterministisch ist: gleicher Seed, gleiche Karten zur gleichen Zeit = gleicher Verlauf. Zwei
+Gruppen, die verschiedene Karten spielen, lassen sich direkt vergleichen.
+
+## 2. Grundregeln im Modell
+
+| Regel | Umsetzung |
+|---|---|
+| Karten sind Ereignisse | `sim.play(karte, ort)` zwischen zwei Ticks; alles wird in `sim.events` protokolliert (Chronik, Diagrammmarken, Wiederholung) |
+| Karten sind Daten | `BT.CARDS` (Name, Text, aktiv/Folge, Voraussetzungen, Stärke je Stufe), kein Sonderfall im Code |
+| Neue Tiere sind Arten | Schaf, Hund, Ratte, Katze werden Einträge in `BT.SPECIES` mit demselben Verhalten |
+| Störung als Feld | Dorf, Äcker, Weiden erzeugen ein Störungsfeld (je Weidezelle, 0..1). Jede Art hat eine `scheu` (0..1) und meidet Störung entsprechend |
+| Gelände in zwei Schichten | `world.biome` bleibt die Natur, `nutzung` (Dorf, Acker, Weide, gerodet) liegt darüber. Nahrung und Lebensraum werden aus beidem lokal neu berechnet |
+| Inselzahmheit | Jede Art hat `kennt: [...]`, die Räuber, vor denen sie flieht. Fremde Räuber bemerkt sie spät oder nie |
+| Neue Todesursachen | `jagd`, `mensch`, `krankheit`, `gelege` (Eier gefressen), dazu die neuen Räuber |
+
+## 3. Die Karten
+
+### Startkarte
+
+| Karte | Was passiert | Folgen im Modell |
+|---|---|---|
+| **Landung** | Klick an die Küste: Ein Schiff fährt hin, das erste Haus entsteht, 5 Siedler | Störungsfeld um das Dorf; Hirsche und Wölfe meiden es, Laufvögel kaum (inselzahm). Das Gras ums Dorf erholt sich sichtbar, weil dort niemand mehr weidet |
+
+### Aktive Karten
+
+| # | Karte | Was passiert | Gegenspieler und Folgen |
+|---|---|---|---|
+| 1 | **Dorf vergrößern** | Wald am Dorfrand wird gerodet, neue Häuser, mehr Siedler | Farnwald und Buschland werden Grasland bzw. Dorf: weniger Laub, Früchte, Deckung. Größeres Störungsfeld |
+| 2 | **Acker anlegen** | Ein Feld am Dorf; jede weitere Karte vergrößert es oder legt ein neues an | Viel Nahrung im Sommer, kahl nach der Ernte, keine Deckung. **Hirsche fressen gern am Acker** (Ernteschaden; Folgekarte „Hirsche im Acker“) |
+| 3 | **Schafweide** | Eingezäunte Weide mit einer Schafherde | Schafe fressen Gras sehr kurz (genügsam, große Herden). **Wölfe holen sich Schafe** (leichte Beute). Folgekarte: Schafe brechen aus |
+| 4 | **Hütehunde** | Hunde im Dorf und an den Weiden | Wölfe und Hirsche halten Abstand (starkes Störungsfeld), weniger Schafe gerissen. Folgekarte: Hunde verwildern |
+| 5 | **Wölfe jagen** | Jäger ziehen in die Wolfsreviere | Wölfe sterben (Ursache „Jagd“), selten auch ein Jäger. Folgen: Hirsche nehmen zu → Überweidung |
+| 6 | **Wild jagen** | Jäger erlegen Hirsche und Laufvögel als Nahrung | Zusätzliche Sterblichkeit; Laufvögel fliehen nicht vor Menschen und sind leichte Beute |
+| 7 | **Sammeln** | Siedler sammeln Früchte und Samen rund ums Dorf | Weniger Früchte für die Laufvögel, vor allem im Herbst |
+| 8 | **Ratten mitbringen** (z. B. „Neues Schiff mit Vorräten“) | Ratten kommen an Land | Siehe unten: Ratten sind eine Plage, aber auch Nahrung für Wölfe und Adler |
+
+### Folgekarten (treten von selbst ein)
+
+| Karte | Auslöser | Was passiert |
+|---|---|---|
+| **Schafe brechen aus** | je Weide und Jahr eine Wahrscheinlichkeit, höher ohne Hütehunde | Eine kleine Herde wird frei: **verwilderte Schafe** als eigene Art. Sie fressen das Grasland kurz, und die Hirsche weichen in Busch und Wald aus |
+| **Hunde verwildern** | je Jahr mit Hütehunden eine Wahrscheinlichkeit | Ein kleines Rudel wird frei: **verwilderte Hunde** wie Wölfe (Rudel, Revier), aber erfolgreicher auf der Jagd; Laufvögel kennen sie nicht. Sie tragen eine **Krankheit**, die Wölfe in ihrer Nähe schwächt und tötet |
+| **Wolf greift Siedler an** | ein Siedler ist allein außerhalb des Dorfs, ein hungriges Rudel ist nah | Meist gewinnt der Mensch (der Wolf stirbt, Ursache „Mensch“), manchmal stirbt der Siedler |
+| **Hirsche im Acker** | Hirsche fressen am Acker | Meldung in der Chronik; später vielleicht: Siedler jagen dann von selbst |
+| **Rattenplage** | Ratten erreichen einen Schwellenwert | Meldung; Ratten breiten sich über die ganze Insel aus |
+
+### Die Ratten genauer
+
+- Fressen **Eier** (Laufvogelnester und Adlerhorste), **Küken** der Laufvögel, **Samen und
+  Früchte**, **Insekten**.
+- Vermehren sich sehr schnell, leben kurz (etwa 1 Jahr), breiten sich vom Dorf aus über die Insel aus.
+- Sind selbst **Beute für Wölfe und Adler**. Das ist eine schöne Doppelrolle: Zuerst geht es
+  den Räubern sogar besser, den Laufvögeln aber schlechter.
+- Technisch: wahrscheinlich ein **Feld** (Rattendichte je Weidezelle) statt einzelner Tiere,
+  sonst werden es Tausende. Auf der Karte als gestreute Ratten gezeichnet, dichter, wo viele sind.
+
+## 4. Was noch fehlen könnte (Vorschläge)
+
+| Idee | Warum |
+|---|---|
+| **Katzen gegen Ratten** (aktiv) | Klassisches Beispiel für eine Kaskade: Die Katzen sollen die Ratten bekämpfen, fressen aber lieber die Laufvögel, die sie nicht kennen |
+| **Rattengift** (aktiv) | Weniger Ratten, aber Adler und Wölfe, die vergiftete Ratten fressen, sterben mit (Sekundärvergiftung) |
+| **Schutzgebiet / Zaun** (aktiv) | Ein raubtierfreies Gebiet. So endet die Geschichte nicht nur mit Zerstörung (Neuseeland: „Predator Free 2050“) |
+| **Brandrodung** (aktiv oder Folge von „Dorf vergrößern“) | Schnell viel Fläche, aber das Feuer kann außer Kontrolle geraten |
+| **Erosion** (Folge) | Gerodete, überweidete Hänge tragen dauerhaft weniger |
+| **Versorgung des Dorfs** | Braucht das Dorf Nahrung, um zu wachsen? Das gäbe einen Grund für Acker, Jagd und Schafe, macht es aber zum Wirtschaftsspiel. **Vorschlag: zunächst nicht**, die Lernenden sollen Folgen beobachten, nicht wirtschaften |
+
+## 5. Grafiken (Sprites)
+
+Sprites braucht es überall dort, wo man **einzelne Dinge** auf der Karte sieht. Flächen wie
+Acker, Weide und gerodetes Land werden gezeichnet (Konturen und Texturen wie die Lebensräume).
+
+| Bild | Haltungen / Varianten | Wofür |
+|---|---|---|
+| Schiff | 1 (mit Segel), Seitenansicht | Landung, weitere Schiffe |
+| Haus | 2–3 Varianten (Hütte, Haus, Scheune) | Dorf |
+| Siedler | gehend, stehend, arbeitend (hacken/sammeln) | Figuren im Dorf und auf dem Feld |
+| Jäger | gehend, schießend (oder Speer) | Jagdkarten, Kampf mit Wölfen |
+| Schaf | wie die Tiere: f/m/j × gehend, stehend, essend, liegend | Weide und verwilderte Schafe |
+| Hund | wie der Wolf | Hütehunde und verwilderte Hunde |
+| Ratte | gehend, essend | Rattenplage |
+| Katze | gehend, stehend, essend | Katzenkarte |
+| Zaun | Stück, kachelbar (oder gezeichnet) | Weiden, Schutzgebiet |
+| Kartenbilder | je Karte ein Bild | Kartenleiste in der Oberfläche |
+
+Dateinamen wie bei den Tieren: `assets/<name>_<f|m|j>_<haltung>.png`, für Dinge ohne
+Geschlecht `assets/<name>_<haltung>.png` (z. B. `schiff_faehrt.png`, `haus_1.png`,
+`siedler_gehend.png`). Bis die Bilder da sind, zeichnet das Programm einfache Platzhalter.
+
+## 6. Plan, Schritt für Schritt
+
+Jeder Schritt endet mit: `node tools/balance.js 8 30` (ohne Menschen unverändert), einem
+Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
+
+| Schritt | Inhalt | Stand |
+|---|---|---|
+| **1** | **Grundgerüst und Landung:** Karten als Ereignisse (`sim.play`, Chronik), Störungsfeld, Art-Merkmal `scheu`, Kartenleiste, Karte „Landung“ mit Schiff, erstem Haus und Siedlern, Tiere meiden das Dorf, Platzhalter-Grafiken | erledigt |
+| 2 | **Dorf vergrößern:** Schicht `nutzung`, Rodung verändert Lebensraum und Nahrung, Karte wird neu gezeichnet, Häuser kommen dazu, Ereignismarken im Diagramm | |
+| 3 | **Acker:** Ackerflächen mit Saison und Ernte, Hirsche fressen dort | |
+| 4 | **Ratten und Inselzahmheit:** Art-Merkmal `kennt`, Ratten als Feld, Gelegeraub, Ratten als Beute | |
+| 5 | **Schafe:** Weide mit Zaun, Schaf als Art, Wölfe reißen Schafe, Folgekarte „Schafe brechen aus“ | |
+| 6 | **Hunde:** Hütehunde (Störung), verwilderte Hunde als Art, Krankheit bei Wölfen | |
+| 7 | **Jagd:** Wölfe jagen, Wild jagen, Siedler gegen Wolf | |
+| 8 | **Sammeln** | |
+| 9 | **Gegenmaßnahmen:** Katzen, Gift, Schutzgebiet (nach Absprache) | |
+
+## 7. Offene Fragen
+
+1. Wer spielt die Karten: nur die Lehrkraft oder auch die Lernenden (z. B. Gruppen gegeneinander)?
+2. Sollen Karten etwas kosten (z. B. eine Karte pro Jahr), oder ist alles frei wählbar?
+3. Darf eine Art endgültig aussterben, oder gibt es immer einen Weg zur Rettung (Schritt 9)?
+4. Versorgung des Dorfs: ja oder nein (Abschnitt 4)?
+
+## 8. Umgesetzt (Schritt 1)
+
+- `js/eco/cards.js`: Kartentabelle `BT.CARDS`. Bisher ist nur „Landung“ spielbar, die übrigen
+  Karten stehen blass als „kommt bald“ in der Leiste.
+- `js/eco/humans.js`: Schiffe, Häuser, Siedler, Störungsfeld (`BT.HUMANS` mit allen
+  Stellschrauben). Die Menschen haben einen eigenen Zufallsgenerator (`fork('menschen')`).
+  **Ohne Landung läuft die Simulation exakt wie vorher** (`balance.js` liefert dieselben Zahlen).
+- `sim.play(karte, ort)` prüft die Karte und führt sie beim nächsten Tick aus. Festgehalten
+  wird sie in `sim.events` (Tag, Karte, Ort). Daraus entstehen die Chronik unter der Kartenleiste
+  und die gestrichelten Marken mit Symbol in allen Diagrammen.
+- **Landung:** Karte antippen, dann an die Küste klicken. Der Klick wird zum nächsten
+  Landpunkt direkt an der Küste verschoben (höchstens 150 Einheiten entfernt). Das Schiff
+  kommt von der offenen See, fährt 4 Tage und liegt dann 3 Tage vor Anker. Solange es fährt,
+  läuft die Zeit in Zeitlupe (höchstens 8 Ticks pro Sekunde, das Ergebnis bleibt gleich). Das
+  erste Haus steht 4 Rasterzellen hinter der Küste. 5 Siedler gehen an Land und laufen tagsüber
+  rund ums Haus (bis 110 Einheiten weit). Nachts sind sie im Haus.
+- **Störung:** Um jedes Haus fällt sie von 1 (am Haus) auf 0 (im Abstand 260) ab. Wie stark eine
+  Art sie meidet, steht in `scheu`: Zwerghirsch 1, Inselwolf 0,9, Inseladler 0,5, Laufvogel 0,2
+  (inselzahm). Gemieden wird, wo `Störung · scheu ≥ 0,3` ist: Pflanzenfresser ziehen dort weg
+  (Zustand „meidet die Menschen“) und wählen dort keine Weideplätze, Räuber streifen und jagen
+  dort nicht. Durst geht vor, denn das Wasser kann im Dorf liegen. Für den Hirsch heißt das:
+  im Umkreis von etwa 180 um das Haus. Der Laufvogel meidet das Dorf nie.
+- Platzhalter-Grafiken in `js/render/humanRenderer.js`. Sobald Bilder da sind, werden sie dort
+  in `FILES` eingetragen.
+- `tools/shot.js … --landung=fx,fy` landet vor dem Simulieren an dieser Stelle (Anteil der Welt).

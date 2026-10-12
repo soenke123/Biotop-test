@@ -9,9 +9,12 @@
  * Ein Verhalten fuer alle Arten - die Unterschiede stehen in BT.SPECIES.
  *
  * Zustaende:
- *   Pflanzenfresser  fressen · fliehen · trinken · brueten
+ *   Pflanzenfresser  fressen · fliehen · trinken · brueten · meiden
  *   Raeuber          streifen · jagen · ruhen · trinken · wandern (ohne Revier)
- *                    heimflug (Greifvogel bringt Beute zum Horst)
+ *                    heimflug (Greifvogel bringt Beute zum Horst) · meiden
+ *
+ * Meiden: Wo Menschen stoeren (sim.humans, mal spec.scheu), zieht die Gruppe
+ * weg vom naechsten Haus und sucht dort weder Futter noch Beute.
  *
  * Horst (spec.horst): Tiere im Horst (Brutvogel, Kueken) bleiben dort, der
  * Anker der Gruppe sind die jagenden Eltern. Jede Beute wird zum Horst
@@ -64,6 +67,25 @@
     return true;
   }
 
+  /**
+   * Menschen meiden: Liegt die Gruppe in gestoerter Gegend, zieht sie vom
+   * naechsten Haus weg. Durst geht vor (das Wasser kann im Dorf liegen).
+   * true, solange damit beschaeftigt.
+   */
+  function avoidPeople(sim, g) {
+    var H = sim.humans;
+    if (!H.active || !g.spec.scheu || g.nest || g.horst) return false;
+    if (!H.avoids(g.spec, g.x, g.y)) return false;
+    if (g.spec.thirstDays && maxOf(g.members, 'thirst') > 0.75) return false;
+    var h = H.nearestHouse(g.x, g.y);
+    var sp = g.spec.speed * 2;
+    g.state = 'meiden';
+    g.tx = null;
+    BT.Move.stepAway(sim.world, g.spec, g, h.x, h.y, sp);
+    g.speedNow = sp;
+    return true;
+  }
+
   /** Zufaelliger erreichbarer Punkt im Umkreis. */
   function randomPointNear(sim, spec, x, y, radius) {
     for (var t = 0; t < 12; t++) {
@@ -109,6 +131,7 @@
       var b = w.query.biomeAt(px, py);
       var pref = spec.habitat[b];
       if (pref <= 0) continue;
+      if (sim.humans.avoids(spec, px, py)) continue;
       var food = f.energyAt(f.index(px, py), spec.diet);
       var score = food * pref - BT.M.hypot(px - g.x, py - g.y) * 0.0015;
       // Im Winter sind die Thermalfelder warm: dort kostet die Kaelte weniger
@@ -141,10 +164,13 @@
       }
     }
 
-    // 2. Durst
+    // 2. Menschen meiden
+    if (avoidPeople(sim, g)) return;
+
+    // 3. Durst
     if (handleThirst(sim, g, spec.speed)) { g.speedNow = spec.speed * 2.5; return; }
 
-    // 3. Fressen (beim Brueten nur rund ums Nest)
+    // 4. Fressen (beim Brueten nur rund ums Nest)
     g.state = g.nest ? 'brueten' : 'fressen';
     var cx = g.nest ? g.nest.x : g.x, cy = g.nest ? g.nest.y : g.y;
     var radius = g.nest ? 50 : spec.searchRadius;
@@ -235,6 +261,7 @@
       if (g.home && BT.M.hypot(p.x - g.home.x, p.y - g.home.y) > spec.territory * 1.4) continue;
       if (!g.home && insideForeignTerritory(sim, g, p.x, p.y)) continue;
       if (!eligibleVictims(g, p).length) continue;
+      if (sim.humans.avoids(spec, p.x, p.y)) continue;
       var score = weight * (1 - d / vision);
       if (score > bestScore) { bestScore = score; best = p; bestWeight = weight; }
     }
@@ -312,6 +339,7 @@
     for (var t = 0; t < 6; t++) {
       var p = randomPointNear(sim, spec, c.x, c.y, r);
       var score = sim.rng.next() * 0.5;
+      if (sim.humans.avoids(spec, p.x, p.y)) score -= 100;
       for (var i = 0; i < sim.herbivoreGroups.length; i++) {
         var h = sim.herbivoreGroups[i];
         var w = spec.prey[h.spec.id];
@@ -366,6 +394,7 @@
     for (var t = 0; t < 12; t++) {
       var p = randomPointNear(sim, spec, g.x, g.y, spec.territory * 3);
       if (spec.habitat[sim.world.query.biomeAt(p.x, p.y)] <= 0 || !sim.homeIsFree(spec, p.x, p.y)) continue;
+      if (sim.humans.avoids(spec, p.x, p.y)) continue;
       var d = BT.M.hypot(p.x - g.x, p.y - g.y);
       if (d < bestD) { bestD = d; best = p; }
     }
@@ -453,7 +482,7 @@
     // Jagd laeuft
     if (g.state === 'jagen') {
       var prey = g.prey;
-      if (!prey || !prey.members.length || g.stateTicks <= 0 || ++g.stalkTicks > 60) {
+      if (!prey || !prey.members.length || g.stateTicks <= 0 || ++g.stalkTicks > 60 || sim.humans.avoids(spec, prey.x, prey.y)) {
         g.state = 'streifen'; g.prey = null; g.cooldown = 6; g.tx = null;
       } else {
         // Anschleichen, solange die Beute noch nichts merkt, dann Sprint
@@ -480,6 +509,8 @@
       }
     }
 
+    if (avoidPeople(sim, g)) return;
+
     // Aas in der Naehe? Leichter als jagen.
     if (energy < hungry && scavenge(sim, g)) return;
 
@@ -503,6 +534,7 @@
       if (!area) p = mateSearchPoint(sim, g) || freeHomePoint(sim, g) || randomPointNear(sim, spec, g.x, g.y, spec.territory * 2.5);
       else if (energy < hungry * 1.15) p = preyRichPoint(sim, g, area, area.r);
       else p = randomPointNear(sim, spec, area.x, area.y, area.r);
+      for (var t = 0; t < 4 && sim.humans.avoids(spec, p.x, p.y); t++) p = randomPointNear(sim, spec, area ? area.x : g.x, area ? area.y : g.y, area ? area.r : spec.territory * 2.5);
       g.tx = p.x; g.ty = p.y;
       g.stateTicks = 40;
     }
