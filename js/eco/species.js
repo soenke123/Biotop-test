@@ -108,8 +108,13 @@
    *          lighten: hellt die Bilder auf (Farbe, mit der die dunklen Toene aufgehellt werden).
    *          tint: faerbt die Bilder ein (Platzhalter: eine Art mit den Bildern einer anderen).
    * scheu:   wie stark die Art Menschen meidet (0..1, mal Stoerung, eco/humans.js)
-   * kennt:   Raeuber, vor denen die Art flieht (Inselzahmheit). Fehlt es, kennt sie alle.
-   * introduced: kommt erst mit den Menschen auf die Insel (Startbestand 0, eco/humans.js)
+   * introduced: kommt erst mit den Menschen auf die Insel (Startbestand 0, eco/humans.js).
+   *          Die heimischen Arten bleiben unveraendert; eine eingeschleppte Art bringt
+   *          ihre Beziehungen zu ihnen selbst mit:
+   *   preyOf:     { raeuber: Gewicht } - so gern fressen heimische Raeuber diese Art
+   *               (wird beim Laden in deren prey eingetragen; ohne die Art wirkungslos)
+   *   preyMaxAgeOf: { raeuber: Alter } - nur Jungtiere bis zu diesem Alter
+   *   unknownTo:  [arten] - diese Arten kennen den Raeuber nicht und fliehen nicht (Inselzahmheit)
    */
   var Y = function (y) { return BT.Time.years(y); };
 
@@ -161,7 +166,6 @@
       speed: 3.2, fleeSpeed: 11, sprintTicks: 3,
       vision: 120,
       scheu: 0.2,                     // inselzahm: kennt keine Menschen
-      kennt: ['inselwolf', 'inseladler'],   // ... und keine Hunde: vor ihnen flieht er nicht
       searchRadius: 200,
       habitat: pref({ SCRUB: 1.0, FERN: 1.0, MOSS: 0.8, SWAMP: 0.9, TUSSOCK: 0.7, BEACH: 0.4, THERMAL: 0.3, ROCK: 0.1, PEAK: 0, MEADOW: 0.6, SOIL: 0.1, FIELD: 0.4 }),
       maturity: Y(1), maxAge: Y(7),
@@ -181,7 +185,7 @@
       color: '#7c7c86',
       group: { kind: 'pack', min: 1, max: 6, spread: 18, start: [3, 5] },
       start: 20,                      // Tiere, verteilt auf Rudel
-      prey: { zwerghirsch: 1.0, laufvogel: 0.15, schaf: 1.0 },
+      prey: { zwerghirsch: 1.0, laufvogel: 0.15 },
       // Wie sein Vorbild frisst er nebenher Insekten und Fruechte - das traegt
       // ihn durch Zeiten mit wenig Beute, reicht aber nicht fuer Nachwuchs
       diet: { frucht: 0.06, insekten: 0.06 },
@@ -218,8 +222,8 @@
       group: { kind: 'pair', min: 1, max: 3, spread: 30, start: [2, 2] },
       start: 12,                      // Tiere, verteilt auf Paare
       // Greift Jungtiere des Hirschs und Laufvoegel an, sieht nicht unter Baeume
-      prey: { laufvogel: 1.0, zwerghirsch: 0.25, schaf: 0.25 },   // Kaelber selten: sonst fehlen sie den Woelfen
-      preyMaxAge: { zwerghirsch: Y(0.5), schaf: Y(0.5) },
+      prey: { laufvogel: 1.0, zwerghirsch: 0.25 },   // Kaelber selten: sonst fehlen sie den Woelfen
+      preyMaxAge: { zwerghirsch: Y(0.5) },
       costPerDay: 0.03,
       winterCost: 0.005,
       thirstDays: 0,                  // trinkt nicht (Wasser aus der Beute)
@@ -274,10 +278,12 @@
     sprites: { name: 'hirsch', facing: 'right', lighten: '#8a8070', tint: '#e05ad8', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
     size: 21,
     color: '#e05ad8',
-    group: { kind: 'herd', min: 3, max: 24, spread: 24, start: [6, 6] },
+    group: { kind: 'herd', min: 3, max: 50, spread: 34, start: [8, 8] },   // grosse Herden
     start: 0,
     scarce: 1.2,
     scarceMin: 40,                    // Beutewechsel ohne Startbestand: bei 40 Schafen halb so gefragt
+    preyOf: { inselwolf: 1.0, inseladler: 0.25 },   // Woelfe reissen Schafe, Adler nur Laemmer
+    preyMaxAgeOf: { inseladler: Y(0.5) },
     // Fressen das Gras sehr kurz und kommen mit wenig aus, Laub nur nebenher
     diet: { gras: 0.12, laub: 0.05, korn: 0.12 },
     bite: 0.42,
@@ -295,40 +301,45 @@
     meat: 1.3
   };
 
-  BT.SPECIES.hund = {
+  // Verwilderte Hunde sind wie Woelfe (alle uebrigen Werte vom Inselwolf), nur etwas
+  // staerker: Sie jagen erfolgreicher, scheuen die Menschen kaum, die Laufvoegel
+  // kennen sie nicht (unknownTo) und werden deshalb oefter erbeutet, und sie tragen
+  // eine Krankheit, an der Woelfe in ihrer Naehe erkranken (disease, eco/simulation.js).
+  BT.SPECIES.hund = Object.assign({}, BT.SPECIES.inselwolf, {
     id: 'hund',
     name: 'Hund',
     plural: 'Hunde',
-    role: 'predator',
     introduced: true,
     sprites: { name: 'wolf', facing: 'left', lighten: '#5a4a30', tint: '#ff8c1a', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
-    size: 20,
     color: '#ff8c1a',
-    group: { kind: 'pack', min: 1, max: 6, spread: 18, start: [3, 3] },
     start: 0,
-    // Verwilderte Hunde jagen, was sie kriegen. Die Laufvoegel kennen sie nicht.
-    prey: { zwerghirsch: 0.8, schaf: 1.0, laufvogel: 0.3 },
-    diet: { frucht: 0.05, insekten: 0.05 },
-    bite: 0.15,
-    costPerDay: 0.045,
-    winterCost: 0.015,
-    thirstDays: 10,
-    speed: 6, chaseSpeed: 18,
-    vision: 220,
     scheu: 0.3,                       // kennt die Menschen
-    huntChance: 0.3,
-    maxChaseTicks: 12,
-    territory: 340,
-    hungry: 0.7,
-    habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 0.9, MOSS: 0.8, SWAMP: 0.6, BEACH: 0.7, THERMAL: 0.6, ROCK: 0.6, PEAK: 0.1, MEADOW: 1, SOIL: 0.7, VILLAGE: 0.5, FIELD: 0.9 }),
-    maturity: Y(1), maxAge: Y(10),
-    breed: { kind: 'group-pair', season: 0, day: 6, chance: 0.85, litter: [2, 4], minEnergy: 0.5, cost: 0.15 },
-    newbornEnergy: 0.6,
-    disperse: { season: 2, minAge: Y(1), minGroup: 4, chance: 0.6 },
-    meat: 1.0
-  };
+    huntChance: 0.36,                 // Wolf 0,32
+    prey: { zwerghirsch: 1.0, schaf: 1.0, laufvogel: 0.3 },
+    unknownTo: ['laufvogel'],
+    /*
+     * Krankheit (Vorbild Staupe): Die Hunde selbst erkranken nicht. Jeden Tag steckt
+     * sich jedes gesunde Tier der Arten in `victims` im Umkreis `radius` eines
+     * Hunderudels mit `chance` an, im eigenen Rudel mit `spread` je krankem Tier.
+     * Kranke Tiere verbrauchen `cost` mehr Energie am Tag, bekommen keine Jungen und
+     * sterben je Tag mit `death` (Ursache "krankheit"). Mit `recover` je Tag werden
+     * sie gesund und sind danach immun.
+     */
+    disease: { name: 'Staupe', victims: ['inselwolf'], radius: 300, chance: 0.03, spread: 0.03, cost: 0.02, death: 0.015, recover: 0.006 }
+  });
 
   BT.SPECIES_ORDER = ['zwerghirsch', 'laufvogel', 'inselwolf', 'inseladler', 'schaf', 'hund'];
+
+  // Eingeschleppte Arten als Beute der heimischen Raeuber eintragen (preyOf)
+  BT.SPECIES_ORDER.forEach(function (id) {
+    var s = BT.SPECIES[id];
+    for (var pred in s.preyOf || {}) BT.SPECIES[pred].prey[id] = s.preyOf[pred];
+    for (pred in s.preyMaxAgeOf || {}) {
+      var p = BT.SPECIES[pred];
+      p.preyMaxAge = Object.assign({}, p.preyMaxAge);
+      p.preyMaxAge[id] = s.preyMaxAgeOf[pred];
+    }
+  });
 
   function pref(byName) {
     var arr = new Array(BT.BIOME_INFO.length).fill(0);

@@ -34,11 +34,11 @@
 
   Stats.prototype.record = function () {
     var sim = this.sim;
-    var row = { day: sim.day, count: {}, young: {}, groups: {}, food: sim.fields.levels(), health: sim.fields.healthLevels(), weather: sim.weatherNow,
+    var row = { day: sim.day, count: {}, young: {}, groups: {}, sick: {}, food: sim.fields.levels(), health: sim.fields.healthLevels(), weather: sim.weatherNow,
       menschen: sim.humans ? sim.humans.people.length : 0 };
     for (var k = 0; k < BT.SPECIES_ORDER.length; k++) {
       var id = BT.SPECIES_ORDER[k];
-      row.count[id] = 0; row.young[id] = 0; row.groups[id] = 0;
+      row.count[id] = 0; row.young[id] = 0; row.groups[id] = 0; row.sick[id] = 0;
     }
     for (var i = 0; i < sim.groups.length; i++) {
       var g = sim.groups[i];
@@ -48,6 +48,7 @@
       for (var m = 0; m < g.members.length; m++) {
         row.count[sid]++;
         if (g.members[m].age < g.spec.maturity) row.young[sid]++;
+        if (g.members[m].sick) row.sick[sid]++;
       }
     }
     for (k = 0; k < BT.SPECIES_ORDER.length; k++) {

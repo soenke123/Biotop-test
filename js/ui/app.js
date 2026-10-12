@@ -539,7 +539,7 @@
       $('count-' + id).textContent = row.count[id];
       var g = row.groups[id];
       var kind = { herd: ['Herde', 'Herden'], flock: ['Gruppe', 'Gruppen'], pack: ['Rudel', 'Rudel'], pair: ['Paar/Revier', 'Paare/Reviere'] }[BT.SPECIES[id].group.kind];
-      $('sub-' + id).textContent = row.count[id] ? row.young[id] + ' Jungtiere · ' + g + ' ' + kind[g === 1 ? 0 : 1]
+      $('sub-' + id).textContent = row.count[id] ? row.young[id] + ' Jungtiere · ' + g + ' ' + kind[g === 1 ? 0 : 1] + (row.sick && row.sick[id] ? ' · ' + row.sick[id] + ' krank' : '')
         : sim.stats.extinct[id] != null ? 'ausgestorben in ' + BT.Time.label(sim.stats.extinct[id]).replace(/,.*/, '') : 'nicht auf der Insel';
     });
     updateCharts();
@@ -550,7 +550,7 @@
   }
 
   function updateDeaths() {
-    var causes = [['hunger', 'Hunger'], ['durst', 'Durst'], ['alter', 'Alter'], ['inselwolf', 'Wolf'], ['inseladler', 'Adler'], ['hund', 'Hund']];
+    var causes = [['hunger', 'Hunger'], ['durst', 'Durst'], ['alter', 'Alter'], ['inselwolf', 'Wolf'], ['inseladler', 'Adler'], ['hund', 'Hund'], ['krankheit', 'Krankheit']];
     var html = '<tr><th></th>' + causes.map(function (c) { return '<th>' + c[1] + '</th>'; }).join('') + '</tr>';
     BT.SPECIES_ORDER.forEach(function (id) {
       if (BT.SPECIES[id].introduced && !sim.stats.seen[id]) return;
@@ -697,7 +697,7 @@
       var g = a.group;
       text = a.spec.name + (a.sex === 'f' ? ' ♀' : ' ♂') + ' · ' +
         (a.age < a.spec.maturity ? 'Jungtier' : years.toFixed(1).replace('.', ',') + ' Jahre') +
-        ' · Energie ' + Math.round(a.energy * 100) + ' %' +
+        ' · Energie ' + Math.round(a.energy * 100) + ' %' + (a.sick ? ' · krank' : a.immune ? ' · immun' : '') +
         (g ? ' · ' + GROUP_TEXT[a.spec.group.kind] + ' mit ' + g.members.length + ' · ' + stateText(g, a) : '');
     } else {
       var b = sim ? sim.biomeAt(w.x, w.y) : world.query.biomeAt(w.x, w.y);

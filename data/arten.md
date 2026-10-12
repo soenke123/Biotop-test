@@ -228,27 +228,35 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   einem Jahr ohne Partner. Höchstalter etwa 14 Jahre.
 - **Trinkt nicht** (Wasser aus der Beute).
 
-## Schaf (eingeschleppt)
+## Eingeschleppte Arten: Schaf und Hund
 
-- **Vorbild:** verwilderte Hausschafe (Neuseeland, Hawaii).
+Sie kommen über Karten mit den Menschen (`docs/MENSCH.md`). **Die vier heimischen Arten bleiben
+unverändert** – ihre Einträge in `species.js` sind dieselben wie vorher. Was die heimischen Arten
+mit den neuen zu tun haben, bringt die neue Art selbst mit: `preyOf` (welche heimischen Räuber
+sie fressen) und `unknownTo` (wer sie nicht kennt und nicht flieht). Ohne Schafe und Hunde hat
+beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch nicht getestet.
+
+### Schaf
+
+- **Vorbild:** verwilderte Hausschafe (Neuseeland, Hawaii). Etwas stärker als der Hirsch und
+  nimmt ihm das Grasland weg.
 - **Kommt mit den Menschen:** Startbestand 0. Mit der Karte „Schafweide“ stehen 12 Schafe auf
   einer eingezäunten Weide. Die gehören den Siedlern und zählen nicht zum Tierbestand, fressen
   aber das Gras der Weide (0,25 je Tick und Schaf, tagsüber). **4 Jahre nach der ersten Weide**
   brechen einmal 8 Schafe aus (Folgekarte 🐑 „Schafe brechen aus“). Die Siedler ersetzen sie im
   nächsten Frühjahr, die Weide bleibt voll.
-- **Gruppe:** Herde (3–24). **Nahrung:** vor allem Gras (Energie 0,12), wenig Laub (0,05),
-  Getreide (0,12). Frisst kräftiger als der Hirsch (0,42 je Schritt), braucht weniger
-  (0,045 am Tag). Trinkt seltener (20 Tage ohne Wasser).
-- **Lebensraum:** Grasland und Wiese, auch Fels (0,6); Wald kaum. Geht dem Hirsch also genau dort
-  ins Gehege, wo der am liebsten weidet.
+- **Gruppe:** große Herden bis **50** Tiere (ab 3).
+- **Nahrung:** vor allem Gras (Energie 0,12, Hirsch 0,11), wenig Laub (0,05), Getreide (0,12).
+  Frisst kräftiger als der Hirsch (0,42 je Schritt, Hirsch 0,38), braucht weniger (0,045 am Tag,
+  Hirsch 0,05). Trinkt seltener (20 Tage ohne Wasser).
+- **Lebensraum:** Grasland und Wiese, auch Fels (0,6); Wald kaum.
 - **Fortpflanzung:** jedes Weibchen, 1–2 Lämmer, Chance 0,9. Reif mit 1 Jahr, Höchstalter 9.
-- **Flucht:** 11,5, kürzer ausdauernd als der Hirsch. `scheu` 0,4 (kennt Menschen).
-- **Feinde:** Wolf (Gewicht 1,0), Hund (1,0), Adler (Lämmer bis ½ Jahr, 0,25).
+- **Flucht:** 11,5. `scheu` 0,4 (kennt Menschen).
+- **Feinde** (`preyOf`): Wolf 1,0, Adler 0,25 (nur Lämmer bis ½ Jahr), Hund 1,0.
 - **Beutewechsel ohne Startbestand:** `scarceMin` 40 – bei 40 Schafen sind sie für die Räuber
-  halb so gefragt. Mit 10 statt 40 wurde die kleine Herde fast immer aufgefressen, bevor sie
-  wachsen konnte.
+  halb so gefragt.
 
-## Hund (eingeschleppt)
+### Hund
 
 - **Vorbild:** verwilderte Hunde, Dingo.
 - **Kommt mit den Menschen:** Startbestand 0. Mit der Karte „Hütehunde“ laufen 3 Hunde zwischen
@@ -257,14 +265,16 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   **4 Jahre nach den ersten Hütehunden** verwildern einmal 3 Hunde (Weibchen, Männchen, Weibchen;
   Folgekarte 🐕 „Hunde verwildern“). Sie tauchen 220 vom Dorf entfernt auf und gründen ein Revier.
   Die Siedler ersetzen die Hunde im nächsten Frühjahr.
-- **Wie der Wolf** (Rudel, Revier 340, Fortpflanzung nur das ranghöchste Paar, 2–4 Welpen), aber
-  reif schon mit 1 Jahr, `scheu` nur 0,3, und sie jagen auch nahe am Dorf.
-- **Beute:** Schaf 1,0, Hirsch 0,8, Laufvogel 0,3. **Die Laufvögel kennen keine Hunde**
-  (`kennt` beim Laufvogel: nur Wolf und Adler) und fliehen nicht vor ihnen.
-- **Folge:** Auf vielen Inseln stirbt einige Jahre danach der Adler aus – die Hunde nehmen
-  ihm die Laufvögel weg. Das ist gewollt (Neuseeland). Mit Laufvogel 0,15 verhungerten die
-  Hunde dagegen überall nach 2–3 Jahren.
-- Krankheit bei Wölfen: noch nicht umgesetzt.
+- **Wie der Wolf:** Alle Werte kommen vom Inselwolf (`Object.assign`), nur etwas stärker:
+  Jagderfolg 0,36 (Wolf 0,32), `scheu` 0,3 (Wolf 0,9), Beute Hirsch 1,0, Schaf 1,0, Laufvogel 0,3.
+  **Die Laufvögel kennen keine Hunde** (`unknownTo`) und fliehen nicht vor ihnen.
+- **Krankheit (Staupe):** Die Hunde tragen sie, erkranken aber nicht. Jeden Tag steckt sich jeder
+  gesunde Wolf mit 3 % an, wenn ein Hunderudel näher als 300 ist, und mit 3 % je krankem Tier im
+  eigenen Rudel. Kranke Wölfe verbrauchen 0,02 Energie am Tag mehr, bekommen keine Jungen und
+  sterben je Tag mit 1,5 % (Ursache „Krankheit“). Mit 0,6 % am Tag werden sie gesund und sind
+  danach immun. Im Mittel ist ein Wolf etwa 50 Tage krank, gut zwei Drittel sterben daran. Beim
+  ersten kranken Wolf erscheint die Folgekarte 🦠 „Wölfe erkranken“. Kranke Tiere tragen auf der
+  Karte einen grünen Punkt.
 
 ## Scheu vor Menschen
 

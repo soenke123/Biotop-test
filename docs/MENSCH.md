@@ -31,7 +31,7 @@ Gruppen, die verschiedene Karten spielen, lassen sich direkt vergleichen.
 | Neue Tiere sind Arten | Schaf, Hund, Ratte, Katze werden Einträge in `BT.SPECIES` mit demselben Verhalten |
 | Störung als Feld | Dorf, Äcker, Weiden erzeugen ein Störungsfeld (je Weidezelle, 0..1). Jede Art hat eine `scheu` (0..1) und meidet Störung entsprechend |
 | Gelände in zwei Schichten | `world.biome` bleibt die Natur, `nutzung` (Dorf, Acker, Weide, gerodet) liegt darüber. Nahrung und Lebensraum werden aus beidem lokal neu berechnet |
-| Inselzahmheit | Jede Art hat `kennt: [...]`, die Räuber, vor denen sie flieht. Fremde Räuber bemerkt sie spät oder nie |
+| Inselzahmheit | Ein eingeschleppter Räuber hat `unknownTo: [...]`, die Arten, die ihn nicht kennen und nicht vor ihm fliehen |
 | Neue Todesursachen | `jagd`, `mensch`, `krankheit`, `gelege` (Eier gefressen), dazu die neuen Räuber |
 
 ## 3. Die Karten
@@ -119,7 +119,7 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 | **2** | **Dorf vergrößern:** Schicht Nutzung (`js/eco/landuse.js`), Rodung zu Erde, nach Jahren Wiese, neue Häuser und Siedler, Pause zwischen den Karten | erledigt |
 | **3** | **Acker:** Ackerflächen mit Saison und Ernte, Hirsche fressen dort, Bilanz in der Chronik | erledigt |
 | 4 | **Schafe:** Weide mit Zaun, Schaf als Art, Folgekarte „Schafe brechen aus“ (vorgezogen) | erledigt, ohne Wölfe an der Weide |
-| 5 | **Hunde:** Hütehunde (Störung), verwilderte Hunde als Art, Art-Merkmal `kennt` (vorgezogen) | erledigt, ohne Krankheit |
+| 5 | **Hunde:** Hütehunde (Störung), verwilderte Hunde als Art, Staupe bei Wölfen (vorgezogen) | erledigt |
 | 6 | **Ratten:** Ratten als Feld, Gelegeraub, Ratten als Beute | |
 | 7 | **Jagd:** Wölfe jagen, Wild jagen, Siedler gegen Wolf | |
 | 8 | **Sammeln** | |
@@ -238,8 +238,14 @@ einmal aus**; danach leben sie als eingeschleppte Arten (`BT.SPECIES.schaf`, `.h
 - **Folgekarten** (eco/humans.js `checkEscape`, einmal, 4 Jahre nach der ersten Karte der Sorte):
   🐑 **Schafe brechen aus** (8 Schafe am Zaun), 🐕 **Hunde verwildern** (3 Hunde, 220 vom Dorf).
   Im nächsten Frühjahr füllen die Siedler Weide und Hunde wieder auf.
-- **Inselzahmheit:** Art-Merkmal `kennt` (Räuber, vor denen eine Art flieht). Der Laufvogel kennt
-  nur Wolf und Adler, vor Hunden flieht er nicht.
+- **Die vier heimischen Arten bleiben unverändert.** Die Beziehungen bringen die neuen Arten mit:
+  `preyOf` beim Schaf (Wolf und Adler fressen Schafe), `unknownTo` beim Hund (der Laufvogel kennt
+  ihn nicht und flieht nicht).
+- **Schafe** bilden Herden bis 50 und sind etwas stärker als der Hirsch: Sie nehmen ihm das
+  Grasland weg.
+- **Hunde** sind wie Wölfe (gleiche Werte), etwas stärker, und tragen **Staupe**: Wölfe in ihrer
+  Nähe erkranken mit der Zeit, werden schwach und sterben oft daran (Folgekarte 🦠 „Wölfe
+  erkranken“, Todesursache „Krankheit“, kranke Tiere mit grünem Punkt).
 - **Platzhalter-Bilder:** Schafe sind eingefärbte Hirsche (pink-lila), Hunde eingefärbte Wölfe
   (orange). Auch die Haustiere auf der Weide und im Dorf werden so gezeichnet.
 - **Oberfläche:** Kacheln für Schafe und Hunde erscheinen, sobald die Art auf der Insel ist; in
@@ -247,13 +253,9 @@ einmal aus**; danach leben sie als eingeschleppte Arten (`BT.SPECIES.schaf`, `.h
   Reiter Menschen: Schafe auf den Weiden, Hütehunde.
 - `tools/balance.js … --karten=schafe@1,hunde@1` landet an der Westküste und spielt Karten zu
   Jahresbeginn; `tools/shot.js … --landung=… --karten=schafe,hunde`.
-- **Noch nicht:** Wölfe reißen Schafe auf der Weide, Krankheit der Hunde bei Wölfen.
-- **Ergebnis** (8 Inseln × 30 Jahre, `--karten=schafe@1,hunde@1`): Die Insel kippt, und zwar
-  jedes Mal anders. Der **Adler stirbt auf 6 von 8 Inseln** aus (Jahr 21–30), weil die Hunde ihm
-  die Laufvögel wegnehmen. Die **Schafe** halten sich auf 3 von 8 Inseln; wo es kaum Wölfe gibt,
-  explodieren sie (bis 229). Die **Hunde** halten sich auf 5 von 8. Einmal sterben die Wölfe aus.
-  Nur mit Schafen überleben alle Arten auf 6 von 8 Inseln, nur mit Dorf auf 8 von 8.
-  **Ohne Karte läuft alles exakt wie vorher** (`balance.js 8 30` liefert dieselben Zahlen).
+- **Noch nicht:** Wölfe reißen Schafe auf der Weide.
+- **Mit Schafen und Hunden darf das Ökosystem kippen.** Die Werte sind noch nicht abgestimmt
+  (das Testen übernimmt die Projektleitung). **Ohne Karte läuft alles exakt wie vorher.**
 
 ### Oberfläche: Reiter und Marken
 

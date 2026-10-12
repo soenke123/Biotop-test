@@ -177,6 +177,13 @@
         var so = spec.flies && ps === 'move' ? size * 0.6 : size * 0.12;
         ctx.ellipse(x + so, y + size * 0.3 + so, size * 0.36, size * 0.14, 0, 0, Math.PI * 2);
         ctx.fill();
+        // Kranke Tiere: ein gruener Punkt ueber dem Kopf
+        if (a.sick) {
+          ctx.fillStyle = '#8fd400';
+          ctx.strokeStyle = '#2c4a00';
+          ctx.lineWidth = Math.max(0.6, size * 0.04);
+          ctx.beginPath(); ctx.arc(x, y - size * 0.5, size * 0.13, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        }
         if (img) {
           var h = size * img.height / img.width;
           ctx.save();

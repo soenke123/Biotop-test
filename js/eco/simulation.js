@@ -353,6 +353,7 @@
     // Reihenfolge der Gruppen einmal am Tag mischen - sonst haetten immer
     // dieselben Gruppen den ersten Zugriff aufs Futter
     shuffle(this.groups, this.rng);
+    this.disease();
 
     var groups = this.groups.slice();
     for (var i = 0; i < groups.length; i++) {
@@ -368,6 +369,48 @@
     this.reorganize();
     this.cleanup();
     this.stats.record();
+  };
+
+  /**
+   * Krankheiten, einmal am Tag (spec.disease der Traegerart, z. B. Staupe der
+   * Hunde): Anstecken in der Naehe der Traeger und im eigenen Rudel, Kranke
+   * verlieren Energie, sterben oder werden gesund und immun. Ohne Traeger und
+   * ohne Kranke wird kein Zufall verbraucht - der Verlauf bleibt wie ohne Krankheit.
+   */
+  Simulation.prototype.disease = function () {
+    for (var k = 0; k < BT.SPECIES_ORDER.length; k++) {
+      var D = BT.SPECIES[BT.SPECIES_ORDER[k]], dis = D.disease;
+      if (!dis) continue;
+      var carriers = this.groups.filter(function (g) { return g.spec === D && g.members.length; });
+      for (var i = 0; i < this.groups.length; i++) {
+        var g = this.groups[i];
+        if (!g.members.length || dis.victims.indexOf(g.spec.id) < 0) continue;
+        var near = false, sick = 0, m, a;
+        for (var c = 0; c < carriers.length && !near; c++) near = BT.M.hypot(carriers[c].x - g.x, carriers[c].y - g.y) < dis.radius;
+        for (m = 0; m < g.members.length; m++) if (g.members[m].sick) sick++;
+        if (!near && !sick) continue;
+        var p = 1 - (1 - (near ? dis.chance : 0)) * BT.M.pow(1 - dis.spread, sick);
+        var newly = 0;
+        for (m = 0; m < g.members.length; m++) {
+          a = g.members[m];
+          if (a.sick || a.immune || !this.rng.chance(p)) continue;
+          a.sick = true;
+          newly++;
+        }
+        if (newly && !this.diseaseDay) {
+          this.diseaseDay = this.day;
+          this.events.push({ day: this.day, tick: this.tick, card: 'krankheit', params: {},
+            at: { x: g.x, y: g.y, text: dis.name + ': die ersten ' + g.spec.plural + ' sind krank' } });
+        }
+        for (m = g.members.length - 1; m >= 0; m--) {
+          a = g.members[m];
+          if (!a.sick) continue;
+          a.energy -= dis.cost;
+          if (this.rng.chance(dis.death)) this.kill(a, 'krankheit');
+          else if (this.rng.chance(dis.recover)) { a.sick = false; a.immune = true; }
+        }
+      }
+    }
   };
 
   Simulation.prototype.ageGroup = function (g) {
@@ -420,7 +463,7 @@
     var males = adults(g, 'm');
     if (!males) return;
     var mothers = g.members.filter(function (a) {
-      return a.sex === 'f' && a.age >= spec.maturity && a.energy >= b.minEnergy;
+      return a.sex === 'f' && a.age >= spec.maturity && a.energy >= b.minEnergy && !a.sick;
     });
     if (!mothers.length) return;
 
