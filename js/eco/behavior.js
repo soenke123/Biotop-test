@@ -298,6 +298,7 @@
     if (g.horst) { g.carry = (g.carry || 0) + meat; return true; }
     var rest = sim.feed(g, meat);
     sim.addCarcass(vx, vy, rest * 0.8);     // Reste fuer Aasfresser
+    g.ateTick = sim.tick;                   // nur fuers Bild: die Tiere fressen an der Beute
     return true;
   }
 
@@ -421,6 +422,7 @@
     var rest = sim.feed(g, food);
     sim.addCarcass(h.x, h.y, rest * 0.8);
     g.carry = 0;
+    g.ateTick = sim.tick;
     if (h.phase === 'brut') {
       for (var i = 0; i < g.members.length; i++) {
         var a = g.members[i];

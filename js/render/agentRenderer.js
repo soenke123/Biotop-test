@@ -20,6 +20,7 @@
   var BT = global.BT || (global.BT = {});
 
   var MIN_PX = 12;  // Mindestgroesse eines Tiers auf dem Bildschirm
+  var EAT_TICKS = 3; // so viele Ticks (je 4 Stunden) fressen Raeuber nach einem Riss
 
   function draw(ctx, sim, view, scale, alpha, opts) {
     if (!sim) return;
@@ -123,9 +124,12 @@
     var spec = g.spec;
     var moved = Math.sqrt((a.x - a.px) * (a.x - a.px) + (a.y - a.py) * (a.y - a.py)) / spec.speed;
     var turn = (sim.tick + a.id) % 3;
+    // Nach einem Riss fressen die Raeuber erst eine Weile an der Beute, bevor
+    // sie sich hinlegen (die Energie gibt es in der Simulation sofort)
+    var feeding = g.state === 'ruhen' && g.ateTick !== undefined && sim.tick - g.ateTick < EAT_TICKS;
     if (spec.flies) {
       if (g.horst && BT.Behavior.inHorst(g, a)) return 'rest';
-      if (g.state === 'aas') return 'eat';
+      if (g.state === 'aas' || feeding) return 'eat';
       if (g.state === 'ruhen') return 'stand';
       return moved > 0.3 ? 'move' : 'stand';
     }
@@ -141,7 +145,7 @@
       case 'trinken':
         return moved < 0.3 ? 'eat' : 'move';
       case 'ruhen':
-        return 'rest';
+        return feeding ? 'eat' : 'rest';
       default:
         return moved > 0.3 ? 'move' : 'stand';
     }
