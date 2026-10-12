@@ -273,3 +273,21 @@ button:disabled { opacity: 0.5; cursor: default; }
 .aim-badge.error { border-color: #e66767; }
 .aim-badge small { display: block; opacity: 0.75; font-size: 11px; margin-top: 2px; }
 #map.aiming { cursor: crosshair; }
+
+/* Reiter: Tierbestand | Menschen */
+.tabs { display: flex; gap: 4px; margin: 0 0 12px; border-bottom: 2px solid #2d6684; }
+.tab { flex: 1; border-radius: 8px 8px 0 0; border: 2px solid transparent; border-bottom: none; background: #153f58;
+  padding: 7px 6px; font-size: 13px; font-weight: 600; margin-bottom: -2px; position: relative; }
+.tab[aria-selected="true"] { background: #1d5878; border-color: #2d6684; color: #fff; }
+.tab:not([aria-selected="true"]) { opacity: 0.75; }
+.tab-badge { display: inline-block; margin-left: 4px; padding: 1px 6px; border-radius: 9px; background: #e08a3c; color: #1a1a1a;
+  font-size: 10px; font-weight: 700; vertical-align: 1px; }
+.pane[hidden] { display: none; }
+.people-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.people-stats .ps { background: #153f58; border-radius: 8px; padding: 6px 8px; }
+.people-stats .ps b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+.people-stats .ps span { font-size: 11px; opacity: 0.7; }
+.chart-note .ev-card { width: 3px; height: 11px; border-radius: 0; background: rgb(255, 170, 90); }
+.chart-note .ev-folge { width: 3px; height: 11px; border-radius: 0; background: repeating-linear-gradient(180deg, rgb(240, 110, 110) 0 3px, transparent 3px 5px); }
+.ps-empty { grid-column: 1 / -1; margin: 0; font-size: 12px; opacity: 0.8; }
+.tab-badge[hidden] { display: none; }

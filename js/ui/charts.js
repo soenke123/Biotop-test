@@ -288,7 +288,7 @@
       }
     }
 
-    // Gespielte Karten (Menschen) als senkrechte Marke mit Symbol
+    // Ereignisse der Menschen als senkrechte Marke mit Symbol (Meldungen nur in der Chronik)
     var events = this.view.events || [];
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     for (var e = 0; e < events.length; e++) {
@@ -297,8 +297,10 @@
       var ek = events[e].day - d0;
       if (ek < 0 || ek > n - 1) continue;
       var ex = Math.round(x(ek)) + 0.5;
-      ctx.strokeStyle = 'rgba(255, 170, 90, 0.85)'; ctx.lineWidth = 1.5;
-      ctx.setLineDash([3, 3]);
+      // Gespielte Karte: durchgezogen orange; Folge (tritt von selbst ein): gestrichelt rot
+      var folge = info && info.kind === 'folge';
+      ctx.strokeStyle = folge ? 'rgba(240, 110, 110, 0.85)' : 'rgba(255, 170, 90, 0.9)'; ctx.lineWidth = 1.5;
+      ctx.setLineDash(folge ? [3, 3] : []);
       ctx.beginPath(); ctx.moveTo(ex, Tp); ctx.lineTo(ex, Tp + ph); ctx.stroke();
       ctx.setLineDash([]);
       var card = BT.CARDS && BT.CARDS[events[e].card];

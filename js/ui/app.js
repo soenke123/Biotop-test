@@ -396,11 +396,17 @@
       $('cc-' + id).textContent = !n ? '' : c.repeat ? '×' + n : '✓';
     });
     var H = sim.humans, lu = sim.landuse;
-    var forest = (H.fields.length ? ' · ' + H.fields.length + (H.fields.length === 1 ? ' Acker' : ' Äcker') : '') +
-      (lu.counts.gerodet ? ' · ' + pct(lu.counts.gerodet / lu.woodyCells) + ' des Waldes gerodet' : '');
-    $('peopleInfo').textContent = H.people.length || H.houses.length
-      ? H.people.length + ' Siedler · ' + H.houses.length + (H.houses.length === 1 ? ' Haus' : ' Häuser') + forest
-      : H.ships.length ? 'ein Schiff ist unterwegs' : 'noch keine auf der Insel';
+    var last = H.harvests.length ? H.harvests[H.harvests.length - 1] : null;
+    var stats = [
+      [H.people.length, 'Siedler'],
+      [H.houses.length, H.houses.length === 1 ? 'Haus' : 'Häuser'],
+      [H.fields.length, H.fields.length === 1 ? 'Acker' : 'Äcker'],
+      [pct(lu.counts.gerodet / lu.woodyCells), 'des Waldes gerodet'],
+      [last ? pct(last.share) : '–', 'der letzten Ernte von Tieren gefressen']
+    ];
+    $('peopleStats').innerHTML = !H.houses.length
+      ? '<p class="ps-empty">' + (H.ships.length ? 'Ein Schiff ist unterwegs …' : 'Noch keine Menschen auf der Insel. Spiele die Karte „Landung“.') + '</p>'
+      : stats.map(function (st) { return '<div class="ps"><b>' + st[0] + '</b><span>' + st[1] + '</span></div>'; }).join('');
     // Wann darf die naechste Karte gespielt werden?
     var next = $('nextCard'), nd = sim.nextCardDay();
     var ready = H.houses.length && sim.day >= nd;
@@ -408,6 +414,21 @@
       : !H.houses.length ? 'Das Schiff ist unterwegs …'
       : ready ? 'Nächste Karte: jetzt' : 'Nächste Karte: ' + BT.Time.label(nd).replace(' · ', ', ');
     next.classList.toggle('ready', !!ready);
+    // Am Reiter zeigen, dass wieder eine Karte gespielt werden darf
+    $('tabBadge').hidden = !(ready || !sim.played('landung')) || currentTab === 'menschen';
+    $('tabBadge').textContent = sim.played('landung') ? 'Karte bereit' : 'Landung';
+  }
+
+  // ---------------------------------------------------------------- Reiter
+  var currentTab = 'tiere';
+  function setTab(name) {
+    currentTab = name;
+    ['tiere', 'menschen'].forEach(function (t) {
+      $('tab-' + t).setAttribute('aria-selected', String(t === name));
+      $('pane-' + t).hidden = t !== name;
+    });
+    if (name === 'tiere' && chartView) chartView.drawAll();
+    updateCards();
   }
 
   function pct(v) {
@@ -716,6 +737,8 @@
     dirty = true;
   });
   $('skip').addEventListener('click', function () { skipYears(5); });
+  $('tab-tiere').addEventListener('click', function () { setTab('tiere'); });
+  $('tab-menschen').addEventListener('click', function () { setTab('menschen'); });
   $('cardPause').addEventListener('change', function () {
     if (sim) sim.cardPause = BT.Time.years(+$('cardPause').value);
     updateCards();
@@ -798,6 +821,7 @@
     },
     setRunning: setRunning,
     /** Karte spielen, z. B. play('landung', { x: 400, y: 800 }); liefert null oder einen Fehlertext */
-    play: function (id, params) { return playCard(id, params || {}); }
+    play: function (id, params) { return playCard(id, params || {}); },
+    tab: setTab
   };
 })(typeof window !== 'undefined' ? window : globalThis);

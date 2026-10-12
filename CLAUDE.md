@@ -59,7 +59,8 @@ js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (
             über der Natur; sim.biomeAt), movement, cards (Kartentabelle, Pause zwischen Karten),
             humans (Schiffe, Häuser, Siedler, Äcker und Ernte, Störungsfeld), behavior (Gruppen-Entscheidungen),
             stats, simulation (Tick/Tag, sim.play für Karten)
-js/ui/      app.js (Karte, Zeitregler, Seitenleiste, Kartenleiste und Chronik, Bildpuffer, Großansicht der Diagramme),
+js/ui/      app.js (Karte, Zeitregler, Reiter Tierbestand/Menschen, Kartenleiste und Chronik, Bildpuffer,
+            Großansicht der Diagramme),
             charts.js (LineChart; ChartView: gemeinsamer Zeitraum und Fadenkreuz)
 data/       arten.md (fachliche Wahrheit für species.js)
 assets/     Tierbilder (Platzhalter aus Wild Clusters)

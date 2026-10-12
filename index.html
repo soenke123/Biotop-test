@@ -62,57 +62,71 @@
         </label>
       </section>
 
-      <section class="people">
-        <h2>Menschen <small id="peopleInfo">noch keine auf der Insel</small></h2>
-        <div id="cards" class="cards"></div>
-        <div class="card-rule">
-          <span id="nextCard" class="next-card"></span>
-          <label class="field">Pause
-            <select id="cardPause" title="So lange muss man nach einer Karte warten">
-              <option value="0">keine</option>
-              <option value="1">1 Jahr</option>
-              <option value="2" selected>2 Jahre</option>
-              <option value="3">3 Jahre</option>
-            </select>
-          </label>
-        </div>
-        <ol id="chronicle" class="chronicle"></ol>
-      </section>
+      <div class="tabs" role="tablist" aria-label="Ansicht">
+        <button type="button" role="tab" id="tab-tiere" class="tab" aria-selected="true" aria-controls="pane-tiere">🦌 Tierbestand</button>
+        <button type="button" role="tab" id="tab-menschen" class="tab" aria-selected="false" aria-controls="pane-menschen">🏠 Menschen <span id="tabBadge" class="tab-badge" hidden>Karte bereit</span></button>
+      </div>
 
-      <section class="startvalues">
-        <h2>Startbestand <small>für diese Insel</small></h2>
-        <div id="startInputs" class="start-list"></div>
-        <div class="row">
-          <button id="restart" type="button">Neu starten</button>
-          <button id="defaults" type="button">Empfohlene Werte</button>
-        </div>
-      </section>
+      <div id="pane-tiere" role="tabpanel" aria-labelledby="tab-tiere" class="pane">
+        <section class="startvalues">
+          <h2>Startbestand <small>für diese Insel</small></h2>
+          <div id="startInputs" class="start-list"></div>
+          <div class="row">
+            <button id="restart" type="button">Neu starten</button>
+            <button id="defaults" type="button">Empfohlene Werte</button>
+          </div>
+        </section>
 
-      <section>
-        <h2>Bestand <small>Art anklicken: auf der Karte zeigen</small></h2>
-        <div id="tiles" class="tiles"></div>
-      </section>
+        <section>
+          <h2>Bestand <small>Art anklicken: auf der Karte zeigen</small></h2>
+          <div id="tiles" class="tiles"></div>
+        </section>
 
-      <section>
-        <h2>Verlauf <small>Zeiger über ein Diagramm: derselbe Tag in allen</small></h2>
-        <div class="chart-tools">
-          <div id="chartTools"></div>
-          <button id="openBig" type="button" aria-expanded="false" aria-controls="bigView" title="Alle Diagramme groß untereinander">⤢ Groß</button>
-        </div>
-        <div id="charts"></div>
-        <p class="chart-note"><i class="mast"></i> Mastjahr <i class="winter"></i> harter Winter</p>
-      </section>
+        <section>
+          <h2>Verlauf <small>Zeiger über ein Diagramm: derselbe Tag in allen</small></h2>
+          <div class="chart-tools">
+            <div id="chartTools"></div>
+            <button id="openBig" type="button" aria-expanded="false" aria-controls="bigView" title="Alle Diagramme groß untereinander">⤢ Groß</button>
+          </div>
+          <div id="charts"></div>
+          <p class="chart-note"><i class="mast"></i> Mastjahr (viele Früchte) <i class="winter"></i> harter Winter <i class="ev-card"></i> Karte gespielt <i class="ev-folge"></i> Folge, von selbst</p>
+        </section>
 
-      <section>
-        <h2>Todesursachen <small>seit Start</small></h2>
-        <table id="deaths" class="deaths"></table>
-      </section>
+        <section>
+          <h2>Todesursachen <small>seit Start</small></h2>
+          <table id="deaths" class="deaths"></table>
+        </section>
 
-      <section>
-        <div class="row">
-          <button id="csv" type="button">Daten herunterladen (CSV)</button>
-        </div>
-      </section>
+        <section>
+          <div class="row">
+            <button id="csv" type="button">Daten herunterladen (CSV)</button>
+          </div>
+        </section>
+      </div>
+
+      <div id="pane-menschen" role="tabpanel" aria-labelledby="tab-menschen" class="pane" hidden>
+        <section>
+          <h2>Auf der Insel</h2>
+          <div id="peopleStats" class="people-stats"></div>
+        </section>
+
+        <section class="people">
+          <h2>Karten <small>antippen zum Spielen</small></h2>
+          <div id="cards" class="cards"></div>
+          <div class="card-rule">
+            <span id="nextCard" class="next-card"></span>
+            <label class="field">Pause
+              <select id="cardPause" title="So lange muss man nach einer Karte warten">
+                <option value="0">keine</option>
+                <option value="1">1 Jahr</option>
+                <option value="2" selected>2 Jahre</option>
+                <option value="3">3 Jahre</option>
+              </select>
+            </label>
+          </div>
+          <ol id="chronicle" class="chronicle"></ol>
+        </section>
+      </div>
     </aside>
   </div>
 
@@ -121,7 +135,7 @@
     <div class="big-head">
       <h2>Verlauf</h2>
       <div id="bigTools"></div>
-      <p class="chart-note"><i class="mast"></i> Mastjahr <i class="winter"></i> harter Winter</p>
+      <p class="chart-note"><i class="mast"></i> Mastjahr (viele Früchte) <i class="winter"></i> harter Winter <i class="ev-card"></i> Karte gespielt <i class="ev-folge"></i> Folge, von selbst</p>
       <span class="spacer"></span>
       <button id="closeBig" type="button" title="Schließen (Esc)">✕ Schließen</button>
     </div>

@@ -221,3 +221,15 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
   Acker am Grasland, fressen die Hirsche anfangs bis 45 %, liegt er im Wald, fast nichts. Mit dem
   Dorf wächst die Störung, dann bleiben die Hirsche meist weg. Auf 7 von 8 Inseln überleben alle
   Arten. Auf Insel 8919 sterben die Wölfe aus, das passiert dort auch ohne Menschen in 2 von 8 Läufen.
+
+### Oberfläche: Reiter und Marken
+
+- Unter der Zeitsteuerung gibt es zwei Reiter: **🦌 Tierbestand** (Startbestand, Bestand,
+  Diagramme, Todesursachen, CSV) und **🏠 Menschen** (Übersicht: Siedler, Häuser, Äcker, gerodeter
+  Wald, Fraß an der letzten Ernte; Karten, Pause, Chronik). Darf wieder eine Karte gespielt
+  werden, steht am Reiter „Menschen“ das Schild **Karte bereit**.
+- **Marken in den Diagrammen:** gespielte Karte = durchgezogene orange Linie mit Symbol;
+  Folgekarte, die von selbst eintritt (z. B. 🦌 Hirsche im Acker) = gestrichelte rote Linie.
+  Meldungen wie die jährliche Ernte stehen nur in der Chronik. Die gelblichen Bänder sind
+  **Mastjahre** (Wetter, viele Früchte), die bläulichen harte Winter. Beides hat nichts mit den
+  Menschen zu tun. Die Legende unter den Diagrammen erklärt alle vier.
