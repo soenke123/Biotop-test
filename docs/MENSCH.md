@@ -294,6 +294,13 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
   Adler 82 %. Auf den 13 Inseln, wo sie aussterben: Hirsch 116 %, Wolf 70 %. Die meisten Schafe
   verhungern im Sommer nach der Lammzeit (4 Inseln: Frühling 556, Sommer 991, Herbst 494, Winter
   668), nicht im Winter; robustere Schafe im Winter würden wenig ändern.
+- **Fünfte Abstimmung:** Schafe fressen auch Laub und Triebe (0,08 statt 0,05; Busch 0,8, Farnwald
+  0,5, Moos 0,3). 24 Inseln, nur Schafe: auf 16 Inseln halten sie sich (vorher 11), Mittel 116;
+  dort Hirsch 100 %, Laufvogel 96 %, Wolf 124 %, Adler 107 %. Versuch zusätzlich ohne leichte Beute
+  (`easyPrey` 1): Schafe schießen auf etwa 380 hoch und brechen auf etwa 80 ein, Hirsch 92 %,
+  Wolf 135 %. **Die Wölfe deckeln die Schafe:** Mehr Futter für die Schafe wird zu mehr Wölfen.
+  Großen Einfluss aufs ganze Ökosystem haben die Schafe erst, wenn die Wölfe fehlen (wie in
+  Neuseeland, das keine Raubtiere hatte).
 - **Noch nicht:** Wölfe reißen Schafe auf der Weide.
 - **Mit Schafen und Hunden darf das Ökosystem kippen.** Die Werte sind noch nicht abgestimmt
   (das Testen übernimmt die Projektleitung). **Ohne Karte läuft alles exakt wie vorher.**

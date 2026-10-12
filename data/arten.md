@@ -254,7 +254,7 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
 - **Teilen bei Futtermangel** (`group.split`): Ist eine Herde ab 24 Tieren im Mittel unter Energie
   0,5, zieht die Hälfte 250–500 weit zu einer neuen Weide. Danach teilen sich beide Teile 90 Tage
   nicht.
-- **Nahrung:** vor allem Gras (Energie 0,12, Hirsch 0,11), wenig Laub (0,05), Getreide (0,12).
+- **Nahrung:** vor allem Gras (Energie 0,12, Hirsch 0,11), Triebe und Laub (0,08, Hirsch 0,09), Getreide (0,12).
   **Frisst kürzer als der Hirsch:** Unter dem Gras liegt die **Grasnarbe** (eigene Nahrungsschicht
   `narbe`, etwa ein Viertel der Graskapazität, wächst langsam, hängt am Zustand des Grases). Nur
   Schafe beißen so tief (Energie 0,1); auf kahl gefressenem Grasland finden sie so noch Futter, der
@@ -266,7 +266,7 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   gehetzt wurden.
 - **Zaun und Wasser:** Wasser in einer Weide ist für wilde Tiere nicht erreichbar; der Weg zum
   Wasser führt um die Zäune herum (`humans.waterDist`, nur wenn es Weiden gibt).
-- **Lebensraum:** Grasland und Wiese, auch Fels (0,6); Wald kaum.
+- **Lebensraum:** Grasland und Wiese, Busch (0,8), Fels (0,6), Farnwald (0,5), Moos (0,3).
 - **Fortpflanzung:** jedes Weibchen, **1–2 Lämmer**, Chance 0,95 (Hirsch: 1 Kalb, 0,85). **Reif mit
   ½ Jahr** (Hirsch 1 Jahr), Höchstalter 9.
 - **Flucht:** 11,5. `scheu` 0,4 (kennt Menschen).

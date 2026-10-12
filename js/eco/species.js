@@ -306,8 +306,8 @@
     preyMaxAgeOf: { inseladler: Y(0.5) },
     easyPrey: 1.2,                    // langsam, wenig wachsam, auf Zahmheit gezuechtet
     // Fressen das Gras bis auf die Grasnarbe (narbe: nur Schafe) und kommen mit wenig aus,
-    // Laub nur nebenher
-    diet: { gras: 0.12, laub: 0.05, korn: 0.12, narbe: 0.1 },
+    // dazu Triebe und Laub im Busch und am Waldrand (fast wie der Hirsch, 0,09)
+    diet: { gras: 0.12, laub: 0.08, korn: 0.12, narbe: 0.1 },
     bite: 0.42,
     costPerDay: 0.035,                // genuegsam: Hirsch 0,05
     winterCost: 0.008,                // Wolle: Hirsch 0,015
@@ -317,7 +317,7 @@
     vision: 150,
     scheu: 0.4,                       // kennt Menschen, haelt aber Abstand
     searchRadius: 240,
-    habitat: pref({ TUSSOCK: 1.0, MEADOW: 1.0, ROCK: 0.6, SCRUB: 0.5, BEACH: 0.4, THERMAL: 0.3, SWAMP: 0.2, FERN: 0.25, MOSS: 0.15, PEAK: 0.1, SOIL: 0.1, FIELD: 1.0 }),
+    habitat: pref({ TUSSOCK: 1.0, MEADOW: 1.0, ROCK: 0.6, SCRUB: 0.8, BEACH: 0.4, THERMAL: 0.3, SWAMP: 0.2, FERN: 0.5, MOSS: 0.3, PEAK: 0.1, SOIL: 0.1, FIELD: 1.0 }),
     // Schneller erwachsen und mehr Laemmer als der Hirsch (reif mit 1 Jahr, 1 Kalb, Chance 0,85)
     maturity: Y(0.5), maxAge: Y(9),
     breed: { kind: 'each-female', season: 0, day: 3, chance: 0.95, litter: [1, 2], minEnergy: 0.4, cost: 0.15 },
