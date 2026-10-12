@@ -263,6 +263,22 @@ zum ersten Mal aus, danach immer wieder**; sie leben dann als eingeschleppte Art
   Reiter Menschen: Schafe auf den Weiden, Hütehunde.
 - `tools/balance.js … --karten=schafe@1,hunde@1` landet an der Westküste und spielt Karten zu
   Jahresbeginn; `tools/shot.js … --landung=… --karten=schafe,hunde`.
+- **Fassen sie Fuß?** (`node tools/invasion.js 8 30 --karten=…`, Vergleich: dieselbe Insel nur
+  mit Landung; Mittel der letzten 10 Jahre, Median über 8 Inseln)
+
+  | Karten | Schafe etabliert (≥ 20 am Ende) | Hunde etabliert (Rudel mit Revier) | Hirsch | Laufvogel | Wolf | Adler |
+  |---|---|---|---|---|---|---|
+  | nur Schafe | 8 von 8 (23–98, Spitzen bis 375) | – | 97 % | 95 % | 93 % | stark schwankend |
+  | nur Hunde | – | 8 von 8 (3–11 Rudel) | mehr | 100 % | **Wölfe sterben auf 7 von 8 Inseln aus** | 62 % |
+  | Schafe und Hunde | 6 von 8 | 8 von 8 | 75 % | 71 % | **0 %** (alle 8 Inseln) | 45 % |
+
+  Die Hunde verdrängen die Wölfe immer (Staupe und Konkurrenz, nach 12 bis 30 Jahren). Die Schafe
+  halten sich, verdrängen die Hirsche aber nicht: Sie vermehren sich stark, fressen das Grasland
+  kahl und brechen ein (viele verhungern; gehetzt von Hunden und Wölfen kommen viele nicht zum
+  Trinken). Die Hirsche weichen in Busch und Wald aus. Probeläufe nur mit Schafen: genügsamere
+  Schafe (`costPerDay` 0,035, `winterCost` 0,008) → Hirsch 73 %; mehr Laub und Busch (Laub 0,08,
+  Busch 0,9, Farnwald 0,5, Moos 0,4) → 79 %; beides zusammen → 95 % (Rauschen: 8 Inseln reichen
+  für kleine Unterschiede nicht).
 - **Noch nicht:** Wölfe reißen Schafe auf der Weide.
 - **Mit Schafen und Hunden darf das Ökosystem kippen.** Die Werte sind noch nicht abgestimmt
   (das Testen übernimmt die Projektleitung). **Ohne Karte läuft alles exakt wie vorher.**
