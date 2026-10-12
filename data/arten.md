@@ -58,11 +58,13 @@ braun, voll leicht grün – so sieht man z. B., wo die Laufvögel Früchte und 
 
 **Übernutzte Insekten:** Auch die Laufvögel können ihre Nahrung zerstören. Sie scharren den
 Boden nach Larven und Puppen ab. Fällt der Insektenbestand einer ganzen Gegend (5 × 5
-Weidezellen, also 120 × 120 Einheiten) in Sommer oder Herbst unter 30 % dessen, was eine gesunde
-Gegend trägt, sinkt dort, wo gefressen wird, der Zustand der Insekten um 0,1 je Tag. Ein
-durchziehender Trupp schadet also nicht, nur zu viele Vögel in der ganzen Gegend. Ist eine Gegend
-einmal verarmt, schadet jedes weitere Fressen, und erholen kann sie sich erst nach 120 Tagen Ruhe
-(um 0,006 je Tag, kahl nur zu 3 %).
+Weidezellen, also 120 × 120 Einheiten) in Sommer oder Herbst unter 30 % dessen, was sie in ihrem
+heutigen Zustand trägt, sinkt dort, wo gefressen wird, der Zustand der Insekten um 0,1 je Tag. Ein
+durchziehender Trupp schadet also nicht, nur zu viele Vögel in der ganzen Gegend. Erholen kann sich
+eine verarmte Gegend erst nach 120 Tagen ohne Übernutzung (um 0,006 je Tag, kahl nur zu 3 %).
+Früher galt als Maßstab eine gesunde Gegend. Eine einmal verarmte Gegend lag dann für immer unter
+der Schwelle, jedes Fressen schadete weiter, und über Jahrzehnte verarmte die ganze Insel. Mit
+den Insekten sanken die Laufvögel und dann die Adler.
 
 ## Jahreswetter
 
@@ -173,7 +175,7 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
 
 - **Vorbild:** Haastadler (Neuseeland, ausgestorben).
 - **Gruppe:** Paar mit Revier (Radius 330), im Frühling und Sommer dazu die Küken im Horst.
-- **Beute:** Laufvögel, junge Zwerghirsche (bis ½ Jahr). Sieht schlecht unter Bäume. Frisst Aas.
+- **Beute:** Laufvögel, selten junge Zwerghirsche (bis ½ Jahr; Gewicht 0,25 – häufiger fehlten die Kälber den Wölfen). Sieht schlecht unter Bäume. Frisst Aas.
   Jagt unter 65 % Energie, verbraucht 0,03 Energie am Tag. Erfolg je Angriff und Jäger 0,3.
 - **Horst:** Jedes Paar hat einen festen Horst nahe der Reviermitte, am liebsten auf Bäumen oder
   Felsen, und nutzt ihn jedes Jahr wieder. Auf der Karte ist er ein Reisignest, während der Brut
@@ -215,8 +217,8 @@ stirbt in der Simulation fast immer eine Art aus.
 1. **Reviere:** Räuber ohne Revier dürfen nicht in fremden Revieren jagen und bekommen keinen
    Nachwuchs, volle Rudel auch nicht. Das begrenzt die Zahl der Räuber auf die Zahl der Reviere.
 2. **Beutewechsel (Holling Typ III):** Wird eine Beuteart selten, wird sie seltener gewählt und
-   seltener verfolgt. Die Räuber hungern dann, bevor die Beute verschwindet (Bezug: Laufvogel
-   80 % des Startbestands, Zwerghirsch 120 %, `scarce` in der Artentabelle). Die vergebliche Suche nach seltener Beute kostet
+   seltener verfolgt. Die Räuber hungern dann, bevor die Beute verschwindet (Bezug: beide Pflanzenfresser
+   120 % des Startbestands, `scarce` in der Artentabelle). Die vergebliche Suche nach seltener Beute kostet
    einen Tag – sonst würde ein hungriger Räuber es einfach gleich wieder versuchen.
 3. **Rückzugsräume:** Im Wald werden Beutetiere schlechter entdeckt und erwischt.
 4. **Aas:** Verhungerte Tiere und Reste von Rissen ernähren die Räuber in schlechten Zeiten.
@@ -231,18 +233,18 @@ Das System ist so gebaut, dass es **nur mit allen Arten zusammen** funktioniert.
 Insektenbestände können übernutzt werden und erholen sich dann jahrelang nicht.
 
 - Ohne Wölfe vermehren sich die Hirsche, bis sie ihre Weiden zerstören.
-- Ohne Adler (und Wölfe) vermehren sich die Laufvögel, bis sie die Insekten ganzer Gegenden
-  ausgeräumt haben. Danach überlebt nur ein Rest – weniger als mit Räubern.
+- Ohne Adler (und Wölfe) vermehren sich die Laufvögel zunächst stark und schaden den Insekten.
+  Seit sich verarmte Gegenden erholen können, bleiben danach aber mehr Laufvögel als mit Räubern.
 
-Vergleich (mittlere Insel, 8 Inseln; Mittel ab Jahr 11; mit Räubern über 100 Jahre, ohne über 60):
+Vergleich (mittlere Insel; Mittel ab Jahr 11; mit Räubern 16 Inseln über 150 Jahre, ohne 8 über 60):
 
 | | mit Räubern | ohne Räuber |
 |---|---|---|
-| Zwerghirsche, Spitze in Jahr 1–5 | etwa 200 | etwa 640 (Massenvermehrung) |
-| Zwerghirsche, ab Jahr 11 | etwa 120, schwankend | etwa 160, viele sterben an Hunger |
-| Laufvögel, Spitze in Jahr 1–5 | etwa 320 | etwa 570 (Massenvermehrung) |
-| Laufvögel, ab Jahr 11 | etwa 215 | etwa 110–140 (Insekten ausgeräumt) |
-| Zustand Grasland / Laub / Insekten (`balance.js 8 30`) | etwa 94 % / 99 % / 91 % | etwa 22 % / 50 % / 55 % |
+| Zwerghirsche, Spitze in Jahr 1–5 | etwa 200 | etwa 650 (Massenvermehrung) |
+| Zwerghirsche, ab Jahr 11 | etwa 140, schwankend | etwa 160, viele sterben an Hunger |
+| Laufvögel, Spitze in Jahr 1–5 | etwa 400 | etwa 590 (Massenvermehrung) |
+| Laufvögel, ab Jahr 11 | etwa 300–320 | etwa 350 |
+| Zustand Grasland (`balance.js 8 30`) | etwa 87 % | etwa 22 % |
 
 Ohne Räuber verläuft es wie auf dem Kaibab-Plateau: erst viel mehr Pflanzenfresser, dann
 kahl gefressene Weiden, ausgeräumte Böden und Hungersnot. Die Insel bleibt danach verarmt, weil
@@ -254,6 +256,25 @@ Hirsche, das Grasland leidet. Erholen sich die Wölfe, sinken die Hirsche, und d
 Adler, Laufvögel und Insekten zusammen.
 
 ## Abstimmung (Stand)
+
+**Räuber über 150 Jahre** (16 Inseln, Seeds ab 1000 und 5000):
+
+- Mehr Reviere (Reviermitten näher, `spacing` 0,75) oder kleinere Reviere (280/250) machten es
+  schlechter: Die Räuber wuchsen anfangs auf ~50 Wölfe, fraßen zu viel und brachen ein
+  (alle Arten 0 bzw. 1 von 8 statt 3 von 8). Die Zahl der Reviere ist nicht der Engpass.
+- Die schleichende Verarmung der Insekten behoben (siehe Übernutzte Insekten). Danach waren die
+  Wölfe stabil (7 von 8), aber die Adler schossen über: mehr Laufvögel, Adler von 12 auf 26, dann
+  Laufvögel von 300 auf 96 und Zusammenbruch.
+- Beutewechsel bei Laufvögeln wie bei Hirschen erst unter 120 % des Startbestands: Die Adler
+  hungern, bevor sie die Laufvögel leer fressen. Mit 160 % starben die Wölfe häufiger, weil
+  die zahlreicheren Adler ihnen die Hirschkälber wegfraßen; deshalb nehmen Adler Kälber jetzt nur
+  selten (0,25 statt 0,6).
+- Ergebnis: über 100 Jahre alle Arten 11 von 16, Wölfe 13, Adler 14 (vorher 9, 14, 10). Über
+  150 Jahre alle Arten 7 von 16, Wölfe 12, Adler 8. Die Adler sterben meist erst nach Jahr 100
+  aus, wenn nur noch wenige Paare übrig sind. Auf Insel 8919 sterben die Wölfe in jeder bisher
+  getesteten Fassung aus.
+- `balance.js 8 30`: 6 von 8.
+
 
 **Mehr Beute, stabilere Räuber** (Ziel: Räuber halten die Pflanzenfresser deutlich unter dem,
 was das Futter trägt, und überleben auch 100 Jahre). Vorher trug das Futter nur ~120 Hirsche, und
