@@ -19,6 +19,12 @@
 
   var BT = global.BT || (global.BT = {});
 
+  /**
+   * pauseYears: nach jeder Karte so lange warten, bis die naechste aktive
+   * Karte gespielt werden darf (in der Oberflaeche einstellbar).
+   */
+  BT.CARD_RULES = { pauseYears: 2 };
+
   BT.CARDS = {
     landung: {
       id: 'landung', kind: 'start', icon: '⛵',
@@ -28,9 +34,9 @@
       repeat: false
     },
     dorf: {
-      id: 'dorf', kind: 'aktiv', icon: '🏘️', soon: true, needs: 'landung', repeat: true,
+      id: 'dorf', kind: 'aktiv', icon: '🏘️', needs: 'landung', repeat: true,
       name: 'Dorf vergrößern',
-      text: 'Wald am Dorfrand wird gerodet, neue Häuser entstehen.'
+      text: 'Wald am Dorfrand wird gerodet, neue Häuser entstehen. Auf der gerodeten Erde wächst erst nach Jahren wieder etwas.'
     },
     acker: {
       id: 'acker', kind: 'aktiv', icon: '🌾', soon: true, needs: 'landung', repeat: true,

@@ -51,7 +51,7 @@
       growth: 0.13, seed: 0.05,
       season: [1.5, 1.0, 0.7, 0.3],
       damage: { below: 0.25, loss: 0.05, recover: 0.006, rest: 60, dead: 0.02 },
-      capacity: cap({ TUSSOCK: 11, SCRUB: 5.5, SWAMP: 6.6, BEACH: 1.66, FERN: 1.66, MOSS: 1.1, THERMAL: 1.66, ROCK: 1.1 })
+      capacity: cap({ TUSSOCK: 11, SCRUB: 5.5, SWAMP: 6.6, BEACH: 1.66, FERN: 1.66, MOSS: 1.1, THERMAL: 1.66, ROCK: 1.1, MEADOW: 8.8 })
     },
     laub: {
       name: 'Triebe und Laub',
@@ -59,7 +59,7 @@
       growth: 0.1, seed: 0.05,
       season: [1.4, 1.0, 0.6, 0.25],
       damage: { below: 0.3, loss: 0.03, recover: 0.004, rest: 60, dead: 0.02 },
-      capacity: cap({ FERN: 7.04, MOSS: 5.28, SCRUB: 6.16, SWAMP: 1.76, TUSSOCK: 0.88 })
+      capacity: cap({ FERN: 7.04, MOSS: 5.28, SCRUB: 6.16, SWAMP: 1.76, TUSSOCK: 0.88, MEADOW: 0.88 })
     },
     frucht: {
       name: 'Früchte und Samen',
@@ -69,7 +69,7 @@
       decay: [0, 0, 0.015, 0.07],
       mast: 2.4,
       healthOf: 'laub',
-      capacity: cap({ SCRUB: 3.3, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.1, SWAMP: 1.1 })
+      capacity: cap({ SCRUB: 3.3, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.1, SWAMP: 1.1, MEADOW: 0.55 })
     },
     insekten: {
       name: 'Insekten',
@@ -80,7 +80,7 @@
       // Zu viele Laufvoegel scharren ganze Gegenden leer: Larven und Puppen
       // fehlen, im naechsten Jahr schluepfen weniger Insekten
       damage: { below: 0.3, area: 2, season: [0, 1, 1, 0], loss: 0.1, recover: 0.006, rest: 120, dead: 0.03 },
-      capacity: cap({ SWAMP: 3.85, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.65, SCRUB: 1.65, BEACH: 0.55 })
+      capacity: cap({ SWAMP: 3.85, FERN: 2.2, MOSS: 1.65, TUSSOCK: 1.65, SCRUB: 1.65, BEACH: 0.55, MEADOW: 1.65 })
     }
   };
   BT.FOOD_ORDER = ['gras', 'laub', 'frucht', 'insekten'];
@@ -123,7 +123,7 @@
       vision: 180,                    // erkennt Raeuber
       scheu: 1.0,                     // meidet Menschen (0..1, eco/humans.js)
       searchRadius: 260,              // sucht Futter
-      habitat: pref({ TUSSOCK: 1.0, SCRUB: 1.0, FERN: 0.8, SWAMP: 0.5, MOSS: 0.5, BEACH: 0.3, THERMAL: 0.3, ROCK: 0.15, PEAK: 0 }),
+      habitat: pref({ TUSSOCK: 1.0, SCRUB: 1.0, FERN: 0.8, SWAMP: 0.5, MOSS: 0.5, BEACH: 0.3, THERMAL: 0.3, ROCK: 0.15, PEAK: 0, MEADOW: 1.0, SOIL: 0.1 }),
       maturity: Y(1), maxAge: Y(8),
       breed: { kind: 'each-female', season: 0, day: 4, chance: 0.85, litter: [1, 1], minEnergy: 0.4, cost: 0.15 },
       newbornEnergy: 0.6,
@@ -150,7 +150,7 @@
       vision: 120,
       scheu: 0.2,                     // inselzahm: kennt keine Menschen
       searchRadius: 200,
-      habitat: pref({ SCRUB: 1.0, FERN: 1.0, MOSS: 0.8, SWAMP: 0.9, TUSSOCK: 0.7, BEACH: 0.4, THERMAL: 0.3, ROCK: 0.1, PEAK: 0 }),
+      habitat: pref({ SCRUB: 1.0, FERN: 1.0, MOSS: 0.8, SWAMP: 0.9, TUSSOCK: 0.7, BEACH: 0.4, THERMAL: 0.3, ROCK: 0.1, PEAK: 0, MEADOW: 0.6, SOIL: 0.1 }),
       maturity: Y(1), maxAge: Y(7),
       // Bodenbrueter: Gelege im Fruehling, Kueken schluepfen nach einigen Tagen
       breed: { kind: 'pair', season: 0, day: 2, chance: 0.85, litter: [2, 4], minEnergy: 0.35, cost: 0.15, incubation: 8 },
@@ -183,7 +183,7 @@
       maxChaseTicks: 12,
       territory: 380,                 // Radius des Reviers
       hungry: 0.7,                    // jagt, wenn Energie darunter
-      habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 0.7, BEACH: 0.6, THERMAL: 0.6, ROCK: 0.6, PEAK: 0.1 }),
+      habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 0.7, BEACH: 0.6, THERMAL: 0.6, ROCK: 0.6, PEAK: 0.1, MEADOW: 1, SOIL: 0.6 }),
       maturity: Y(1.5), maxAge: Y(9),
       breed: { kind: 'group-pair', season: 0, day: 6, chance: 0.85, litter: [2, 4], minEnergy: 0.5, cost: 0.15 },
       newbornEnergy: 0.6,
@@ -223,7 +223,7 @@
       // Je mehr andere Adler im Umkreis jagen, desto seltener gelingt ein Angriff
       crowding: { radius: 250, k: 0.25 },
       hungry: 0.65,
-      habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 1, BEACH: 1, THERMAL: 1, ROCK: 1, PEAK: 1 }),
+      habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 1, BEACH: 1, THERMAL: 1, ROCK: 1, PEAK: 1, MEADOW: 1, SOIL: 1, VILLAGE: 0.5 }),
       maturity: Y(2), maxAge: Y(14),
       // Horst: Ein Paar mit Revier legt im Fruehling 2-3 Eier. Brut: einer sitzt,
       // der andere jagt, bei jeder Beute wird gewechselt. Nestlinge: beide jagen

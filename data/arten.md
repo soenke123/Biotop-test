@@ -236,6 +236,11 @@ wo `Störung · scheu ≥ 0,3` ist.
 
 Ohne Menschen hat `scheu` keine Wirkung.
 
+**Nutzung** (`docs/MENSCH.md`, Schritt 2): Auf gerodeter **Erde** wächst nichts, und es gibt keine
+Deckung (Lebensraumwert Hirsch und Laufvogel 0,1). Nach 3 bis 5 Jahren wird sie zur **Wiese**:
+Gras 8,8, Laub 0,88, Früchte 0,55, Insekten 1,65; Lebensraumwert Hirsch 1,0, Laufvogel 0,6,
+Wolf und Adler 1. Das **Dorf** trägt keine Nahrung.
+
 ## Was das Ökosystem stabil hält
 
 Diese Mechanismen sind bewusst eingebaut, weil sie auch in der Natur stabilisieren. Ohne sie

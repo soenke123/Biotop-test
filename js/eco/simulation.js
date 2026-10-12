@@ -23,6 +23,8 @@
     var opts = options || {};
     this.world = world;
     this.fields = new BT.Fields(world);
+    this.landuse = new BT.Landuse(this);
+    this.fields.ground = this.landuse.ground;
     this.rng = new BT.Rng(world.seed).fork('sim' + (opts.variant || ''));
     this.ticksPerDay = T.TICKS_PER_DAY;
     this.tick = 0;
@@ -43,6 +45,7 @@
     }
     this.humans = new BT.Humans(this);
     this.events = [];               // gespielte Karten: { day, tick, card, params, at }
+    this.cardPause = opts.cardPause != null ? opts.cardPause : BT.Time.years(BT.CARD_RULES.pauseYears);
     this.pending = [];              // gespielt, wird beim naechsten Tick ausgefuehrt
     this.stats = new BT.Stats(this);
     this.populate();
@@ -148,7 +151,7 @@
     var w = this.world;
     for (var t = 0; t < 400; t++) {
       var x = this.rng.range(0, w.width), y = this.rng.range(0, w.height);
-      var b = w.query.biomeAt(x, y);
+      var b = this.biomeAt(x, y);
       if (BT.isBlocked(b, null)) continue;
       if (spec.habitat[b] >= (minPref || 0.7)) return { x: x, y: y };
     }
@@ -194,7 +197,22 @@
     }
   };
 
+  /** Lebensraum an einem Punkt, mit der Nutzung durch den Menschen (eco/landuse.js). */
+  Simulation.prototype.biomeAt = function (x, y) { return this.landuse.biomeAt(x, y); };
+
   // ------------------------------------------------------------ Karten (Menschen)
+
+  /** Tag der zuletzt gespielten Karte (auch wartende), sonst null. */
+  Simulation.prototype.lastCardDay = function () {
+    if (this.pending.length) return this.day;
+    return this.events.length ? this.events[this.events.length - 1].day : null;
+  };
+
+  /** Ab diesem Tag darf die naechste aktive Karte gespielt werden. */
+  Simulation.prototype.nextCardDay = function () {
+    var last = this.lastCardDay();
+    return last == null ? 0 : last + this.cardPause;
+  };
 
   /** Wie oft wurde diese Karte schon gespielt (einschliesslich wartender)? */
   Simulation.prototype.played = function (id) {
@@ -210,7 +228,9 @@
     if (!c) return 'Unbekannte Karte';
     if (c.soon) return 'Kommt bald';
     if (c.needs && !this.played(c.needs)) return 'Erst „' + BT.CARDS[c.needs].name + '“ spielen';
+    if (c.needs === 'landung' && !this.humans.houses.length) return 'Das Schiff ist noch nicht angekommen';
     if (!c.repeat && this.played(id)) return 'Schon gespielt';
+    if (c.kind === 'aktiv' && this.day < this.nextCardDay()) return 'Nächste Karte ' + BT.Time.label(this.nextCardDay()).replace(' · ', ', ');
     return null;
   };
 
@@ -262,7 +282,7 @@
       var spec = g.spec;
       // Wer am Wasser vorbeikommt, trinkt
       var drinks = spec.thirstDays && BT.Move.atWater(this.world, g.x, g.y);
-      var onThermal = this.world.query.biomeAt(g.x, g.y) === BT.BIOME.THERMAL;
+      var onThermal = this.biomeAt(g.x, g.y) === BT.BIOME.THERMAL;
       var cost = (spec.costPerDay + (winter ? spec.winterCost * this.weatherNow.winter * (onThermal ? 0.3 : 1) : 0)) * perTick;
       var thirst = spec.thirstDays ? perTick / spec.thirstDays : 0;
       // Rueckwaerts, weil Tiere dabei sterben koennen
@@ -316,6 +336,7 @@
     this.calendar = T.calendar(this.day);
     var cal = this.calendar;
     this.weatherNow = this.weather.year(cal.year - 1);
+    this.landuse.newDay();
     this.fields.grow(cal.season, this.weatherNow);
     // Aas verwest
     for (var c = this.carcasses.length - 1; c >= 0; c--) {
@@ -445,7 +466,7 @@
     var best = { x: home.x, y: home.y }, bestScore = -1;
     for (var t = 0; t < 10; t++) {
       var p = BT.Behavior.randomPointNear(this, spec, home.x, home.y, spec.territory * 0.35);
-      var score = spec.horst.sites[this.world.query.biomeAt(p.x, p.y)] + this.rng.next() * 0.1;
+      var score = spec.horst.sites[this.biomeAt(p.x, p.y)] + this.rng.next() * 0.1;
       if (score > bestScore) { bestScore = score; best = p; }
     }
     return best;

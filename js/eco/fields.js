@@ -61,11 +61,12 @@
   }
 
   /**
-   * Kapazitaet aus den Lebensraeumen berechnen. Wird spaeter nach Rodung,
-   * Acker usw. erneut aufgerufen - deshalb eine eigene Funktion.
+   * Kapazitaet aus den Lebensraeumen berechnen. Wird nach Rodung, Bebauung
+   * und Nachwachsen erneut aufgerufen (eco/landuse.js).
    */
   Fields.prototype.rebuildCapacity = function () {
-    var w = this.world, g = w.biome.data, s = this.step;
+    // ground: Lebensraum mit Nutzung (eco/landuse.js), sonst die Natur
+    var w = this.world, g = this.ground || w.biome.data, s = this.step;
     for (var fy = 0; fy < this.rows; fy++) {
       for (var fx = 0; fx < this.cols; fx++) {
         var sums = {}, count = 0;

@@ -23,6 +23,10 @@
     peak:    { base: '#eef2f6', band: '#d6dee6', edge: '#b9c4cf', snow: '#ffffff' },
     thermal: { base: '#dccba0', band: '#e8d9b4', edge: '#c39b5c', pool: '#3fc3c8', poolRim: '#e08a3c', poolRim2: '#f2c94c', steam: '#ffffff' },
     lake:    { base: '#2a86a8', band: '#3c9dbd', shallow: '#68bdd0', edge: '#9ad6e0' },
-    river:   { base: '#3a98bd', edge: '#8fd0e0' }
+    river:   { base: '#3a98bd', edge: '#8fd0e0' },
+    // Nutzung (render/landuseRenderer.js)
+    erde:    { base: '#8b6a45', band: '#7c5d3b', edge: '#5f4529', stump: '#5a3e24', stumpTop: '#a8834f' },
+    dorf:    { base: '#c4a979', band: '#b69a6a', edge: '#97794c' },
+    wiese:   { base: '#a9bf62', band: '#9db357', edge: '#86993f', tuft: '#c9d985' }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

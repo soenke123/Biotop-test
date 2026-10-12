@@ -31,7 +31,12 @@
     PEAK: 9,       // Gipfel, Schnee
     THERMAL: 10,   // Thermalfeld mit farbigen Becken - fantasievoll
     LAKE: 11,      // Suesswassersee
-    RIVER: 12      // Fluss
+    RIVER: 12,     // Fluss
+    // Nutzung durch den Menschen (eco/landuse.js) - entstehen nie bei der
+    // Generierung, nur in der Simulation
+    SOIL: 13,      // gerodet, nackte Erde
+    VILLAGE: 14,   // Dorf, bebaut
+    MEADOW: 15     // auf gerodetem Land nachgewachsene Wiese
   };
 
   BT.BIOME_INFO = [
@@ -47,7 +52,10 @@
     { key: 'peak',    name: 'Gipfel',          land: true },
     { key: 'thermal', name: 'Thermalfeld',     land: true },
     { key: 'lake',    name: 'See',             land: false, water: 'fresh' },
-    { key: 'river',   name: 'Fluss',           land: false, water: 'fresh' }
+    { key: 'river',   name: 'Fluss',           land: false, water: 'fresh' },
+    { key: 'erde',    name: 'Gerodet (Erde)',  land: true, use: true },
+    { key: 'dorf',    name: 'Dorf',            land: true, use: true },
+    { key: 'wiese',   name: 'Wiese (nach Rodung)', land: true, use: true }
   ];
 
   /** Inselgroessen fuer Experimente: gleiche Insel-Logik, andere Flaeche. */

@@ -54,6 +54,7 @@
     }
     var shares = {};
     for (var b = 0; b < counts.length; b++) {
+      if (BT.BIOME_INFO[b].use) continue;
       shares[BT.BIOME_INFO[b].key] = b <= BT.BIOME.SHALLOW ? counts[b] / d.length : counts[b] / Math.max(1, land);
     }
     shares.land = land / d.length;

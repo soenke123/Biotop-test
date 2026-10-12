@@ -27,7 +27,7 @@
   var B = BT.BIOME;
 
   // Deckung: so viel schlechter werden Beutetiere hier entdeckt und erwischt
-  var COVER = new Array(13).fill(0);
+  var COVER = new Array(BT.BIOME_INFO.length).fill(0);   // Erde, Dorf, Wiese: keine Deckung
   COVER[B.FERN] = 0.5; COVER[B.MOSS] = 0.6; COVER[B.SCRUB] = 0.35; COVER[B.SWAMP] = 0.25;
 
   // So viele Tage kostet es, eine seltene Beute vergeblich zu suchen
@@ -128,7 +128,7 @@
       var r = radius * Math.sqrt(sim.rng.next());
       var px = cx + BT.M.cos(a) * r, py = cy + BT.M.sin(a) * r;
       if (BT.Move.blockedAt(w, spec, px, py)) continue;
-      var b = w.query.biomeAt(px, py);
+      var b = sim.biomeAt(px, py);
       var pref = spec.habitat[b];
       if (pref <= 0) continue;
       if (sim.humans.avoids(spec, px, py)) continue;
@@ -249,7 +249,7 @@
       if (!weight || !p.members.length) continue;
       weight *= sim.preyAvailability(p.spec.id);
       if (weight < 0.12) continue;      // sehr seltene Beute lohnt die Suche nicht
-      var cover = COVER[w.query.biomeAt(p.x, p.y)];
+      var cover = COVER[sim.biomeAt(p.x, p.y)];
       var vision = spec.vision * (1 - cover * (spec.flies ? 1.3 : 0.6));
       if (vision <= 0) continue;
       var d = dist(g, p);
@@ -290,7 +290,7 @@
     if (g.horst) p = Math.min(1, p * spec.horst.huntBonus);
     // Junge Wanderer sind ungeuebt und erwischen seltener etwas
     if (spec.floater && !g.home && maxOf(g.members, 'age') < spec.maturity) p *= spec.floater.skill;
-    p *= 1 - COVER[sim.world.query.biomeAt(prey.x, prey.y)] * (spec.flies ? 0.9 : 0.4);
+    p *= 1 - COVER[sim.biomeAt(prey.x, prey.y)] * (spec.flies ? 0.9 : 0.4);
     p /= 1 + 0.03 * (prey.members.length - 1);           // Wachsamkeit der Gruppe
     // Konkurrenz: Jagen viele Artgenossen in der Naehe, wird die Beute frueher
     // gewarnt und Beute streitig gemacht - der Jagderfolg sinkt
@@ -335,7 +335,8 @@
    */
   function preyRichPoint(sim, g, c, r) {
     var spec = g.spec;
-    var best = null, bestScore = -1;
+    // -Infinity: auch wenn alle Kandidaten im Dorf liegen, gibt es ein Ziel
+    var best = null, bestScore = -Infinity;
     for (var t = 0; t < 6; t++) {
       var p = randomPointNear(sim, spec, c.x, c.y, r);
       var score = sim.rng.next() * 0.5;
@@ -393,7 +394,7 @@
     var best = null, bestD = Infinity;
     for (var t = 0; t < 12; t++) {
       var p = randomPointNear(sim, spec, g.x, g.y, spec.territory * 3);
-      if (spec.habitat[sim.world.query.biomeAt(p.x, p.y)] <= 0 || !sim.homeIsFree(spec, p.x, p.y)) continue;
+      if (spec.habitat[sim.biomeAt(p.x, p.y)] <= 0 || !sim.homeIsFree(spec, p.x, p.y)) continue;
       if (sim.humans.avoids(spec, p.x, p.y)) continue;
       var d = BT.M.hypot(p.x - g.x, p.y - g.y);
       if (d < bestD) { bestD = d; best = p; }

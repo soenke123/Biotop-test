@@ -38,8 +38,10 @@ Soll später ein Skill in MPSkills werden (wie Wild Clusters in `newTablet-Schul
   Zelle. Gezeichnet werden geglättete Konturen (`js/render/shapes.js`), nie Zellen.
 - **Modell ohne Darstellung:** `js/core`, `js/world` (und später `js/eco`) laufen in Node ohne
   DOM. Nur `js/render` und `js/ui` dürfen den Browser kennen.
-- **Gelände wird später veränderbar** (Rodung, Acker, Dorf). Neue Logik nicht darauf bauen,
-  dass `world.biome` nach der Generierung fest ist.
+- **Gelände ist veränderbar** (Rodung, Dorf, später Acker): `world.biome` ist die Natur und
+  bleibt fest; die Simulation fragt den Lebensraum über `sim.biomeAt(x, y)` ab
+  (`sim.landuse.ground`). Lebensraum, Deckung und Nahrung in `js/eco` immer darüber;
+  `world.query.biomeAt` nur für Wasser und Küste, die sich nie ändern.
 
 ## Aufbau
 
@@ -50,9 +52,11 @@ js/world/   config.js (alle Stellschrauben, Lebensräume), island.js (Generator)
 js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefschattierung),
             seasonRenderer (Jahreszeiten als Farbschicht), plantRenderer (Weidezustand:
             entsättigt die Textur, abgefressen blasser, überweidet grau), sprites, agentRenderer (Tiere, Hervorhebung einer Art),
-            humanRenderer (Schiff, Häuser, Siedler; Platzhalter bis Bilder da sind)
+            humanRenderer (Schiff, Häuser, Siedler; Platzhalter bis Bilder da sind),
+            landuseRenderer (gerodete Erde, Dorfplatz, Wiese als Schicht über dem Gelände)
 js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung und
-            Pflanzenzustand je Weidezelle, Überweidung), movement, cards (Kartentabelle),
+            Pflanzenzustand je Weidezelle, Überweidung), landuse (Nutzung: Erde, Dorf, Wiese über
+            der Natur; sim.biomeAt), movement, cards (Kartentabelle, Pause zwischen Karten),
             humans (Schiffe, Häuser, Siedler, Störungsfeld), behavior (Gruppen-Entscheidungen),
             stats, simulation (Tick/Tag, sim.play für Karten)
 js/ui/      app.js (Karte, Zeitregler, Seitenleiste, Kartenleiste und Chronik, Bildpuffer, Großansicht der Diagramme),

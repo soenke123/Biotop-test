@@ -33,6 +33,15 @@
       speed: 3,               // Weltunits je Tick
       roam: 110,              // so weit gehen sie vom Haus weg
       size: 13
+    },
+    village: {                // Karte "Dorf vergroessern"
+      houses: 2,              // neue Haeuser je Karte
+      settlersPerHouse: 2,
+      clearRadius: 75,        // Rodung: Radius der (unregelmaessigen) Flaeche
+      clearMin: 70,           // ... deren Mitte so weit vom Dorf entfernt liegt
+      clearMax: 300,
+      yard: 24,               // um jedes Haus wird das Land zu Dorf
+      spacing: 34             // Mindestabstand zwischen Haeusern
     }
   };
 
@@ -170,21 +179,90 @@
       if (w.fields.distSea[i] >= cfg.inland && w.query.biomeAt(px, py) !== BT.BIOME.BEACH) break;
     }
     var house = this.addHouse(site.x, site.y);
-    for (var k = 0; k < cfg.settlers; k++) {
-      this.people.push({
-        id: this.nextId++, house: house,
-        x: c.x, y: c.y, px: c.x, py: c.y, heading: 0,
-        tx: site.x + this.rng.range(-20, 20), ty: site.y + this.rng.range(-20, 20),
-        wait: 0, inside: false
-      });
-    }
+    for (var k = 0; k < cfg.settlers; k++) this.addSettler(house, c.x, c.y);
   };
 
   Humans.prototype.addHouse = function (x, y) {
     var h = { id: this.nextId++, x: x, y: y, kind: this.houses.length % 3, day: this.sim.day };
     this.houses.push(h);
+    this.sim.landuse.build(x, y, BT.HUMANS.village.yard);
     this.updateDisturbance();
     return h;
+  };
+
+  Humans.prototype.addSettler = function (house, x, y) {
+    this.people.push({
+      id: this.nextId++, house: house,
+      x: x, y: y, px: x, py: y, heading: 0,
+      tx: house.x + this.rng.range(-20, 20), ty: house.y + this.rng.range(-20, 20),
+      wait: 0, inside: false
+    });
+  };
+
+  Humans.prototype.center = function () {
+    var x = 0, y = 0, n = this.houses.length;
+    for (var i = 0; i < n; i++) { x += this.houses[i].x; y += this.houses[i].y; }
+    return { x: x / n, y: y / n };
+  };
+
+  /**
+   * Dorf vergroessern: Neben dem Dorf wird ein Stueck Wald gerodet (dort, wo
+   * nah am Dorf am meisten Wald steht), am Rand der Rodung zum Dorf hin
+   * entstehen neue Haeuser, neue Siedler ziehen ein.
+   */
+  Humans.prototype.expand = function () {
+    var cfg = BT.HUMANS.village, lu = this.sim.landuse, w = this.world;
+    var c = this.center();
+    // Ort der Rodung: einige Kandidaten, der mit dem meisten Wald nah am Dorf gewinnt
+    var best = null, bestScore = 0;
+    for (var t = 0; t < 24; t++) {
+      var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(cfg.clearMin, cfg.clearMax);
+      var px = c.x + BT.M.cos(a) * r, py = c.y + BT.M.sin(a) * r;
+      if (BT.Move.blockedAt(w, null, px, py)) continue;
+      var score = lu.woodyAround(px, py, cfg.clearRadius) - r * 0.15;
+      if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
+    }
+    var cleared = 0;
+    if (best) {
+      var shape = [this.rng.range(0.08, 0.2), this.rng.range(0, 6.28), this.rng.range(0.04, 0.12), this.rng.range(0, 6.28)];
+      cleared = lu.clear(best.x, best.y, cfg.clearRadius, shape);
+    }
+    // Neue Haeuser: zwischen Dorf und Rodung, mit Abstand zu den anderen
+    var grow = best ? { x: c.x + (best.x - c.x) * 0.6, y: c.y + (best.y - c.y) * 0.6 } : c;
+    var built = 0;
+    for (var k = 0; k < cfg.houses; k++) {
+      var site = this.houseSite(grow, c);
+      if (!site) continue;
+      var h = this.addHouse(site.x, site.y);
+      for (var s = 0; s < cfg.settlersPerHouse; s++) this.addSettler(h, c.x, c.y);
+      built++;
+    }
+    return { x: grow.x, y: grow.y, houses: built, cleared: cleared };
+  };
+
+  /** Bauplatz nahe `near`: an Land, nicht im Wasser, mit Abstand zu allen Haeusern. */
+  Humans.prototype.houseSite = function (near, center) {
+    var cfg = BT.HUMANS.village, w = this.world;
+    var best = null, bestD = Infinity;
+    for (var t = 0; t < 40; t++) {
+      var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(0, 90);
+      var px = near.x + BT.M.cos(a) * r, py = near.y + BT.M.sin(a) * r;
+      var b = w.query.biomeAt(px, py);
+      if (!BT.BIOME_INFO[b].land || b === BT.BIOME.PEAK || BT.Move.blockedAt(w, null, px, py)) continue;
+      // nicht direkt am Wasser bauen
+      if (w.query.freshWaterDistance(px, py) < 12 || w.fields.distSea[w.query.index(px, py)] < 2) continue;
+      var free = true;
+      for (var i = 0; i < this.houses.length && free; i++) {
+        var o = this.houses[i];
+        if ((o.x - px) * (o.x - px) + (o.y - py) * (o.y - py) < cfg.spacing * cfg.spacing) free = false;
+      }
+      if (!free) continue;
+      // moeglichst nah am Dorf bleiben
+      var d = (px - near.x) * (px - near.x) + (py - near.y) * (py - near.y) +
+        0.3 * ((px - center.x) * (px - center.x) + (py - center.y) * (py - center.y));
+      if (d < bestD) { bestD = d; best = { x: px, y: py }; }
+    }
+    return best;
   };
 
   /** Stoerungsfeld neu berechnen (nach jedem neuen Haus). */
@@ -275,6 +353,11 @@
     if (card === 'landung') {
       var c = this.land(params);
       return { x: c.x, y: c.y };
+    }
+    if (card === 'dorf') {
+      var r = this.expand();
+      r.text = r.houses + (r.houses === 1 ? ' Haus' : ' Häuser') + (r.cleared ? ', ' + r.cleared + ' Zellen Wald gerodet' : ', kein Wald in der Nähe');
+      return r;
     }
     return null;
   };

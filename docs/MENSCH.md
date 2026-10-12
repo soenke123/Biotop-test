@@ -116,7 +116,7 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 | Schritt | Inhalt | Stand |
 |---|---|---|
 | **1** | **Grundgerüst und Landung:** Karten als Ereignisse (`sim.play`, Chronik), Störungsfeld, Art-Merkmal `scheu`, Kartenleiste, Karte „Landung“ mit Schiff, erstem Haus und Siedlern, Tiere meiden das Dorf, Platzhalter-Grafiken | erledigt |
-| 2 | **Dorf vergrößern:** Schicht `nutzung`, Rodung verändert Lebensraum und Nahrung, Karte wird neu gezeichnet, Häuser kommen dazu, Ereignismarken im Diagramm | |
+| **2** | **Dorf vergrößern:** Schicht Nutzung (`js/eco/landuse.js`), Rodung zu Erde, nach Jahren Wiese, neue Häuser und Siedler, Pause zwischen den Karten | erledigt |
 | 3 | **Acker:** Ackerflächen mit Saison und Ernte, Hirsche fressen dort | |
 | 4 | **Ratten und Inselzahmheit:** Art-Merkmal `kennt`, Ratten als Feld, Gelegeraub, Ratten als Beute | |
 | 5 | **Schafe:** Weide mit Zaun, Schaf als Art, Wölfe reißen Schafe, Folgekarte „Schafe brechen aus“ | |
@@ -125,14 +125,25 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 | 8 | **Sammeln** | |
 | 9 | **Gegenmaßnahmen:** Katzen, Gift, Schutzgebiet (nach Absprache) | |
 
-## 7. Offene Fragen
+## 7. Entschieden
 
-1. Wer spielt die Karten: nur die Lehrkraft oder auch die Lernenden (z. B. Gruppen gegeneinander)?
-2. Sollen Karten etwas kosten (z. B. eine Karte pro Jahr), oder ist alles frei wählbar?
-3. Darf eine Art endgültig aussterben, oder gibt es immer einen Weg zur Rettung (Schritt 9)?
-4. Versorgung des Dorfs: ja oder nein (Abschnitt 4)?
+1. **Wer spielt:** Wer am Gerät sitzt. Jede Person oder Gruppe hat ihre eigene Insel, niemand
+   spielt gegeneinander.
+2. **Begrenzung:** Nach jeder Karte gibt es eine Pause, bis die nächste aktive Karte gespielt
+   werden darf. Der Standard ist 2 Jahre. Weil wir den richtigen Wert noch ausprobieren, lässt
+   sich die Pause in der Kartenleiste einstellen (keine, 1, 2 oder 3 Jahre).
+3. **Versorgung des Dorfs:** Nein. Die Siedler ernähren sich vom Fischfang (so lässt es sich im
+   Unterricht erklären). Das Dorf wächst nur durch die Karte „Dorf vergrößern“.
+4. **Rodung:** Gerodeter Wald wird zu nackter Erde. Erst nach einigen Jahren wächst dort wieder
+   etwas, und zwar Wiese, kein Wald.
 
-## 8. Umgesetzt (Schritt 1)
+## 7a. Noch offen
+
+- Darf eine Art endgültig aussterben, oder gibt es immer einen Weg zur Rettung (Schritt 9)?
+
+## 8. Umgesetzt
+
+### Schritt 1: Landung
 
 - `js/eco/cards.js`: Kartentabelle `BT.CARDS`. Bisher ist nur „Landung“ spielbar, die übrigen
   Karten stehen blass als „kommt bald“ in der Leiste.
@@ -157,3 +168,28 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 - Platzhalter-Grafiken in `js/render/humanRenderer.js`. Sobald Bilder da sind, werden sie dort
   in `FILES` eingetragen.
 - `tools/shot.js … --landung=fx,fy` landet vor dem Simulieren an dieser Stelle (Anteil der Welt).
+
+### Schritt 2: Dorf vergrößern
+
+- **Nutzung als eigene Schicht** (`js/eco/landuse.js`): `world.biome` bleibt die Natur, wie sie
+  generiert wurde. Die Simulation rechnet mit `sim.landuse.ground`, einer Kopie, in der es drei
+  neue Lebensräume gibt: **Erde** (gerodet), **Dorf** (bebaut) und **Wiese** (auf gerodetem
+  Land nachgewachsen). Lebensraum, Deckung und Nahrung kommen daraus (`sim.biomeAt`,
+  `Fields.ground`). Ein Neustart beginnt wieder mit unberührter Natur.
+- **Karte „Dorf vergrößern“:** Von 24 zufälligen Punkten 70 bis 300 Einheiten vom Dorf entfernt
+  gewinnt der mit dem meisten Wald (Farnwald, Moosnebelwald, Buschland) in der Nähe. Dort wird
+  eine unregelmäßige Fläche mit etwa 75 Einheiten Radius gerodet, rund 450 Zellen und je nach
+  Insel 2 % des Waldes. Zwischen Dorf und Rodung entstehen 2 Häuser mit je 2 Siedlern. Um jedes
+  Haus wird das Land im Umkreis von 24 Einheiten zu Dorf.
+- **Erde:** Dort wächst nichts, und es gibt keine Deckung. Nach 3 bis 5 Jahren (je Zelle
+  verschieden, deshalb wird es fleckig grün) wird die Erde zur **Wiese**. Die Wiese trägt viel
+  Gras (8,8, fast wie Tussock), aber kaum Laub und Früchte. Wald kommt nicht zurück.
+- **Pause:** `BT.CARD_RULES.pauseYears` (Standard 2), einstellbar in der Kartenleiste. Die Leiste
+  zeigt, ab wann die nächste Karte geht. Karten, die eine Landung brauchen, gehen erst, wenn das
+  Schiff angekommen ist.
+- **Anzeige:** gerodete Erde braun mit Baumstümpfen, Dorfplatz sandfarben, Wiese hellgrün
+  (`js/render/landuseRenderer.js`). In der Kopfzeile der Kartenleiste steht, wie viel Prozent
+  des Waldes gerodet sind, in der Chronik, wie viele Häuser und Zellen eine Karte gebracht hat.
+- **Härtetest:** 8 Inseln, Landung, dann 28 Jahre lang alle 2 Jahre „Dorf vergrößern“ (14
+  Karten, 27 Häuser, 13 bis 22 % des Waldes gerodet). Auf 7 von 8 Inseln überleben alle Arten,
+  auf einer stirbt der Inseladler aus.

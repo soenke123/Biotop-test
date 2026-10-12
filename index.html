@@ -65,6 +65,17 @@
       <section class="people">
         <h2>Menschen <small id="peopleInfo">noch keine auf der Insel</small></h2>
         <div id="cards" class="cards"></div>
+        <div class="card-rule">
+          <span id="nextCard" class="next-card"></span>
+          <label class="field">Pause
+            <select id="cardPause" title="So lange muss man nach einer Karte warten">
+              <option value="0">keine</option>
+              <option value="1">1 Jahr</option>
+              <option value="2" selected>2 Jahre</option>
+              <option value="3">3 Jahre</option>
+            </select>
+          </label>
+        </div>
         <ol id="chronicle" class="chronicle"></ol>
       </section>
 
@@ -131,6 +142,7 @@
   <script src="js/eco/time.js"></script>
   <script src="js/eco/species.js"></script>
   <script src="js/eco/fields.js"></script>
+  <script src="js/eco/landuse.js"></script>
   <script src="js/eco/movement.js"></script>
   <script src="js/eco/weather.js"></script>
   <script src="js/eco/cards.js"></script>
@@ -142,6 +154,7 @@
   <script src="js/render/shapes.js"></script>
   <script src="js/render/camera.js"></script>
   <script src="js/render/terrainRenderer.js"></script>
+  <script src="js/render/landuseRenderer.js"></script>
   <script src="js/render/plantRenderer.js"></script>
   <script src="js/render/seasonRenderer.js"></script>
   <script src="js/render/sprites.js"></script>

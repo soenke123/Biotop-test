@@ -90,7 +90,7 @@
     if (startSize !== world.size) { customStart = false; startSize = world.size; }
     if (!customStart) startValues = Object.assign({}, recommended);
     syncStartSliders();
-    sim = new BT.Simulation(world, { start: startValues });
+    sim = new BT.Simulation(world, { start: startValues, cardPause: BT.Time.years(+$('cardPause').value) });
     if (chartView) chartView.events = sim.events;
     setAim(null);
     tickAcc = 0;
@@ -295,6 +295,7 @@
       ctx.fillStyle = BT.PALETTE.background;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       drawTerrain();
+      if (sim) BT.LanduseRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale);
       var alpha = running && tickRate() <= 90 ? Math.min(1, tickAcc) : 1;
       if (sim) BT.SeasonRenderer.draw(ctx, world, seasonPos(alpha));
       // nach den Jahreszeiten, sonst faerbt der Fruehling den kahlen Boden gruen
@@ -394,17 +395,30 @@
       var n = sim.played(id);
       $('cc-' + id).textContent = !n ? '' : c.repeat ? '×' + n : '✓';
     });
-    var H = sim.humans;
+    var H = sim.humans, lu = sim.landuse;
+    var forest = lu.counts.gerodet ? ' · ' + pct(lu.counts.gerodet / lu.woodyCells) + ' des Waldes gerodet' : '';
     $('peopleInfo').textContent = H.people.length || H.houses.length
-      ? H.people.length + ' Siedler · ' + H.houses.length + (H.houses.length === 1 ? ' Haus' : ' Häuser')
+      ? H.people.length + ' Siedler · ' + H.houses.length + (H.houses.length === 1 ? ' Haus' : ' Häuser') + forest
       : H.ships.length ? 'ein Schiff ist unterwegs' : 'noch keine auf der Insel';
+    // Wann darf die naechste Karte gespielt werden?
+    var next = $('nextCard'), nd = sim.nextCardDay();
+    var ready = H.houses.length && sim.day >= nd;
+    next.textContent = !sim.played('landung') ? 'Zuerst: Landung'
+      : !H.houses.length ? 'Das Schiff ist unterwegs …'
+      : ready ? 'Nächste Karte: jetzt' : 'Nächste Karte: ' + BT.Time.label(nd).replace(' · ', ', ');
+    next.classList.toggle('ready', !!ready);
+  }
+
+  function pct(v) {
+    return (v < 0.1 ? (v * 100).toFixed(1).replace('.', ',') : Math.round(v * 100)) + ' %';
   }
 
   function updateChronicle() {
     if (!sim) return;
     var items = sim.events.map(function (ev) {
       var c = BT.CARDS[ev.card];
-      return '<li><span class="when">' + BT.Time.label(ev.day).replace(' · ', ', ') + '</span><span>' + c.icon + ' ' + c.name + '</span></li>';
+      return '<li><span class="when">' + BT.Time.label(ev.day).replace(' · ', ', ') + '</span><span>' + c.icon + ' ' + c.name +
+        (ev.at && ev.at.text ? '<small>' + ev.at.text + '</small>' : '') + '</span></li>';
     }).reverse();
     sim.pending.forEach(function (ev) {
       items.unshift('<li class="pending"><span class="when">gleich</span><span>' + BT.CARDS[ev.card].icon + ' ' + BT.CARDS[ev.card].name + '</span></li>');
@@ -516,6 +530,7 @@
     var html = '<h2>Lebensräume</h2>';
     for (var b = BT.BIOME.BEACH; b < BT.BIOME_INFO.length; b++) {
       var info = BT.BIOME_INFO[b];
+      if (info.use) continue;
       var pct = shares[info.key] * 100;
       if (pct < 0.05) continue;
       html += '<div class="row"><span class="swatch" style="background:' + P[info.key].base + '"></span>' +
@@ -645,8 +660,9 @@
         ' · Energie ' + Math.round(a.energy * 100) + ' %' +
         (g ? ' · ' + GROUP_TEXT[a.spec.group.kind] + ' mit ' + g.members.length + ' · ' + stateText(g, a) : '');
     } else {
-      var b = world.query.biomeAt(w.x, w.y);
+      var b = sim ? sim.biomeAt(w.x, w.y) : world.query.biomeAt(w.x, w.y);
       text = BT.BIOME_INFO[b].name;
+      if (sim && b === BT.BIOME.SOIL) text += ' · früher ' + BT.BIOME_INFO[world.query.biomeAt(w.x, w.y)].name + ', hier wächst noch nichts';
       if (BT.BIOME_INFO[b].land && sim) {
         var f = sim.fields, i = f.index(w.x, w.y);
         text += ' · Gras ' + pctOf(f, 'gras', i) + ' · Laub ' + pctOf(f, 'laub', i) +
@@ -695,6 +711,10 @@
     dirty = true;
   });
   $('skip').addEventListener('click', function () { skipYears(5); });
+  $('cardPause').addEventListener('change', function () {
+    if (sim) sim.cardPause = BT.Time.years(+$('cardPause').value);
+    updateCards();
+  });
   $('cards').addEventListener('click', function (e) {
     var card = e.target.closest('.card');
     if (card && !card.disabled) chooseCard(card.dataset.id);
