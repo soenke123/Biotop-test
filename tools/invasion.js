@@ -16,8 +16,8 @@ const { spawn } = require('child_process');
 
 const args = process.argv.slice(2);
 const flags = Object.fromEntries(args.filter((a) => a.startsWith('--')).map((a) => {
-  const [k, v] = a.replace(/^--/, '').split('=');
-  return [k, v === undefined ? true : v];
+  const t = a.replace(/^--/, ''), i = t.indexOf('=');
+  return i < 0 ? [t, true] : [t.slice(0, i), t.slice(i + 1)];
 }));
 const pos = args.filter((a) => !a.startsWith('--'));
 
