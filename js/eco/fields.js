@@ -119,12 +119,14 @@
   };
 
   /**
-   * Fuellstand der Umgebung je Weidezelle: Summe der Nahrung durch Summe der
-   * Kapazitaet einer gesunden Gegend im Quadrat mit Radius r (Weidezellen).
-   * Ueber Praefixsummen.
+   * Fuellstand der Umgebung je Weidezelle: Summe der Nahrung durch Summe dessen,
+   * was die Gegend beim heutigen Zustand tragen kann, im Quadrat mit Radius r
+   * (Weidezellen). Ueber Praefixsummen.
    */
   Fields.prototype.regionShare = function (key, r) {
-    var C = this.cols, R = this.rows, v = this.value[key], cap = this.capacity[key];
+    var C = this.cols, R = this.rows, v = this.value[key];
+    var cap = this._carry || (this._carry = new Float32Array(C * R));
+    for (var c = 0; c < C * R; c++) cap[c] = this.carrying(key, c);
     var W = C + 1, n = W * (R + 1);
     if (!this._sv || this._sv.length !== n) { this._sv = new Float64Array(n); this._sk = new Float64Array(n); }
     var sv = this._sv, sk = this._sk;
@@ -168,9 +170,11 @@
         var active = dmg.season ? dmg.season[season] > 0 : def.season[season] >= 0.5;
         // Bei Nahrung, die ein umherziehender Trupp nur kurz abfrisst und die
         // schnell nachwaechst (Insekten), zaehlt die Umgebung (`damage.area`
-        // Weidezellen im Umkreis), gemessen an einer gesunden Gegend: Ein
-        // durchziehender Trupp schadet nicht, nur zu viele Tiere in der ganzen
-        // Gegend. Ist sie einmal verarmt, schadet jedes weitere Fressen.
+        // Weidezellen im Umkreis), gemessen an dem, was sie heute tragen kann:
+        // Ein durchziehender Trupp schadet nicht, nur zu viele Tiere in der
+        // ganzen Gegend. (Gemessen an einer gesunden Gegend lag eine einmal
+        // verarmte Gegend fuer immer unter der Schwelle, jedes Fressen schadete
+        // weiter, und die Insel verarmte ueber die Jahrzehnte.)
         var region = dmg.area ? this.regionShare(key, dmg.area) : null;
         for (var i = 0; i < v.length; i++) {
           if (cap[i] <= 0) continue;

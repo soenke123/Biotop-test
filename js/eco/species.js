@@ -37,7 +37,7 @@
    *           mal 0,2 + 0,8 * Zustand: kahler Boden braucht am laengsten). Voellig
    *           ueberweidet traegt die Zelle nur noch `dead` (Anteil der Kapazitaet).
    *           area: statt der einzelnen Zelle zaehlt die Umgebung (so viele Weidezellen
-   *           im Umkreis, gemessen an einer gesunden Gegend) - fuer Nahrung, die ein
+   *           im Umkreis, gemessen an dem, was sie heute traegt) - fuer Nahrung, die ein
    *           Trupp im Vorbeiziehen abfrisst. season: Jahreszeiten, in denen Schaden
    *           entsteht (sonst jede mit kraeftigem Wachstum).
    * healthOf: diese Schicht haengt am Zustand einer anderen (Fruechte an den Bueschen)
