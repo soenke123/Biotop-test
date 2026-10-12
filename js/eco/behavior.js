@@ -138,6 +138,20 @@
       if (winter && b === B.THERMAL) score += 0.25;
       if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
     }
+    // Aecker kennt man: Wer Getreide frisst, prueft auch die Aecker in der Naehe
+    var fields = sim.humans.fields;
+    if (fields.length && spec.diet.korn) {
+      for (var k = 0; k < fields.length; k++) {
+        var fl = fields[k];
+        if (BT.M.hypot(fl.x - cx, fl.y - cy) > radius * 1.5) continue;
+        a = sim.rng.range(0, Math.PI * 2);
+        r = BT.HUMANS.field.radius * 0.7 * Math.sqrt(sim.rng.next());
+        px = fl.x + BT.M.cos(a) * r; py = fl.y + BT.M.sin(a) * r;
+        if (BT.Move.blockedAt(w, spec, px, py) || sim.humans.avoids(spec, px, py)) continue;
+        score = f.energyAt(f.index(px, py), spec.diet) * spec.habitat[sim.biomeAt(px, py)] - BT.M.hypot(px - g.x, py - g.y) * 0.0015;
+        if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
+      }
+    }
     return best;
   }
 

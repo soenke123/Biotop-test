@@ -27,6 +27,9 @@
     // Nutzung (render/landuseRenderer.js)
     erde:    { base: '#8b6a45', band: '#7c5d3b', edge: '#5f4529', stump: '#5a3e24', stumpTop: '#a8834f' },
     dorf:    { base: '#c4a979', band: '#b69a6a', edge: '#97794c' },
-    wiese:   { base: '#a9bf62', band: '#9db357', edge: '#86993f', tuft: '#c9d985' }
+    wiese:   { base: '#a9bf62', band: '#9db357', edge: '#86993f', tuft: '#c9d985' },
+    // Acker je Jahreszeit: Saat gruen, reif golden, Stoppeln, Winterbrache; abgefressen: Erde
+    acker:   { base: '#c9b06a', edge: '#7a5f36', furrow: 'rgba(80, 55, 25, 0.28)', soil: '#8f6e45',
+               spring: '#86b552', summer: '#e0bf4e', stubble: '#c4ad78', winter: '#9c8560' }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

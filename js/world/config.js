@@ -36,7 +36,8 @@
     // Generierung, nur in der Simulation
     SOIL: 13,      // gerodet, nackte Erde
     VILLAGE: 14,   // Dorf, bebaut
-    MEADOW: 15     // auf gerodetem Land nachgewachsene Wiese
+    MEADOW: 15,    // auf gerodetem Land nachgewachsene Wiese
+    FIELD: 16      // Acker
   };
 
   BT.BIOME_INFO = [
@@ -55,7 +56,8 @@
     { key: 'river',   name: 'Fluss',           land: false, water: 'fresh' },
     { key: 'erde',    name: 'Gerodet (Erde)',  land: true, use: true },
     { key: 'dorf',    name: 'Dorf',            land: true, use: true },
-    { key: 'wiese',   name: 'Wiese (nach Rodung)', land: true, use: true }
+    { key: 'wiese',   name: 'Wiese (nach Rodung)', land: true, use: true },
+    { key: 'acker',   name: 'Acker',           land: true, use: true }
   ];
 
   /** Inselgroessen fuer Experimente: gleiche Insel-Logik, andere Flaeche. */

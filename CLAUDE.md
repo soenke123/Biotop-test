@@ -53,11 +53,11 @@ js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefsch
             seasonRenderer (Jahreszeiten als Farbschicht), plantRenderer (Weidezustand:
             entsättigt die Textur, abgefressen blasser, überweidet grau), sprites, agentRenderer (Tiere, Hervorhebung einer Art),
             humanRenderer (Schiff, Häuser, Siedler; Platzhalter bis Bilder da sind),
-            landuseRenderer (gerodete Erde, Dorfplatz, Wiese als Schicht über dem Gelände)
+            landuseRenderer (gerodete Erde, Dorfplatz, Wiese, Acker als Schicht über dem Gelände)
 js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung und
-            Pflanzenzustand je Weidezelle, Überweidung), landuse (Nutzung: Erde, Dorf, Wiese über
-            der Natur; sim.biomeAt), movement, cards (Kartentabelle, Pause zwischen Karten),
-            humans (Schiffe, Häuser, Siedler, Störungsfeld), behavior (Gruppen-Entscheidungen),
+            Pflanzenzustand je Weidezelle, Überweidung), landuse (Nutzung: Erde, Dorf, Wiese, Acker
+            über der Natur; sim.biomeAt), movement, cards (Kartentabelle, Pause zwischen Karten),
+            humans (Schiffe, Häuser, Siedler, Äcker und Ernte, Störungsfeld), behavior (Gruppen-Entscheidungen),
             stats, simulation (Tick/Tag, sim.play für Karten)
 js/ui/      app.js (Karte, Zeitregler, Seitenleiste, Kartenleiste und Chronik, Bildpuffer, Großansicht der Diagramme),
             charts.js (LineChart; ChartView: gemeinsamer Zeitraum und Fadenkreuz)

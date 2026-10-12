@@ -27,7 +27,15 @@
     },
     disturb: {
       radius: 260,            // Weltunits um jedes Haus
-      avoid: 0.3              // Stoerung * scheu darueber: die Gegend wird gemieden
+      avoid: 0.3,             // Stoerung * scheu darueber: die Gegend wird gemieden
+      night: 0.4              // nachts sind die Siedler im Haus: so viel Stoerung bleibt
+    },
+    field: {                  // Karte "Acker anlegen"
+      radius: 55,             // Groesse eines Ackers (unregelmaessig)
+      distMin: 150,           // Abstand der Ackermitte vom Dorf
+      distMax: 270,
+      harvestSeason: 2,       // geerntet wird am ersten Tag des Herbstes
+      workers: 0.5            // Anteil der Siedler, die tagsueber auf dem Acker arbeiten
     },
     settler: {
       speed: 3,               // Weltunits je Tick
@@ -54,6 +62,10 @@
     this.people = [];
     this.nextId = 1;
     this.active = false;            // gibt es ueberhaupt Stoerung?
+    this.night = false;             // nachts weniger Stoerung (Siedler im Haus)
+    this.fields = [];               // Aecker: { x, y, cells, day }
+    this.cropMark = 0;              // Getreide, das die Tiere bis zur letzten Ernte gefressen hatten
+    this.harvests = [];             // je Ernte: { day, harvested, eaten }
     var f = sim.fields;
     this.disturb = new Float32Array(f.cols * f.rows);
   }
@@ -63,7 +75,7 @@
   Humans.prototype.disturbanceAt = function (x, y) {
     if (!this.active) return 0;
     var i = this.sim.fields.index(x, y);
-    return i < 0 ? 0 : this.disturb[i];
+    return i < 0 ? 0 : this.disturb[i] * (this.night ? BT.HUMANS.disturb.night : 1);
   };
 
   /** Stoerung, wie sie eine Art empfindet (mal scheu). */
@@ -285,8 +297,66 @@
   // ------------------------------------------------------------ Ablauf
 
   Humans.prototype.step = function () {
+    var tod = this.sim.tick % this.sim.ticksPerDay;
+    this.night = tod === 0 || tod === this.sim.ticksPerDay - 1;
     this.moveShips();
     this.movePeople();
+  };
+
+  // ------------------------------------------------------------ Acker
+
+  /**
+   * Acker anlegen: Von einigen Orten 150 bis 270 vom Dorf gewinnt der mit dem
+   * meisten offenen Land (Wald zaehlt halb, er muss erst gerodet werden). Ein
+   * Acker direkt neben einem bestehenden vergroessert diesen.
+   */
+  Humans.prototype.addField = function () {
+    var cfg = BT.HUMANS.field, lu = this.sim.landuse, w = this.world;
+    var c = this.center(), R = cfg.radius;
+    var best = null, bestScore = 0;
+    for (var t = 0; t < 30; t++) {
+      var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(cfg.distMin, cfg.distMax);
+      var px = c.x + BT.M.cos(a) * r, py = c.y + BT.M.sin(a) * r;
+      if (BT.Move.blockedAt(w, null, px, py)) continue;
+      var f = lu.fieldAround(px, py, R);
+      // neben bestehenden Aeckern liegt man gut, auf ihnen nicht
+      var score = f.ok - f.woody * 0.5 - f.field * 2 + (f.field > 0 && f.field < f.ok ? 15 : 0);
+      if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
+    }
+    if (!best) return null;
+    var before = lu.counts.gerodet;
+    var shape = [this.rng.range(0.04, 0.1), this.rng.range(0, 6.28), this.rng.range(0.02, 0.06), this.rng.range(0, 6.28)];
+    var cells = lu.plow(best.x, best.y, R, shape);
+    var field = { x: best.x, y: best.y, cells: cells, day: this.sim.day, angle: this.rng.range(0, Math.PI) };
+    this.fields.push(field);
+    return { x: best.x, y: best.y, cells: cells, cleared: lu.counts.gerodet - before };
+  };
+
+  /**
+   * Einmal am Tag. Zu Beginn des Herbstes wird geerntet: was auf den Aeckern
+   * steht, holen die Siedler ein; was die Tiere seit der letzten Ernte
+   * gefressen haben, fehlt (Bilanz in this.harvests und in der Chronik).
+   */
+  Humans.prototype.newDay = function () {
+    if (!this.fields.length) return;
+    var cal = this.sim.calendar, cfg = BT.HUMANS.field;
+    if (cal.season !== cfg.harvestSeason || cal.dayOfSeason !== 1) return;
+    var f = this.sim.fields, v = f.value.korn, cap = f.capacity.korn, got = 0;
+    for (var i = 0; i < v.length; i++) {
+      if (cap[i] <= 0) continue;
+      got += v[i];
+      v[i] = 0;
+    }
+    var eaten = f.eaten.korn - this.cropMark;
+    this.cropMark = f.eaten.korn;
+    var total = got + eaten;
+    var share = total > 0 ? eaten / total : 0;
+    var h = { day: this.sim.day, harvested: got, eaten: eaten, share: share };
+    this.harvests.push(h);
+    this.sim.events.push({
+      day: this.sim.day, tick: this.sim.tick, card: share >= 0.25 ? 'wildschaden' : 'ernte', params: {},
+      at: { text: Math.round((1 - share) * 100) + ' % eingebracht, ' + Math.round(share * 100) + ' % von Tieren gefressen' }
+    });
   };
 
   Humans.prototype.moveShips = function () {
@@ -334,6 +404,12 @@
         p.inside = false;
         var a = this.rng.range(0, Math.PI * 2), r = cfg.roam * Math.sqrt(this.rng.next());
         var tx = h.x + BT.M.cos(a) * r, ty = h.y + BT.M.sin(a) * r;
+        // ein Teil arbeitet auf dem Acker (Fruehling bis zur Ernte)
+        if (this.fields.length && this.sim.calendar.season < 2 && this.rng.chance(BT.HUMANS.field.workers)) {
+          var fl = this.fields[this.rng.int(0, this.fields.length - 1)];
+          r = BT.HUMANS.field.radius * 0.8 * Math.sqrt(this.rng.next());
+          tx = fl.x + BT.M.cos(a) * r; ty = fl.y + BT.M.sin(a) * r;
+        }
         if (!BT.Move.blockedAt(w, null, tx, ty)) { p.tx = tx; p.ty = ty; }
         p.wait = this.rng.int(1, 3);
       }
@@ -353,6 +429,12 @@
     if (card === 'landung') {
       var c = this.land(params);
       return { x: c.x, y: c.y };
+    }
+    if (card === 'acker') {
+      var fr = this.addField();
+      if (!fr) return { text: 'kein Platz für einen Acker' };
+      fr.text = fr.cells + ' Zellen Acker' + (fr.cleared ? ', davon ' + fr.cleared + ' Wald gerodet' : '');
+      return fr;
     }
     if (card === 'dorf') {
       var r = this.expand();

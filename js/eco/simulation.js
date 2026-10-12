@@ -202,10 +202,14 @@
 
   // ------------------------------------------------------------ Karten (Menschen)
 
-  /** Tag der zuletzt gespielten Karte (auch wartende), sonst null. */
+  /** Tag der zuletzt gespielten Karte (auch wartende), sonst null. Meldungen und Folgekarten zaehlen nicht. */
   Simulation.prototype.lastCardDay = function () {
     if (this.pending.length) return this.day;
-    return this.events.length ? this.events[this.events.length - 1].day : null;
+    for (var i = this.events.length - 1; i >= 0; i--) {
+      var k = BT.CARDS[this.events[i].card].kind;
+      if (k === 'start' || k === 'aktiv') return this.events[i].day;
+    }
+    return null;
   };
 
   /** Ab diesem Tag darf die naechste aktive Karte gespielt werden. */
@@ -338,6 +342,7 @@
     this.weatherNow = this.weather.year(cal.year - 1);
     this.landuse.newDay();
     this.fields.grow(cal.season, this.weatherNow);
+    this.humans.newDay();
     // Aas verwest
     for (var c = this.carcasses.length - 1; c >= 0; c--) {
       var cc = this.carcasses[c];

@@ -42,11 +42,13 @@
     this.health = {};     // Pflanzenzustand je Schicht mit Ueberweidung
     this.bitten = {};     // heute gefressen (fuer die Ueberweidung)
     this.rest = {};       // Tage seit der letzten Ueberweidung
+    this.eaten = {};      // insgesamt gefressen je Schicht (fuer die Ernte-Bilanz)
     for (var k = 0; k < BT.FOOD_ORDER.length; k++) {
       var key = BT.FOOD_ORDER[k];
       this.capacity[key] = new Float32Array(n);
       this.value[key] = new Float32Array(n);
       this.bitten[key] = new Float32Array(n);
+      this.eaten[key] = 0;
       if (BT.FOOD[key].damage) {
         this.health[key] = new Float32Array(n).fill(1);
         this.rest[key] = new Uint16Array(n).fill(65535);
@@ -230,6 +232,7 @@
       var take = Math.min(amount, v[i]);
       v[i] -= take;
       this.bitten[keys[k]][i] += take;
+      this.eaten[keys[k]] += take;
       amount -= take;
       gained += take * diet[keys[k]];
       this.lastWater += take * BT.FOOD[keys[k]].water;

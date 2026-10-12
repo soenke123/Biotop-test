@@ -39,9 +39,21 @@
       text: 'Wald am Dorfrand wird gerodet, neue Häuser entstehen. Auf der gerodeten Erde wächst erst nach Jahren wieder etwas.'
     },
     acker: {
-      id: 'acker', kind: 'aktiv', icon: '🌾', soon: true, needs: 'landung', repeat: true,
+      id: 'acker', kind: 'aktiv', icon: '🌾', needs: 'landung', repeat: true,
       name: 'Acker anlegen',
-      text: 'Ein Feld am Dorf. Hirsche finden es auch lecker.'
+      text: 'Ein Getreidefeld nahe am Dorf. Geerntet wird im Herbst. Hirsche finden das Getreide auch lecker.'
+    },
+    // Meldungen, die von selbst entstehen (nur Chronik, keine Marke im Diagramm)
+    ernte: {
+      id: 'ernte', kind: 'info', icon: '🧺',
+      name: 'Ernte',
+      text: 'Die Siedler bringen die Ernte ein.'
+    },
+    // Folgekarte: tritt von selbst ein (Marke im Diagramm)
+    wildschaden: {
+      id: 'wildschaden', kind: 'folge', icon: '🦌',
+      name: 'Hirsche im Acker',
+      text: 'Mindestens ein Viertel des Getreides haben Tiere gefressen, bevor geerntet wurde.'
     },
     schafe: {
       id: 'schafe', kind: 'aktiv', icon: '🐑', soon: true, needs: 'landung', repeat: true,

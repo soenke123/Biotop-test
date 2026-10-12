@@ -396,7 +396,8 @@
       $('cc-' + id).textContent = !n ? '' : c.repeat ? '×' + n : '✓';
     });
     var H = sim.humans, lu = sim.landuse;
-    var forest = lu.counts.gerodet ? ' · ' + pct(lu.counts.gerodet / lu.woodyCells) + ' des Waldes gerodet' : '';
+    var forest = (H.fields.length ? ' · ' + H.fields.length + (H.fields.length === 1 ? ' Acker' : ' Äcker') : '') +
+      (lu.counts.gerodet ? ' · ' + pct(lu.counts.gerodet / lu.woodyCells) + ' des Waldes gerodet' : '');
     $('peopleInfo').textContent = H.people.length || H.houses.length
       ? H.people.length + ' Siedler · ' + H.houses.length + (H.houses.length === 1 ? ' Haus' : ' Häuser') + forest
       : H.ships.length ? 'ein Schiff ist unterwegs' : 'noch keine auf der Insel';
@@ -663,7 +664,11 @@
       var b = sim ? sim.biomeAt(w.x, w.y) : world.query.biomeAt(w.x, w.y);
       text = BT.BIOME_INFO[b].name;
       if (sim && b === BT.BIOME.SOIL) text += ' · früher ' + BT.BIOME_INFO[world.query.biomeAt(w.x, w.y)].name + ', hier wächst noch nichts';
-      if (BT.BIOME_INFO[b].land && sim) {
+      if (sim && b === BT.BIOME.FIELD) {
+        var fi = sim.fields.index(w.x, w.y);
+        text += ' · Getreide ' + pctOf(sim.fields, 'korn', fi) + (sim.calendar.season >= 2 ? ' (abgeerntet)' : '');
+      }
+      if (BT.BIOME_INFO[b].land && sim && b !== BT.BIOME.FIELD) {
         var f = sim.fields, i = f.index(w.x, w.y);
         text += ' · Gras ' + pctOf(f, 'gras', i) + ' · Laub ' + pctOf(f, 'laub', i) +
           ' · Früchte ' + pctOf(f, 'frucht', i) + ' · Insekten ' + pctOf(f, 'insekten', i) +

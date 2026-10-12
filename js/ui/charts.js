@@ -292,6 +292,8 @@
     var events = this.view.events || [];
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     for (var e = 0; e < events.length; e++) {
+      var info = BT.CARDS && BT.CARDS[events[e].card];
+      if (info && info.kind === 'info') continue;          // Meldungen nur in der Chronik
       var ek = events[e].day - d0;
       if (ek < 0 || ek > n - 1) continue;
       var ex = Math.round(x(ek)) + 0.5;

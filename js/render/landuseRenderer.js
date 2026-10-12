@@ -1,6 +1,10 @@
 /**
- * Nutzung auf der Karte: gerodete Erde (mit Baumstuempfen), Dorfplatz und die
- * Wiese, die auf gerodetem Land nachwaechst.
+ * Nutzung auf der Karte: gerodete Erde (mit Baumstuempfen), Dorfplatz, die
+ * Wiese, die auf gerodetem Land nachwaechst, und Aecker.
+ *
+ * Acker: Farbe je Jahreszeit (Saat gruen, reif golden, Stoppeln, Brache), mit
+ * Furchen. Wo Tiere das Getreide abgefressen haben, schimmert die Erde durch -
+ * ein Bildpunkt je Weidezelle, weich vergroessert, einmal am Tag neu.
  *
  * Das Gelaende im Bildpuffer bleibt die Natur. Die Nutzung liegt als eigene
  * Schicht darueber: geglaettete Umrisse aus dem Raster (wie die Lebensraeume,
@@ -17,7 +21,8 @@
   var LAYERS = [
     { code: B.MEADOW, key: 'wiese' },
     { code: B.SOIL, key: 'erde' },
-    { code: B.VILLAGE, key: 'dorf' }
+    { code: B.VILLAGE, key: 'dorf' },
+    { code: B.FIELD, key: 'acker' }
   ];
 
   var cache = null;
@@ -51,6 +56,68 @@
     return { sim: sim, version: lu.version, layers: layers, stumps: stumps, tufts: tufts };
   }
 
+  function hex(h) { return [1, 3, 5].map(function (k) { return parseInt(h.substr(k, 2), 16); }); }
+
+  /** Getreide je Weidezelle: Farbe der Jahreszeit, abgefressen Richtung Erde. */
+  var crop = null;
+  function cropImage(sim) {
+    var f = sim.fields, doc = global.document;
+    if (!crop || crop.small.width !== f.cols || crop.small.height !== f.rows) {
+      var c = doc.createElement('canvas'); c.width = f.cols; c.height = f.rows;
+      var big = doc.createElement('canvas'); big.width = f.cols * 4; big.height = f.rows * 4;
+      crop = { small: c, canvas: big };
+    }
+    var A = BT.PALETTE.acker, season = sim.calendar.season;
+    var top = hex([A.spring, A.summer, A.stubble, A.winter][season]), soil = hex(A.soil);
+    var cx = crop.small.getContext('2d'), img = cx.createImageData(f.cols, f.rows), d = img.data;
+    var v = f.value.korn, K = f.capacity.korn;
+    for (var i = 0; i < v.length; i++) {
+      if (K[i] <= 0) continue;
+      // Fruehling: die Saat geht auf (gruener mit dem Wuchs); Sommer: reif oder abgefressen
+      var t = season === 0 ? Math.min(1, 0.25 + v[i] / K[i] * 1.5) : season === 1 ? Math.min(1, v[i] / K[i] * 1.25) : 1;
+      var o = i * 4;
+      for (var k = 0; k < 3; k++) d[o + k] = Math.round(soil[k] + (top[k] - soil[k]) * t);
+      d[o + 3] = 255;
+    }
+    cx.putImageData(img, 0, 0);
+    var bx = crop.canvas.getContext('2d');
+    bx.clearRect(0, 0, crop.canvas.width, crop.canvas.height);
+    bx.imageSmoothingEnabled = true;
+    bx.filter = 'blur(2px)';
+    bx.drawImage(crop.small, 0, 0, crop.canvas.width, crop.canvas.height);
+    bx.filter = 'none';
+    crop.day = sim.day; crop.sim = sim;
+    return crop;
+  }
+
+  function drawFields(ctx, sim, path, scale) {
+    var f = sim.fields, A = BT.PALETTE.acker;
+    if (!crop || crop.sim !== sim || crop.day !== sim.day) cropImage(sim);
+    ctx.save();
+    ctx.clip(path, 'evenodd');
+    ctx.fillStyle = A.soil;
+    ctx.fill(path, 'evenodd');
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(crop.canvas, 0, 0, f.cols * f.size, f.rows * f.size);
+    // Furchen: parallele Linien, je Acker eine Richtung
+    ctx.strokeStyle = A.furrow;
+    ctx.lineWidth = Math.max(0.8, 1 / scale);
+    var fields = sim.humans.fields, R = BT.HUMANS.field.radius * 1.4;
+    ctx.beginPath();
+    for (var k = 0; k < fields.length; k++) {
+      var fl = fields[k], dx = Math.cos(fl.angle), dy = Math.sin(fl.angle);
+      for (var o = -R; o <= R; o += 5) {
+        ctx.moveTo(fl.x - dx * R - dy * o, fl.y - dy * R + dx * o);
+        ctx.lineTo(fl.x + dx * R - dy * o, fl.y + dy * R + dx * o);
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = A.edge;
+    ctx.lineWidth = Math.max(1, 1.4 / scale);
+    ctx.stroke(path);
+  }
+
   /** @param ctx  auf Weltkoordinaten transformiert */
   function draw(ctx, sim, view, scale) {
     if (!sim || !sim.landuse.version || typeof Path2D === 'undefined') return;
@@ -58,6 +125,7 @@
     var P = BT.PALETTE;
     for (var k = 0; k < cache.layers.length; k++) {
       var l = cache.layers[k], c = P[l.key];
+      if (l.key === 'acker') { drawFields(ctx, sim, l.path, scale); continue; }
       ctx.fillStyle = c.base;
       ctx.fill(l.path, 'evenodd');
       // dunkler Saum innen am Rand

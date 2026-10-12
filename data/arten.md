@@ -241,6 +241,11 @@ Deckung (Lebensraumwert Hirsch und Laufvogel 0,1). Nach 3 bis 5 Jahren wird sie 
 Gras 8,8, Laub 0,88, Früchte 0,55, Insekten 1,65; Lebensraumwert Hirsch 1,0, Laufvogel 0,6,
 Wolf und Adler 1. Das **Dorf** trägt keine Nahrung.
 
+**Acker** (Schritt 3): trägt nur **Getreide** (Kapazität 14, Wachstum 0,2 aus der Saat 0,1;
+Jahreszeiten 1,4 / 1,1 / 0 / 0; geerntet am ersten Herbsttag). Der Zwerghirsch frisst es
+(Energie 0,14) und kennt die Äcker; Lebensraumwert Acker: Hirsch 1,0, Laufvogel 0,4, Wolf 0,8,
+Adler 1. Nachts sinkt die Störung um die Häuser auf 40 %.
+
 ## Was das Ökosystem stabil hält
 
 Diese Mechanismen sind bewusst eingebaut, weil sie auch in der Natur stabilisieren. Ohne sie

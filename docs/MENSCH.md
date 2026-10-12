@@ -117,7 +117,7 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 |---|---|---|
 | **1** | **Grundgerüst und Landung:** Karten als Ereignisse (`sim.play`, Chronik), Störungsfeld, Art-Merkmal `scheu`, Kartenleiste, Karte „Landung“ mit Schiff, erstem Haus und Siedlern, Tiere meiden das Dorf, Platzhalter-Grafiken | erledigt |
 | **2** | **Dorf vergrößern:** Schicht Nutzung (`js/eco/landuse.js`), Rodung zu Erde, nach Jahren Wiese, neue Häuser und Siedler, Pause zwischen den Karten | erledigt |
-| 3 | **Acker:** Ackerflächen mit Saison und Ernte, Hirsche fressen dort | |
+| **3** | **Acker:** Ackerflächen mit Saison und Ernte, Hirsche fressen dort, Bilanz in der Chronik | erledigt |
 | 4 | **Ratten und Inselzahmheit:** Art-Merkmal `kennt`, Ratten als Feld, Gelegeraub, Ratten als Beute | |
 | 5 | **Schafe:** Weide mit Zaun, Schaf als Art, Wölfe reißen Schafe, Folgekarte „Schafe brechen aus“ | |
 | 6 | **Hunde:** Hütehunde (Störung), verwilderte Hunde als Art, Krankheit bei Wölfen | |
@@ -193,3 +193,31 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 - **Härtetest:** 8 Inseln, Landung, dann 28 Jahre lang alle 2 Jahre „Dorf vergrößern“ (14
   Karten, 27 Häuser, 13 bis 22 % des Waldes gerodet). Auf 7 von 8 Inseln überleben alle Arten,
   auf einer stirbt der Inseladler aus.
+
+### Schritt 3: Acker
+
+- **Karte „Acker anlegen“:** Von 30 Orten 150 bis 270 Einheiten vom Dorf gewinnt der mit dem
+  meisten offenen Land. Wald zählt halb, weil er erst gerodet werden muss. Neben einem
+  bestehenden Acker liegt man gut, deshalb wird ein Acker mit der nächsten Karte meist größer.
+  Ein Acker hat etwa 55 Einheiten Radius (rund 230 Zellen). Nie Acker werden Wasser, Fels,
+  Gipfel, Strand, Thermalfeld, Sumpf und Dorf.
+- **Getreide** ist eine eigene Nahrungsschicht (`BT.FOOD.korn`, Kapazität 14 je Weidezelle,
+  nur auf dem Acker). Es wächst im Frühling und Sommer aus der Saat. Am ersten Herbsttag wird
+  geerntet, dann stehen Stoppeln bis zum nächsten Frühling.
+- **Hirsche lieben Getreide** (Energie 0,14 je Einheit, Gras 0,11). Wer Getreide frisst, kennt die
+  Äcker und prüft sie bei der Futtersuche immer mit.
+- **Nachtruhe:** Nachts (2 von 6 Ticks) sind die Siedler im Haus, die Störung sinkt auf 40 %.
+  Tagsüber halten Hirsche etwa 180 Einheiten Abstand zu den Häusern, nachts nur noch etwa 70.
+  So kommen sie nachts an die Äcker.
+- **Ernte-Bilanz:** Bei jeder Ernte steht in der Chronik, wie viel eingebracht wurde und wie viel
+  Tiere seit der letzten Ernte gefressen haben (🧺 Ernte). Ab einem Viertel ist es die Folgekarte
+  **🦌 Hirsche im Acker**, mit Marke im Diagramm.
+- Tagsüber arbeitet die Hälfte der Siedler auf den Äckern (Frühling und Sommer).
+- **Anzeige:** Acker mit Furchen. Im Frühling grün, je weiter das Getreide steht, desto
+  kräftiger; im Sommer golden, abgefressene Stellen braun; nach der Ernte Stoppeln, im Winter
+  Brache.
+- **Härtetest:** 8 Inseln, Landung, dann 28 Jahre lang im Wechsel Acker und Dorf (7 Äcker,
+  13 Häuser, 10 bis 15 % des Waldes gerodet). Der Wildschaden hängt stark vom Ort ab: Liegt der
+  Acker am Grasland, fressen die Hirsche anfangs bis 45 %, liegt er im Wald, fast nichts. Mit dem
+  Dorf wächst die Störung, dann bleiben die Hirsche meist weg. Auf 7 von 8 Inseln überleben alle
+  Arten. Auf Insel 8919 sterben die Wölfe aus, das passiert dort auch ohne Menschen in 2 von 8 Läufen.
