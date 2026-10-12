@@ -344,13 +344,27 @@
     if (open) { updateCharts(); $('closeBig').focus(); }
   }
 
+  /** Kachelbilder aus den geladenen Sprites (aufgehellt wie auf der Karte). */
+  function drawTileImages() {
+    var canvases = doc.querySelectorAll('#tiles .tile-img');
+    for (var i = 0; i < canvases.length; i++) {
+      var c = canvases[i], img = BT.Sprites.get(c.dataset.id, 'm', 'stand');
+      if (!img) continue;
+      var ctx = c.getContext('2d');
+      var k = Math.min(c.width / img.width, c.height / img.height);
+      var w = img.width * k, h = img.height * k;
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, (c.width - w) / 2, (c.height - h) / 2, w, h);
+    }
+  }
+
   function buildPanel() {
     // Kacheln je Art
     var tiles = $('tiles');
     tiles.innerHTML = BT.SPECIES_ORDER.map(function (id) {
       var s = BT.SPECIES[id];
       return '<div class="tile" role="button" tabindex="0" aria-pressed="false" data-id="' + id + '" title="Alle ' + s.plural + ' auf der Karte zeigen">' +
-        '<img src="' + s.sprite + '" alt=""><div><div class="tile-name">' +
+        '<canvas class="tile-img" width="76" height="66" data-id="' + id + '"></canvas><div><div class="tile-name">' +
         '<i style="background:' + SERIES_COLOR[id] + '"></i>' + s.plural + '</div>' +
         '<div class="tile-count" id="count-' + id + '">–</div><div class="tile-sub" id="sub-' + id + '"></div></div></div>';
     }).join('');
@@ -638,7 +652,7 @@
   // ---------------------------------------------------------------- Start
   buildPanel();
   updateSpeedLabel();
-  BT.Sprites.preload(function () { dirty = true; });
+  BT.Sprites.preload(function () { dirty = true; drawTileImages(); });
   var h = readHash();
   load(h.seed ? BT.parseSeed(h.seed) : BT.randomSeed(), h.size || BT.CONFIG.size);
   global.requestAnimationFrame(frame);
