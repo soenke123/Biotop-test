@@ -278,6 +278,17 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
   Wolf 0 %, Adler 45 %. Die Hunde verdrängen jetzt Wölfe und Adler (sie fressen die Laufvögel weg),
   Schafe und Hunde zusammen drücken Hirsche und Laufvögel auf etwa die Hälfte. Die Schafe schwanken
   stark: Sie vermehren sich auf mehrere Hundert, fressen das Grasland kahl und brechen wieder ein.
+- **Dritte Abstimmung** (Ausbruch nur einmal, Schafe leichte und bevorzugte Beute, kein Verdursten
+  am Zaun; `invasion.js 24 30`, Median gegenüber nur Landung):
+
+  | Karten | Inseln | Schafe (Mittel) | Hirsch | Laufvogel | Wolf | Adler |
+  |---|---|---|---|---|---|---|
+  | nur Schafe | 15 von 24 mit Schafen | 70 | 91 % | 91 % | 115 % | 104 % |
+  | | 9 ohne (ausgestorben) | – | 102 % | 75 % | 105 % | 171 % |
+  | Schafe und Hunde | 15 von 24 mit Schafen, Hunde 21 von 24 | 67 | 93 % | 79 % | 3 % | 11 % |
+
+  Die Wölfe halten die Schafe jetzt klein (sie reißen 200 bis 600 Schafe in 30 Jahren) und werden
+  dabei etwas zahlreicher; die Hirsche sinken um etwa 10 % (scheinbare Konkurrenz, schwach).
 - **Noch nicht:** Wölfe reißen Schafe auf der Weide.
 - **Mit Schafen und Hunden darf das Ökosystem kippen.** Die Werte sind noch nicht abgestimmt
   (das Testen übernimmt die Projektleitung). **Ohne Karte läuft alles exakt wie vorher.**
