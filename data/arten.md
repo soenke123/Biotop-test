@@ -243,8 +243,7 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
 - **Kommt mit den Menschen:** Startbestand 0. Mit der Karte „Schafweide“ stehen 12 Schafe auf
   einer eingezäunten Weide. Die gehören den Siedlern und zählen nicht zum Tierbestand, fressen
   aber das Gras der Weide (0,25 je Tick und Schaf, tagsüber). **Etwa 4 Jahre nach jeder Weide**
-  (3,7–4,3) brechen dort zum ersten Mal Schafe aus, **danach alle 2–5 Jahre wieder**, jedes Mal
-  **2–6** (Folgekarte 🐑 „Schafe brechen aus“). Die Siedler ersetzen sie im nächsten Frühjahr.
+  (3,7–4,3) brechen dort **einmal** **2–6** Schafe aus (Folgekarte 🐑 „Schafe brechen aus“). Die Siedler ersetzen sie im nächsten Frühjahr.
 - **Ausreißer:** satt und ohne Durst. Sie laufen erst 350–600 vom Dorf weg, zu gutem Gras nah am
   Wasser, und suchen sich erst dort ihre Weide.
 - **Zaun:** Wilde Tiere kommen nicht auf die Weide, außer Adlern und Räubern auf der Jagd.
@@ -279,8 +278,8 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
 - **Kommt mit den Menschen:** Startbestand 0. Mit der Karte „Hütehunde“ laufen 3 Hunde zwischen
   Dorf und Weiden umher (jede weitere Karte 3 mehr). Sie stören stärker als die Menschen allein:
   Die Störung ums Dorf reicht 20 % weiter, und um jede Weide liegt Störung im Umkreis von 200.
-  **4 Jahre nach den ersten Hütehunden** verwildern 2–3 Hunde (Weibchen, Männchen, …; Folgekarte
-  🐕 „Hunde verwildern“), **danach alle 3–5 Jahre wieder 1–3**. Sie sind satt, laufen erst 400–700
+  **4 Jahre nach jeder Karte „Hütehunde“** verwildern **einmal** 2–3 Hunde (Weibchen, Männchen, …;
+  Folgekarte 🐕 „Hunde verwildern“). Sie sind satt, laufen erst 400–700
   vom Dorf weg und suchen dann ein Revier. Lebt ein wildes Hunderudel mit Platz höchstens 700 vom
   Dorf, laufen sie zu ihm und schließen sich an. Die Siedler ersetzen die Hunde im nächsten Frühjahr.
 - **Wie der Wolf:** Alle Werte kommen vom Inselwolf (`Object.assign`), nur etwas stärker:

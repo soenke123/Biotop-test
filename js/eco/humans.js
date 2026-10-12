@@ -59,9 +59,8 @@
       sheep: 12,              // Schafe je Weide
       speed: 1.6,             // Weltunits je Tick
       bite: 0.25,             // Gras je Tick und Schaf (tagsueber)
-      escapeYears: 4,         // so lange nach jeder neuen Weide brechen zum ersten Mal Schafe aus (± escapeJitter) ...
+      escapeYears: 4,         // so lange nach jeder neuen Weide brechen dort einmal Schafe aus (± escapeJitter)
       escapeJitter: 0.3,
-      escapeEvery: [2, 5],    // ... danach immer wieder, nach so vielen Jahren
       escape: [2, 6],         // so viele Schafe (Haelfte Weibchen)
       runaway: [350, 600]     // so weit vom Dorf laufen sie, bevor sie sich eine Weide suchen
     },
@@ -70,9 +69,8 @@
       speed: 3.5,
       disturb: 200,           // Hunde an der Weide: Stoerung in diesem Umkreis (statt nur ums Haus)
       houseBonus: 1.2,        // ... und das Dorf wirkt weiter (Radius mal diesem Faktor)
-      escapeYears: 4,         // so lange nach den ersten Huetehunden verwildern zum ersten Mal Hunde ...
-      escapeEvery: [3, 5],    // ... danach immer wieder, nach so vielen Jahren
-      escape: [1, 3],         // so viele Hunde (beim ersten Mal mindestens 2: Weibchen und Maennchen)
+      escapeYears: 4,         // so lange nach jeder Karte "Huetehunde" verwildern einmal Hunde
+      escape: [2, 3],         // so viele Hunde (Weibchen, Maennchen, ...)
       runaway: [400, 700],    // so weit vom Dorf laufen sie, bevor sie ein Revier suchen
       join: 700               // ein wildes Rudel so nah am Dorf: die Ausreisser schliessen sich ihm an
     },
@@ -105,7 +103,7 @@
     this.dogsKept = 0;              // so viele Huetehunde halten die Siedler
     this.sheepDay = null;           // Tag der ersten Weide
     this.dogDay = null;             // Tag der ersten Huetehunde
-    this.dogEscape = null;          // Tag, an dem als naechstes Hunde verwildern
+    this.dogEscapes = [];           // Tage, an denen Hunde verwildern (einer je Karte "Huetehunde")
     this.escaped = {};              // { schaf: Tag, hund: Tag } des ersten Ausbruchs
     this.fence = null;              // Weidezaeune: 1 je Rasterzelle innerhalb einer Weide
     var f = sim.fields;
@@ -621,10 +619,8 @@
     var cfg = BT.HUMANS.dogs, c = this.center();
     for (var k = 0; k < cfg.perCard; k++) this.addDog(c);
     this.dogsKept += cfg.perCard;
-    if (this.dogDay === null) {
-      this.dogDay = this.sim.day;
-      this.dogEscape = this.sim.day + BT.Time.years(cfg.escapeYears);
-    }
+    if (this.dogDay === null) this.dogDay = this.sim.day;
+    this.dogEscapes.push(this.sim.day + BT.Time.years(cfg.escapeYears));
     this.updateDisturbance();
     return { x: c.x, y: c.y, dogs: this.dogs.length };
   };
@@ -657,17 +653,16 @@
   };
 
   /**
-   * Einmal am Tag: Etwa 4 Jahre nach jeder Weide brechen dort zum ersten Mal
-   * Schafe aus, danach immer wieder (HUMANS.pasture.escapeEvery). Ebenso
-   * verwildern 4 Jahre nach den ersten Huetehunden Hunde, danach alle paar
-   * Jahre wieder. Die Ausreisser laufen erst weit weg und leben dann als
-   * eigene Art; Hunde schliessen sich einem wilden Rudel an, wenn eines nah ist.
+   * Einmal am Tag: Etwa 4 Jahre nach jeder Weide brechen dort einmal Schafe
+   * aus, 4 Jahre nach jeder Karte "Huetehunde" verwildern einmal Hunde. Die
+   * Ausreisser laufen erst weit weg und leben dann als eigene Art; Hunde
+   * schliessen sich einem wilden Rudel an, wenn eines nah ist.
    */
   Humans.prototype.checkEscape = function () {
     var day = this.sim.day, P = BT.HUMANS.pasture, D = BT.HUMANS.dogs, c, n, at;
     for (var k = 0; k < this.pastures.length; k++) {
       var p = this.pastures[k];
-      if (day < p.nextEscape || p.sheep.length < 2) continue;
+      if (p.nextEscape == null || day < p.nextEscape || p.sheep.length < 2) continue;
       n = Math.min(this.rng.intIn(P.escape), p.sheep.length);
       c = this.center();
       // ueber den Zaun auf der dem Dorf abgewandten Seite
@@ -675,22 +670,22 @@
       var gate = { x: p.x + BT.M.cos(a) * (this.pastureRadius(p, a) + 15), y: p.y + BT.M.sin(a) * (this.pastureRadius(p, a) + 15) };
       at = this.release(BT.SPECIES.schaf, gate, n, P.runaway, null);
       p.sheep.splice(0, n);
-      p.nextEscape = day + BT.Time.years(this.rng.rangeIn(P.escapeEvery));
+      p.nextEscape = null;          // jede Weide nur einmal
       if (this.escaped.schaf == null) this.escaped.schaf = day;
       this.sim.events.push({ day: day, tick: this.sim.tick, card: 'schafeAus', params: {},
         at: { x: at.x, y: at.y, text: n + ' Schafe sind ausgebüchst' } });
     }
-    if (this.dogEscape !== null && day >= this.dogEscape && this.dogs.length) {
+    if (this.dogEscapes.length && day >= this.dogEscapes[0] && this.dogs.length) {
+      this.dogEscapes.shift();
       c = this.center();
       var first = this.escaped.hund == null;
-      n = Math.min(Math.max(first ? 2 : 1, this.rng.intIn(D.escape)), this.dogs.length);
+      n = Math.min(this.rng.intIn(D.escape), this.dogs.length);
       var pack = this.sim.nearestGroupOf(BT.SPECIES.hund, c, D.join, function (o) {
         return o.members.length < o.spec.group.max;
       });
       var start = { x: this.dogs[0].x, y: this.dogs[0].y };
       at = this.release(BT.SPECIES.hund, start, n, D.runaway, pack);
       this.dogs.splice(0, n);
-      this.dogEscape = day + BT.Time.years(this.rng.rangeIn(D.escapeEvery));
       if (first) this.escaped.hund = day;
       this.updateDisturbance();
       this.sim.events.push({ day: day, tick: this.sim.tick, card: 'hundeWild', params: {},

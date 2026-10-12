@@ -65,7 +65,7 @@
       name: 'Hütehunde',
       text: 'Hunde bewachen Dorf und Weiden: Wölfe und Hirsche halten mehr Abstand. Nach einigen Jahren verwildern Hunde und bringen eine Krankheit zu den Wölfen.'
     },
-    // Folgekarten der Schafe und Hunde (eco/humans.js, etwa 4 Jahre nach der Karte, dann immer wieder)
+    // Folgekarten der Schafe und Hunde (eco/humans.js, etwa 4 Jahre nach der Karte, je Karte einmal)
     schafeAus: {
       id: 'schafeAus', kind: 'folge', icon: '🐑',
       name: 'Schafe brechen aus',

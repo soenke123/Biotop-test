@@ -225,7 +225,7 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 ### Schritt 4 und 5: Schafe und Hunde
 
 Vorgezogen vor die Ratten. Beide kommen **zuerst als Haustiere** und **brechen etwa 4 Jahre später
-zum ersten Mal aus, danach immer wieder**; sie leben dann als eingeschleppte Arten (`BT.SPECIES.schaf`, `.hund`,
+einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als eingeschleppte Arten (`BT.SPECIES.schaf`, `.hund`,
 `introduced: true`, Startbestand 0) mit demselben Verhalten wie alle Arten. Werte und Begründung:
 `data/arten.md`.
 
@@ -236,10 +236,10 @@ zum ersten Mal aus, danach immer wieder**; sie leben dann als eingeschleppte Art
 - **Karte „Hütehunde“:** 3 Hunde laufen zwischen Dorf und Weiden. Störung: ums Dorf 20 % weiter,
   dazu um jede Weide (Umkreis 200).
 - **Folgekarten** (eco/humans.js `checkEscape`):
-  🐑 **Schafe brechen aus:** an jeder Weide zum ersten Mal 3,7 bis 4,3 Jahre nach ihrer Karte, danach
-  alle 2 bis 5 Jahre wieder, jedes Mal 2 bis 6 Schafe (über den Zaun auf der dem Dorf abgewandten
-  Seite). 🐕 **Hunde verwildern:** 4 Jahre nach den ersten Hütehunden 2 bis 3 Hunde, danach alle 3 bis
-  5 Jahre wieder 1 bis 3. Im nächsten Frühjahr füllen die Siedler Weide und Hunde wieder auf.
+  🐑 **Schafe brechen aus:** an jeder Weide einmal, 3,7 bis 4,3 Jahre nach ihrer Karte, 2 bis 6 Schafe
+  (über den Zaun auf der dem Dorf abgewandten Seite). 🐕 **Hunde verwildern:** einmal je Karte
+  „Hütehunde“, 4 Jahre danach, 2 bis 3 Hunde. (Bis zur dritten Abstimmung brachen sie immer wieder
+  aus; das gab ihnen einen unfairen Vorteil, die Messung unten stammt noch von dort.) Im nächsten Frühjahr füllen die Siedler Weide und Hunde wieder auf.
 - **Weglaufen:** Die Ausreißer sind satt und ohne Durst (Energie 1) und laufen erst weit weg
   (Zustand „ist ausgebüchst“, `g.runaway`): Schafe 350 bis 600 vom Dorf zu einem Ort mit gutem
   Gras nah am Wasser, Hunde 400 bis 700 vom Dorf. Erst dort suchen sie Weide bzw. Revier. Lebt ein
