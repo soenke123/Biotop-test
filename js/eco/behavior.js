@@ -414,7 +414,8 @@
     // Junge Wanderer sind ungeuebt und erwischen seltener etwas
     if (spec.floater && !g.home && maxOf(g.members, 'age') < spec.maturity) p *= spec.floater.skill;
     p *= 1 - COVER[sim.biomeAt(prey.x, prey.y)] * (spec.flies ? 0.9 : 0.4);
-    p /= 1 + 0.03 * (prey.members.length - 1);           // Wachsamkeit der Gruppe
+    var watch = prey.spec.vigilance != null ? prey.spec.vigilance : 0.03;
+    p /= 1 + watch * (prey.members.length - 1);          // Wachsamkeit der Gruppe
     // Konkurrenz: Jagen viele Artgenossen in der Naehe, wird die Beute frueher
     // gewarnt und Beute streitig gemacht - der Jagderfolg sinkt
     var crowd = spec.crowding;
