@@ -325,9 +325,12 @@
     habitat: pref({ TUSSOCK: 1.0, MEADOW: 1.0, ROCK: 0.6, SCRUB: 0.8, BEACH: 0.4, THERMAL: 0.3, SWAMP: 0.2, FERN: 0.5, MOSS: 0.3, PEAK: 0.1, SOIL: 0.1, FIELD: 1.0 }),
     // Schneller erwachsen und mehr Laemmer als der Hirsch (reif mit 1 Jahr, 1 Kalb, Chance 0,85)
     maturity: Y(0.5), maxAge: Y(9),
-    breed: { kind: 'each-female', season: 0, day: 3, chance: 0.95, litter: [1, 2], minEnergy: 0.4, cost: 0.15 },
+    // food: weniger Laemmer bei knapper Weide (wie beim Hirsch) - sonst wachsen die Schafe bis zum
+    // Kahlfrass, die Hirsche verhungern, danach die Schafe und zuletzt die Woelfe
+    breed: { kind: 'each-female', season: 0, day: 3, chance: 0.95, litter: [1, 2], minEnergy: 0.4, cost: 0.15,
+      food: { key: 'gras', r: 3, low: 0.3, high: 0.65 } },
     newbornEnergy: 0.6,
-    meat: 1.3
+    meat: 2.6                         // etwas weniger als ein Hirsch (3); vorher 1,3 zu Hirsch 1,5
   };
 
   // Verwilderte Hunde sind wie Woelfe (alle uebrigen Werte vom Inselwolf), nur etwas

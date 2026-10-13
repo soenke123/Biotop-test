@@ -294,7 +294,8 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   Wasser führt um die Zäune herum (`humans.waterDist`, nur wenn es Weiden gibt).
 - **Lebensraum:** Grasland und Wiese, Busch (0,8), Fels (0,6), Farnwald (0,5), Moos (0,3).
 - **Fortpflanzung:** jedes Weibchen, **1–2 Lämmer**, Chance 0,95 (Hirsch: 1 Kalb, 0,85). **Reif mit
-  ½ Jahr** (Hirsch 1 Jahr), Höchstalter 9.
+  ½ Jahr** (Hirsch 1 Jahr), Höchstalter 9. **Weniger Lämmer bei knapper Weide** (`breed.food`, wie
+  beim Hirsch: Gras im Umkreis von 3 Weidezellen, volle Chance ab 65 %, keine Lämmer bei 30 %).
 - **Flucht:** 11,5. `scheu` 0,4 (kennt Menschen).
 - **Feinde** (`preyOf`): **Wolf 1,3**, Hund 1,3 (lieber als Hirsch, 1,0), Adler 0,25 (nur Lämmer
   bis ½ Jahr). **Leichte Beute** (`easyPrey` 1,2; mit 1,4 hielten die Wölfe die Schafe bei etwa 70): Ein Angriff auf Schafe gelingt 1,2-mal so oft
@@ -303,6 +304,28 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   und vermehren sich dabei, was auch die Hirsche trifft (scheinbare Konkurrenz).
 - **Beutewechsel ohne Startbestand:** `scarceMin` 40 – bei 40 Schafen sind sie für die Räuber
   halb so gefragt.
+- **Ein Riss liefert 2,6 Energie** (Hirsch 3; vorher 1,3 zu Hirsch 1,5).
+- **Nachgezogen nach der Abstimmung von Hirsch und Wolf** (Hirsch 3 Energie statt 1,5, Lämmerbremse
+  beim Hirsch, Wolf verbraucht mehr): Die Schafe waren unverändert geblieben. Spielte man die Schafweide
+  auf einer frischen Insel, starben die Wölfe öfter aus als ohne Schafe (16 Inseln × 30 Jahre: 3-mal,
+  ohne Schafe nie). Ablauf: Die Schafe brechen aus, während die Wölfe in einem Tal ihres Zyklus sind.
+  Große Herden (50–90) sind wachsam und werden kaum gejagt, die Schafe wachsen ungebremst auf 400–800,
+  fressen das Gras kahl (Zustand 92 % → 12 %), die Hirsche verhungern, dann die Schafe. Die Wölfe
+  leben noch kurz von hungrigen Schafen (1,3 Energie je Riss), finden dann aber zu wenig und sterben
+  aus. Mit Lämmerbremse und 2,6 Energie (16 Inseln × 30 Jahre, Schafweide im ersten Jahr):
+
+  | | Wölfe ausgestorben | Wölfe | Hirsche | Schafe |
+  |---|---|---|---|---|
+  | ohne Schafe | 0 | 57 | 262 | – |
+  | Schafe vorher | 3 | 58 | 219 | 129 |
+  | nur Fleisch 2,6 | 6 | 64 | 184 | 203 |
+  | nur Lämmerbremse | 1 | 61 | 251 | 61 |
+  | **beides** | **0** | **75** | **250** | **100** |
+
+  (Mittel ab Jahr 9.) Jetzt fressen die Wölfe die Schafe bevorzugt und werden mehr; die Hirsche
+  bekommen den zusätzlichen Druck zu spüren (scheinbare Konkurrenz). Leichter zu fangen
+  (`easyPrey` 1,6 oder weniger Wachsamkeit der Herde, `vigilance` 0,01 statt 0,03) half nicht: Die
+  Schafe wuchsen trotzdem bis zum Kahlfraß.
 
 ### Hund
 
