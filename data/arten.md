@@ -327,6 +327,12 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   (`easyPrey` 1,6 oder weniger Wachsamkeit der Herde, `vigilance` 0,01 statt 0,03) half nicht: Die
   Schafe wuchsen trotzdem bis zum Kahlfraß.
 
+  Mit den offiziellen Werkzeugen: `invasion.js 8 30 --karten=schafe@1` Wölfe 132 % des Laufs ohne
+  Schafe (vorher 118 %), Hirsche 100 % (vorher 96 %). `balance.js 8 30 --karten=schafe@1,hunde@1`:
+  Wölfe sterben auf 3 von 8 Inseln aus (vorher 7 von 8; der Rest geht auf die Staupe der Hunde),
+  Mittel Wölfe 23 statt 15, Gras im Zustand 58 % statt 52 %. Ohne Karten unverändert (`balance.js 8 30`:
+  8 von 8, Hirsche 244, Wölfe 53).
+
 ### Hund
 
 - **Vorbild:** verwilderte Hunde, Dingo.
