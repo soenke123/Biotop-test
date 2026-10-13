@@ -11,6 +11,7 @@
  *   --landung=fx,fy  vor dem Simulieren an dieser Stelle (Anteil der Welt) landen;
  *                    der Ausschnitt (cx, cy) kann dann z. B. auf das Dorf zeigen
  *   --karten=schafe,hunde  nach der Landung (10 Tage spaeter) diese Karten spielen, ohne Pause
+ *   --reiter=menschen  diesen Reiter der Seitenleiste zeigen (tiere, menschen)
  */
 const path = require('path');
 let chromium;
@@ -59,6 +60,7 @@ try {
     await page.evaluate((d) => BT.app.runDays(d), +days);
     console.log(days, 'Tage simuliert in', Date.now() - t0, 'ms');
   }
+  if (flags.reiter) await page.click('#tab-' + flags.reiter);
   await page.evaluate(({ zoom, cx, cy }) => {
     const cam = BT.app.camera, w = BT.app.world;
     if (zoom !== 1) {

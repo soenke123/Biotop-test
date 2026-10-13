@@ -317,6 +317,29 @@ wo `Störung · scheu ≥ 0,3` ist.
 
 Ohne Menschen hat `scheu` keine Wirkung.
 
+**Jagd** (`docs/MENSCH.md`, Schritt 7; Werte in `BT.HUMANS.hunt`, `js/eco/humans.js`): Jäger
+ziehen auf Jagdzüge (bis 12 Tage, bis 1000 vom Dorf, jede weitere Karte derselben Sorte 30 %
+weiter) und schießen aus 90 Einheiten. Die Arten selbst bleiben unverändert; wie sie auf Jäger
+reagieren, folgt aus `scheu`:
+
+| Art | gejagt von | Treffer je Schuss | Verhalten |
+|---|---|---|---|
+| Zwerghirsch | Wildjäger (Gewicht 1) | 0,5 × 0,6 | `scheu` ≥ 0,5: flieht, wenn ein Jäger näher als 0,4 × `vision` (72) ist |
+| Laufvogel | Wildjäger (0,6) | 0,5 | **flieht nicht** (`scheu` 0,2, inselzahm), deshalb die häufigste Beute |
+| Schaf (wild) | Wildjäger (1) | 0,5 | flieht nicht (`scheu` 0,4) |
+| Inselwolf | Wolfsjäger (1) | 0,7 × 0,6 | beschossen flieht das Rudel 300 weit; Wolfsjäger folgen ihm |
+| Hund (wild) | Wolfsjäger (1) | 0,7 | wie der Wolf, aber kaum scheu |
+
+Treffer jeweils mal `1 − Deckung × 0,5`. Wildjäger bringen ein Tier heim, ein Viertel bleibt als
+Aas liegen (für Wölfe und Adler). Wolfsjäger jagen weiter, bis der Jagdzug um ist. Todesursache
+ist „Jagd“.
+
+**Wölfe gegen Jäger:** Ein hungriges Wolfs- oder Hunderudel (Energie unter `hungry`) greift einen
+Jäger an, der ihm näher als 50 kommt, mit 8 % je Tick, mit Beute auf der Schulter mit 16 %. Wildjäger
+sterben dabei zu 30 %, der Wolf zu 40 %; sonst gehen beide auseinander, und die Wölfe nehmen die
+Beute mit. **Wolfsjäger rechnen damit:** Sie sterben nur zu 5 %, der Wolf zu 85 %. Danach flieht das
+Rudel. Tote Jäger ersetzt das Dorf im nächsten Frühling.
+
 **Nutzung** (`docs/MENSCH.md`, Schritt 2): Auf gerodeter **Erde** wächst nichts, und es gibt keine
 Deckung (Lebensraumwert Hirsch und Laufvogel 0,1). Nach 3 bis 5 Jahren wird sie zur **Wiese**:
 Gras 8,8, Laub 0,88, Früchte 0,55, Insekten 1,65; Lebensraumwert Hirsch 1,0, Laufvogel 0,6,

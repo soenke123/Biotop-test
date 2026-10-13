@@ -1,12 +1,12 @@
 /**
- * Zeichnet die Menschen: Schiffe, Haeuser, Siedler, Weiden mit Zaun,
+ * Zeichnet die Menschen: Schiffe, Haeuser, Siedler, Jaeger, Weiden mit Zaun,
  * Schafe auf der Weide und Huetehunde (mit den Bildern der Arten schaf, hund).
  *
  * Bis es Bilder gibt, zeichnet das Programm einfache Platzhalter. Sobald eine
  * Grafik da ist, wird sie in FILES eingetragen (Pfad relativ zu index.html)
  * und statt des Platzhalters benutzt. Blickrichtung der Bilder: rechts.
  * Haeuser: haus_1, haus_2, haus_3 (Varianten), Siedler: siedler_gehend,
- * siedler_stehend, siedler_arbeitend.
+ * siedler_stehend, siedler_arbeitend, Jaeger: jaeger, wolfsjaeger.
  */
 (function (global) {
   'use strict';
@@ -57,6 +57,12 @@
       if (p.inside) continue;
       var q = lerp(p, alpha);
       if (inView(q, view, ps * 2)) drawSettler(ctx, p, q, ps);
+    }
+    for (i = 0; i < H.hunters.length; i++) {
+      var hu = H.hunters[i];
+      if (hu.state === 'daheim' && H.night) continue;
+      var hq = lerp(hu, alpha);
+      if (inView(hq, view, ps * 2)) drawHunter(ctx, hu, hq, ps * 1.1);
     }
     var hund = BT.SPECIES.hund, ds = Math.max(hund.size, 12 / scale);
     for (i = 0; i < H.dogs.length; i++) {
@@ -188,6 +194,51 @@
     ctx.fillRect(q.x - size * 0.2, q.y - size * 0.42, size * 0.4, size * 0.07);
   }
 
+  /**
+   * Jaeger: wie ein Siedler, mit Speer (Wolfsjaeger dunkel mit Fellmuetze,
+   * Wildjaeger gruen). Wer Beute traegt, hat sie ueber der Schulter.
+   */
+  function drawHunter(ctx, h, q, size) {
+    var img = image(h.kind === 'wolf' ? 'wolfsjaeger' : 'jaeger');
+    var right = Math.cos(h.heading) >= 0;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+    ctx.beginPath(); ctx.ellipse(q.x, q.y + size * 0.42, size * 0.3, size * 0.11, 0, 0, Math.PI * 2); ctx.fill();
+    if (img) {
+      var ih = size * img.height / img.width;
+      ctx.save();
+      ctx.translate(q.x, q.y);
+      if (!right) ctx.scale(-1, 1);
+      ctx.drawImage(img, -size / 2, size * 0.45 - ih, size, ih);
+      ctx.restore();
+    } else {
+      ctx.lineWidth = Math.max(0.5, size * 0.07);
+      ctx.strokeStyle = '#2a1d14';
+      // Speer
+      var sx = right ? size * 0.3 : -size * 0.3;
+      ctx.beginPath(); ctx.moveTo(q.x + sx, q.y + size * 0.45); ctx.lineTo(q.x + sx * 1.15, q.y - size * 0.6); ctx.stroke();
+      ctx.fillStyle = '#c8c8c8';
+      ctx.beginPath(); ctx.moveTo(q.x + sx * 1.15 - size * 0.06, q.y - size * 0.55); ctx.lineTo(q.x + sx * 1.17, q.y - size * 0.78); ctx.lineTo(q.x + sx * 1.15 + size * 0.06, q.y - size * 0.55); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = h.kind === 'wolf' ? '#4a4f45' : '#5f7a2e';
+      ctx.beginPath();
+      ctx.moveTo(q.x - size * 0.22, q.y + size * 0.42);
+      ctx.lineTo(q.x - size * 0.15, q.y - size * 0.08);
+      ctx.lineTo(q.x + size * 0.15, q.y - size * 0.08);
+      ctx.lineTo(q.x + size * 0.22, q.y + size * 0.42);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f0c8a0';
+      ctx.beginPath(); ctx.arc(q.x, q.y - size * 0.24, size * 0.16, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = h.kind === 'wolf' ? '#8a7a66' : '#3f5520';
+      ctx.beginPath(); ctx.arc(q.x, q.y - size * 0.32, size * 0.15, Math.PI, 0); ctx.fill();
+    }
+    if (h.carry) {
+      ctx.fillStyle = BT.SPECIES[h.carry.id].color;
+      ctx.strokeStyle = '#2a1d14';
+      ctx.lineWidth = Math.max(0.5, size * 0.05);
+      ctx.beginPath(); ctx.ellipse(q.x - (right ? size * 0.2 : -size * 0.2), q.y - size * 0.12, size * 0.24, size * 0.11, right ? -0.4 : 0.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  }
+
   function drawShip(ctx, s, q, size, scale) {
     var right = Math.cos(s.heading) >= 0;
     var moving = s.phase !== 'liegt';
@@ -262,6 +313,12 @@
       var h = H.houses[i];
       d = Math.hypot(h.x - wx, h.y - wy);
       if (d < Math.max(bestD, HOUSE_SIZE * 0.6)) { bestD = d; best = { kind: 'haus', obj: h }; }
+    }
+    for (i = 0; i < H.hunters.length; i++) {
+      var hu = H.hunters[i];
+      if (hu.state === 'daheim' && H.night) continue;
+      d = Math.hypot(hu.x - wx, hu.y - wy);
+      if (d < bestD) { bestD = d; best = { kind: 'jaeger', obj: hu }; }
     }
     for (i = 0; i < H.dogs.length; i++) {
       d = Math.hypot(H.dogs[i].x - wx, H.dogs[i].y - wy);

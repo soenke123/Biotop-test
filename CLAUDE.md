@@ -52,12 +52,12 @@ js/world/   config.js (alle Stellschrauben, Lebensräume), island.js (Generator)
 js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefschattierung),
             seasonRenderer (Jahreszeiten als Farbschicht), plantRenderer (Weidezustand:
             entsättigt die Textur, abgefressen blasser, überweidet grau), sprites, agentRenderer (Tiere, Hervorhebung einer Art),
-            humanRenderer (Schiff, Häuser, Siedler; Platzhalter bis Bilder da sind),
+            humanRenderer (Schiff, Häuser, Siedler, Jäger; Platzhalter bis Bilder da sind),
             landuseRenderer (gerodete Erde, Dorfplatz, Wiese, Acker als Schicht über dem Gelände)
 js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung und
             Pflanzenzustand je Weidezelle, Überweidung), landuse (Nutzung: Erde, Dorf, Wiese, Acker
             über der Natur; sim.biomeAt), movement, cards (Kartentabelle, Pause zwischen Karten),
-            humans (Schiffe, Häuser, Siedler, Äcker und Ernte, Störungsfeld), behavior (Gruppen-Entscheidungen),
+            humans (Schiffe, Häuser, Siedler, Äcker und Ernte, Weiden, Jäger, Störungsfeld), behavior (Gruppen-Entscheidungen),
             stats, simulation (Tick/Tag, sim.play für Karten)
 js/ui/      app.js (Karte, Zeitregler, Reiter Tierbestand/Menschen, Kartenleiste und Chronik, Bildpuffer,
             Großansicht der Diagramme),
@@ -65,7 +65,7 @@ js/ui/      app.js (Karte, Zeitregler, Reiter Tierbestand/Menschen, Kartenleiste
 data/       arten.md (fachliche Wahrheit für species.js)
 assets/     Tierbilder (Platzhalter aus Wild Clusters)
 tools/      load.js (Skripte in Node laden), smoketest.js, balance.js (Abstimmung),
-            invasion.js (fassen Schafe und Hunde Fuß? Vergleich mit/ohne Karten, parallel),
+            invasion.js (fassen Schafe und Hunde Fuß? was erlegen Jäger? Vergleich mit/ohne Karten, parallel),
             shot.js (Playwright-Screenshot, optional nach N simulierten Tagen)
 ```
 
@@ -86,6 +86,7 @@ node tools/shot.js /tmp/x.png 482917 mittel 1 0.5 0.5 300 [inselwolf,inseladler]
 node tools/shot.js /tmp/x.png 482917 mittel 4 0.2 0.46 300 --landung=0.17,0.5   # mit Dorf
 node tools/balance.js 8 30 --karten=schafe@1,hunde@1    # Menschen mit Karten
 node tools/invasion.js 8 30 --karten=schafe@1           # Schafe etabliert? heimische Arten im Vergleich
+node tools/invasion.js 8 30 --karten=wildJagen@1,woelfeJagen@1   # Jagd: Strecke, Angriffe auf Jäger
 ```
 
 `tools/shot.js` meldet Fehler aus der Browser-Konsole und endet dann mit Code 1. Nach

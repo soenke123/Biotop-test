@@ -393,6 +393,14 @@
     return n;
   }
 
+  function hunters(H, kind) {
+    return H.hunters.filter(function (h) { return h.kind === kind; }).length;
+  }
+
+  function bagOf(H, ids) {
+    return ids.reduce(function (n, id) { return n + (H.bag[id] || 0); }, 0);
+  }
+
   function updateCards() {
     if (!sim) return;
     BT.CARD_ORDER.forEach(function (id) {
@@ -416,6 +424,13 @@
       [pct(lu.counts.gerodet / lu.woodyCells), 'des Waldes gerodet'],
       [last ? pct(last.share) : '–', 'der letzten Ernte von Tieren gefressen']
     ];
+    if (H.huntersKept.wolf || H.huntersKept.wild) {
+      stats.push(
+        [hunters(H, 'wild') + ' / ' + hunters(H, 'wolf'), 'Jäger / Wolfsjäger'],
+        [bagOf(H, ['zwerghirsch', 'laufvogel', 'schaf']), 'Wild erlegt'],
+        [bagOf(H, ['inselwolf', 'hund']), 'Wölfe und Hunde erlegt'],
+        [H.attacks.total + ' / ' + H.attacks.hunters, 'Angriffe auf Jäger / Jäger getötet']);
+    }
     $('peopleStats').innerHTML = !H.houses.length
       ? '<p class="ps-empty">' + (H.ships.length ? 'Ein Schiff ist unterwegs …' : 'Noch keine Menschen auf der Insel. Spiele die Karte „Landung“.') + '</p>'
       : stats.map(function (st) { return '<div class="ps"><b>' + st[0] + '</b><span>' + st[1] + '</span></div>'; }).join('');
@@ -550,7 +565,7 @@
   }
 
   function updateDeaths() {
-    var causes = [['hunger', 'Hunger'], ['durst', 'Durst'], ['alter', 'Alter'], ['inselwolf', 'Wolf'], ['inseladler', 'Adler'], ['hund', 'Hund'], ['krankheit', 'Krankheit']];
+    var causes = [['hunger', 'Hunger'], ['durst', 'Durst'], ['alter', 'Alter'], ['inselwolf', 'Wolf'], ['inseladler', 'Adler'], ['hund', 'Hund'], ['krankheit', 'Krankheit'], ['jagd', 'Jagd']];
     var html = '<tr><th></th>' + causes.map(function (c) { return '<th>' + c[1] + '</th>'; }).join('') + '</tr>';
     BT.SPECIES_ORDER.forEach(function (id) {
       if (BT.SPECIES[id].introduced && !sim.stats.seen[id]) return;
@@ -691,6 +706,7 @@
       text = hp.kind === 'haus' ? 'Haus · gebaut ' + BT.Time.label(hp.obj.day)
         : hp.kind === 'schaf' ? 'Schaf auf der Weide (gehört den Siedlern)' + (sim.humans.escaped.schaf == null ? '' : ' · ein Teil der Herde ist ausgebüchst')
         : hp.kind === 'hund' ? 'Hütehund (gehört den Siedlern)'
+        : hp.kind === 'jaeger' ? (hp.obj.kind === 'wolf' ? 'Wolfsjäger' : 'Jäger') + ' · ' + ({ daheim: 'im Dorf', unterwegs: hp.obj.target ? 'auf der Jagd nach ' + hp.obj.target.spec.plural : 'auf der Jagd', heim: hp.obj.carry ? 'bringt Beute heim (' + BT.SPECIES[hp.obj.carry.id].name + ')' : 'geht heim' })[hp.obj.state]
         : hp.kind === 'schiff' ? 'Schiff · ' + ({ anfahrt: 'fährt zur Küste', liegt: 'liegt vor Anker', abfahrt: 'fährt zurück' })[hp.obj.phase]
         : 'Siedler · ' + (hp.obj.working ? 'arbeitet' : 'unterwegs');
     } else if (a) {

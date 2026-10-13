@@ -61,7 +61,7 @@ Gruppen, die verschiedene Karten spielen, lassen sich direkt vergleichen.
 |---|---|---|
 | **Schafe brechen aus** | je Weide und Jahr eine Wahrscheinlichkeit, höher ohne Hütehunde | Eine kleine Herde wird frei: **verwilderte Schafe** als eigene Art. Sie fressen das Grasland kurz, und die Hirsche weichen in Busch und Wald aus |
 | **Hunde verwildern** | je Jahr mit Hütehunden eine Wahrscheinlichkeit | Ein kleines Rudel wird frei: **verwilderte Hunde** wie Wölfe (Rudel, Revier), aber erfolgreicher auf der Jagd; Laufvögel kennen sie nicht. Sie tragen eine **Krankheit**, die Wölfe in ihrer Nähe schwächt und tötet |
-| **Wolf greift Siedler an** | ein Siedler ist allein außerhalb des Dorfs, ein hungriges Rudel ist nah | Meist gewinnt der Mensch (der Wolf stirbt, Ursache „Mensch“), manchmal stirbt der Siedler |
+| **Wölfe töten einen Jäger** (umgesetzt mit Schritt 7) | ein Jäger ist draußen auf der Jagd, ein hungriges Rudel ist nah | Wolfsjäger gewinnen fast immer (der Wolf stirbt, Ursache „Jagd“), Wildjäger sterben öfter selbst. Siedler im Dorf werden nicht angegriffen |
 | **Hirsche im Acker** | Hirsche fressen am Acker | Meldung in der Chronik; später vielleicht: Siedler jagen dann von selbst |
 | **Rattenplage** | Ratten erreichen einen Schwellenwert | Meldung; Ratten breiten sich über die ganze Insel aus |
 
@@ -121,7 +121,7 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 | 4 | **Schafe:** Weide mit Zaun, Schaf als Art, Folgekarte „Schafe brechen aus“ (vorgezogen) | erledigt, ohne Wölfe an der Weide |
 | 5 | **Hunde:** Hütehunde (Störung), verwilderte Hunde als Art, Staupe bei Wölfen (vorgezogen) | erledigt |
 | 6 | **Ratten:** Ratten als Feld, Gelegeraub, Ratten als Beute | |
-| 7 | **Jagd:** Wölfe jagen, Wild jagen, Siedler gegen Wolf | |
+| 7 | **Jagd:** Wölfe jagen, Wild jagen, Wölfe gegen Jäger (vorgezogen vor die Ratten) | erledigt |
 | 8 | **Sammeln** | |
 | 9 | **Gegenmaßnahmen:** Katzen, Gift, Schutzgebiet (nach Absprache) | |
 

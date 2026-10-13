@@ -178,6 +178,17 @@
       if (!hunting && (p.spec.flies || p.state === 'ruhen' || d > vision * 0.3)) continue;
       if (d < bestD) { bestD = d; best = p; }
     }
+    // Jaeger (sim.humans.hunters): scheue Arten fliehen, wenn einer nah ist
+    var H = sim.humans, J = BT.HUMANS.hunt;
+    if (H.hunters.length && spec.scheu >= J.flee) {
+      var near = Math.min(bestD, spec.vision * J.notice);
+      for (i = 0; i < H.hunters.length; i++) {
+        var h = H.hunters[i];
+        if (h.state === 'daheim') continue;
+        d = dist(g, h);
+        if (d < near) { near = d; best = h; }
+      }
+    }
     return best;
   }
 

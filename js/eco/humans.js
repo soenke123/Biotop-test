@@ -20,6 +20,10 @@
  *
  * Zaun: Die Weiden sind eingezaeunt (this.fence, ein Wert je Rasterzelle).
  * Hinein duerfen nur fliegende Tiere und jagende Raeuber (barrier).
+ *
+ * Jaeger (this.hunters): Wolfsjaeger und Wildjaeger ziehen auf Jagdzuege und
+ * erlegen Tiere (Todesursache "jagd"). Hungrige Woelfe greifen sie an; wer
+ * gewinnt, haengt davon ab, ob es Wolfsjaeger sind (siehe "Jagd" unten).
  */
 (function (global) {
   'use strict';
@@ -74,6 +78,31 @@
       runaway: [400, 700],    // so weit vom Dorf laufen sie, bevor sie ein Revier suchen
       join: 700               // ein wildes Rudel so nah am Dorf: die Ausreisser schliessen sich ihm an
     },
+    hunt: {                   // Karten "Woelfe jagen" und "Wild jagen"
+      perCard: 2,             // Jaeger je Karte
+      speed: 30,              // Weltunits je Tick auf dem Weg (nachts lagern sie draussen)
+      stalk: 14,              // ... und beim Anschleichen (naeher als 150 an der Beute)
+      range: 1000,            // so weit vom Dorf ziehen sie auf die Jagd (jede weitere Karte + rangePlus)
+      rangePlus: 0.3,
+      tripDays: 12,           // laengstens so lange dauert ein Jagdzug
+      restDays: [2, 4],       // danach so lange im Dorf
+      shot: 90,               // Schussweite
+      // Beute (Gewicht bei der Wahl) und Trefferchance je Schuss (mal 1 - Deckung * 0,5;
+      // scheue Tiere (scheu >= flee) bemerken die Jaeger und fliehen: Treffer mal shy).
+      // Wildjaeger tragen ein Tier heim, Wolfsjaeger jagen weiter, bis der Jagdzug um ist (stay)
+      wolf: { prey: { inselwolf: 1, hund: 1 }, hit: 0.7, stay: true },
+      wild: { prey: { zwerghirsch: 1, laufvogel: 0.6, schaf: 1 }, hit: 0.5, stay: false },
+      flee: 0.5,              // ab dieser scheu fliehen Tiere vor Jaegern (Laufvogel nicht)
+      notice: 0.4,            // ... wenn ein Jaeger naeher ist als vision * notice (Hirsch 72)
+      shy: 0.6,
+      offal: 0.25,            // Anteil der Beute, der als Aas liegen bleibt (Aufbruch)
+      // Hungrige Woelfe (und Hunde) greifen Jaeger an, die ihnen zu nahe kommen
+      attackers: { inselwolf: 1, hund: 1 },
+      attackRange: 50,
+      attack: 0.08,           // Chance je Tick, mal 2, wenn der Jaeger Beute traegt
+      // Ausgang eines Angriffs: Wolfsjaeger rechnen damit, Wildjaeger nicht
+      outcome: { wolf: { hunter: 0.05, wolf: 0.85 }, wild: { hunter: 0.3, wolf: 0.4 } }
+    },
     village: {                // Karte "Dorf vergroessern"
       houses: 2,              // neue Haeuser je Karte
       settlersPerHouse: 2,
@@ -107,6 +136,11 @@
     this.escaped = {};              // { schaf: Tag, hund: Tag } des ersten Ausbruchs
     this.fence = null;              // Weidezaeune: 1 je Rasterzelle innerhalb einer Weide
     this.waterDist = null;          // Abstand zum Suesswasser um die Zaeune herum (Zellen), sonst null
+    this.hunters = [];              // Jaeger: { kind: 'wolf'|'wild', state, target, carry, ... }
+    this.huntersKept = { wolf: 0, wild: 0 };
+    this.bag = {};                  // erlegt seit der Landung, je Art
+    this.bagYear = {};              // ... im laufenden Jahr (Jagdbilanz in der Chronik)
+    this.attacks = { total: 0, hunters: 0, wolves: 0, year: 0, yearHunters: 0 };
     var f = sim.fields;
     this.disturb = new Float32Array(f.cols * f.rows);
   }
@@ -372,6 +406,7 @@
     this.movePeople();
     if (this.pastures.length) this.moveSheep();
     if (this.dogs.length) this.moveDogs();
+    if (this.hunters.length) this.moveHunters();
   };
 
   // ------------------------------------------------------------ Acker
@@ -411,6 +446,7 @@
   Humans.prototype.newDay = function () {
     this.checkEscape();
     this.spring();
+    if (this.huntersKept.wolf || this.huntersKept.wild) this.huntDay();
     if (!this.fields.length) return;
     var cal = this.sim.calendar, cfg = BT.HUMANS.field;
     if (cal.season !== cfg.harvestSeason || cal.dayOfSeason !== 1) return;
@@ -626,6 +662,11 @@
       while (this.dogs.length < this.dogsKept) this.addDog(c);
       this.updateDisturbance();
     }
+    // Fuer jeden toten Jaeger kommt ein neuer
+    for (var kind in this.huntersKept) {
+      var have = this.hunters.filter(function (h) { return h.kind === kind; }).length;
+      for (; have < this.huntersKept[kind]; have++) this.addHunter(kind);
+    }
   };
 
   /** Schafe auf der Weide: ziehen langsam umher und fressen tagsueber das Gras. */
@@ -755,6 +796,191 @@
     return pt;
   };
 
+  // ------------------------------------------------------------ Jagd
+
+  /**
+   * Jaeger (Karten "Woelfe jagen" und "Wild jagen"): Sie ziehen fuer einige
+   * Tage los (nachts lagern sie draussen), suchen sich eine Gruppe ihrer Beute
+   * bis HUMANS.hunt.range vom Dorf, schleichen sich an und schiessen aus
+   * HUMANS.hunt.shot. Wildjaeger bringen ein Tier heim, der Aufbruch bleibt als
+   * Aas liegen. Woelfe, die beschossen werden, fliehen weit weg.
+   *
+   * Hungrige Woelfe greifen Jaeger an, die ihnen zu nahe kommen, erst recht,
+   * wenn sie Beute tragen. Wolfsjaeger rechnen damit und toeten meist den
+   * Wolf, Wildjaeger sterben oefter selbst (HUMANS.hunt.outcome). Tote Jaeger
+   * werden im naechsten Fruehling ersetzt.
+   */
+  Humans.prototype.addHunters = function (kind) {
+    var n = BT.HUMANS.hunt.perCard;
+    for (var k = 0; k < n; k++) this.addHunter(kind);
+    this.huntersKept[kind] += n;
+    var c = this.center();
+    return { x: c.x, y: c.y, hunters: this.hunters.filter(function (h) { return h.kind === kind; }).length };
+  };
+
+  Humans.prototype.addHunter = function (kind) {
+    var house = this.houses[this.rng.int(0, this.houses.length - 1)];
+    var x = house.x + this.rng.range(-15, 15), y = house.y + this.rng.range(-15, 15);
+    this.hunters.push({
+      id: this.nextId++, kind: kind, house: house, x: x, y: y, px: x, py: y, heading: 0,
+      state: 'daheim', rest: this.rng.int(0, 2), target: null, carry: null, trip: 0, reload: 0
+    });
+  };
+
+  /** Beutegruppe fuer einen Jaeger: nah beim Jaeger, hoechstens range vom Dorf, nach Gewicht. */
+  Humans.prototype.huntTarget = function (h) {
+    var cfg = BT.HUMANS.hunt, prey = cfg[h.kind].prey, c = this.center(), sim = this.sim;
+    var range = cfg.range * (1 + cfg.rangePlus * (this.huntersKept[h.kind] / cfg.perCard - 1));
+    var list = h.kind === 'wolf' ? sim.predatorGroups : sim.herbivoreGroups;
+    var best = null, bestScore = 0;
+    for (var i = 0; i < list.length; i++) {
+      var g = list[i], w = prey[g.spec.id];
+      if (!w || !g.members.length) continue;
+      if (BT.M.hypot(g.x - c.x, g.y - c.y) > range) continue;
+      var d = BT.M.hypot(g.x - h.x, g.y - h.y);
+      var score = w * (1 - d / (range * 1.5)) * (0.8 + 0.4 * this.rng.next());
+      if (score > bestScore) { bestScore = score; best = g; }
+    }
+    return best;
+  };
+
+  Humans.prototype.moveHunters = function () {
+    var cfg = BT.HUMANS.hunt, w = this.world, sim = this.sim;
+    for (var i = this.hunters.length - 1; i >= 0; i--) {
+      var h = this.hunters[i];
+      h.px = h.x; h.py = h.y;
+      if (h.state === 'daheim') {
+        if (h.rest > 0 || this.night) continue;
+        h.target = this.huntTarget(h);
+        if (!h.target) { h.rest = 1; continue; }
+        h.state = 'unterwegs'; h.trip = 0; h.trail = []; h.stuck = 0;
+      }
+      if (this.hunterAttacked(h)) { if (!h.alive) this.hunters.splice(i, 1); continue; }
+      if (this.night) continue;                         // nachts lagern sie
+      if (h.state === 'unterwegs') {
+        h.trip++;
+        if (h.reload > 0) h.reload--;
+        if (h.trip > cfg.tripDays * (sim.ticksPerDay - 2)) { h.state = 'heim'; h.target = null; }
+        else {
+          var g = h.target;
+          if (!g || !g.members.length) g = h.target = this.huntTarget(h);
+          if (!g) { h.state = 'heim'; }
+          else {
+            var d = BT.M.hypot(g.x - h.x, g.y - h.y);
+            if (d > cfg.shot * 0.6) {
+              var x0 = h.x, y0 = h.y;
+              BT.Move.stepToward(w, null, h, g.x, g.y, Math.min(d > 150 ? cfg.speed : cfg.stalk, d - cfg.shot * 0.5));
+              // Spur fuer den Heimweg; wer nicht weiterkommt (Wasser, Fels), kehrt um
+              var last = h.trail[h.trail.length - 1] || h.house;
+              if (BT.M.hypot(h.x - last.x, h.y - last.y) > 30) h.trail.push({ x: h.x, y: h.y });
+              h.stuck = BT.M.hypot(h.x - x0, h.y - y0) < 1 ? h.stuck + 1 : 0;
+              if (h.stuck > 8) { h.state = 'heim'; h.target = null; }
+            }
+            if (d <= cfg.shot && !h.reload) this.shoot(h, g);
+            continue;
+          }
+        }
+      }
+      // heim: auf der eigenen Spur zurueck zum Haus
+      var tr = h.trail, p = tr.length ? tr[tr.length - 1] : { x: h.house.x, y: h.house.y + 6 };
+      var dh = BT.M.hypot(p.x - h.x, p.y - h.y);
+      if (dh > 4) BT.Move.stepToward(w, null, h, p.x, p.y, Math.min(cfg.speed, dh));
+      if (dh <= cfg.speed) { if (tr.length) tr.pop(); else if (dh <= 4) this.homeFromHunt(h); }
+    }
+  };
+
+  /** Ein Schuss auf die Gruppe g. */
+  Humans.prototype.shoot = function (h, g) {
+    var cfg = BT.HUMANS.hunt, sim = this.sim, spec = g.spec;
+    var p = cfg[h.kind].hit * (1 - BT.Behavior.COVER[sim.biomeAt(g.x, g.y)] * 0.5);
+    if (spec.scheu >= cfg.flee) p *= cfg.shy;
+    h.reload = 2;
+    if (this.rng.chance(p)) {
+      var victim = g.members[this.rng.int(0, g.members.length - 1)];
+      var meat = spec.meat * (victim.age < spec.maturity ? 0.5 : 1);
+      sim.kill(victim, 'jagd');
+      this.bag[spec.id] = (this.bag[spec.id] || 0) + 1;
+      this.bagYear[spec.id] = (this.bagYear[spec.id] || 0) + 1;
+      sim.addCarcass(victim.x, victim.y, meat * cfg.offal);
+      if (!cfg[h.kind].stay) { h.carry = { id: spec.id, meat: meat * (1 - cfg.offal) }; h.state = 'heim'; h.target = null; }
+    }
+    // Beschossene Raeuber fliehen weit weg (scheue Pflanzenfresser fliehen von selbst)
+    if (spec.role === 'predator' && g.members.length) this.scare(g, h);
+  };
+
+  /** Raeubergruppe flieht vor dem Menschen bei `from` (ein, zwei Tage weit weg). */
+  Humans.prototype.scare = function (g, from) {
+    var dx = g.x - from.x, dy = g.y - from.y, d = Math.max(1, BT.M.hypot(dx, dy));
+    var tx = g.x + dx / d * 300, ty = g.y + dy / d * 300;
+    if (BT.Move.blockedAt(this.world, g.spec, tx, ty)) { tx = g.x + dx / d * 120; ty = g.y + dy / d * 120; }
+    g.runaway = { x: tx, y: ty, state: 'fliehen', ticks: this.sim.ticksPerDay * 2 };
+    g.prey = null; g.tx = null;
+  };
+
+  /**
+   * Greifen hungrige Woelfe den Jaeger an? Ausgang nach HUMANS.hunt.outcome:
+   * der Jaeger stirbt, ein Wolf stirbt, oder beide gehen auseinander (dann
+   * nehmen die Woelfe die Beute mit). true, wenn es einen Angriff gab.
+   */
+  Humans.prototype.hunterAttacked = function (h) {
+    var cfg = BT.HUMANS.hunt, sim = this.sim, preds = sim.predatorGroups;
+    for (var i = 0; i < preds.length; i++) {
+      var g = preds[i], spec = g.spec;
+      if (!cfg.attackers[spec.id] || !g.members.length || g.runaway) continue;
+      if (BT.M.hypot(g.x - h.x, g.y - h.y) > cfg.attackRange) continue;
+      var e = 0;
+      for (var m = 0; m < g.members.length; m++) e += g.members[m].energy;
+      if (e / g.members.length >= spec.hungry) continue;
+      if (!this.rng.chance(cfg.attack * (h.carry ? 2 : 1))) continue;
+      var out = cfg.outcome[h.kind], r = this.rng.next(), text;
+      this.attacks.total++; this.attacks.year++;
+      if (r < out.hunter) {
+        h.alive = false;
+        this.attacks.hunters++; this.attacks.yearHunters++;
+        if (h.carry) sim.feed(g, h.carry.meat);
+        text = (h.kind === 'wolf' ? 'Ein Wolfsjäger' : 'Ein Jäger') + ' wurde von ' + spec.plural + 'n getötet';
+        sim.events.push({ day: sim.day, tick: sim.tick, card: 'jaegerTot', params: {}, at: { x: h.x, y: h.y, text: text } });
+        return true;
+      }
+      if (r < out.hunter + out.wolf) {
+        var a = g.members[this.rng.int(0, g.members.length - 1)];
+        sim.kill(a, 'jagd');
+        this.attacks.wolves++;
+        this.bag[spec.id] = (this.bag[spec.id] || 0) + 1;
+        this.bagYear[spec.id] = (this.bagYear[spec.id] || 0) + 1;
+      } else if (h.carry) {
+        sim.feed(g, h.carry.meat);
+        h.carry = null;
+      }
+      if (g.members.length) this.scare(g, h);
+      return true;
+    }
+    return false;
+  };
+
+  Humans.prototype.homeFromHunt = function (h) {
+    var R = BT.HUMANS.hunt.restDays;
+    h.state = 'daheim'; h.carry = null; h.target = null;
+    h.rest = this.rng.int(R[0], R[1]);
+  };
+
+  /** Einmal am Tag: Ruhetage zaehlen, zu Jahresbeginn die Jagdbilanz in die Chronik. */
+  Humans.prototype.huntDay = function () {
+    for (var i = 0; i < this.hunters.length; i++) if (this.hunters[i].rest > 0) this.hunters[i].rest--;
+    if (this.sim.calendar.dayOfYear !== 0) return;
+    var parts = [], sim = this.sim;
+    for (var k = 0; k < BT.SPECIES_ORDER.length; k++) {
+      var id = BT.SPECIES_ORDER[k], n = this.bagYear[id];
+      if (n) parts.push(n + ' ' + (n === 1 ? BT.SPECIES[id].name : BT.SPECIES[id].plural));
+    }
+    var a = this.attacks;
+    if (a.year) parts.push(a.year + (a.year === 1 ? ' Angriff' : ' Angriffe') + ' von Wölfen auf Jäger' + (a.yearHunters ? ' (' + a.yearHunters + ' tot)' : ''));
+    sim.events.push({ day: sim.day, tick: sim.tick, card: 'jagdbilanz', params: {},
+      at: { text: parts.length ? 'Im letzten Jahr erlegt: ' + parts.join(', ') : 'Im letzten Jahr nichts erlegt' } });
+    this.bagYear = {};
+    a.year = 0; a.yearHunters = 0;
+  };
+
   /** Karte ausfuehren (aus Simulation.step, zwischen zwei Ticks). */
   Humans.prototype.apply = function (card, params) {
     if (card === 'landung') {
@@ -777,6 +1003,12 @@
       var dr = this.addDogs();
       dr.text = dr.dogs + ' Hütehunde im Dorf';
       return dr;
+    }
+    if (card === 'woelfeJagen' || card === 'wildJagen') {
+      var kind = card === 'woelfeJagen' ? 'wolf' : 'wild';
+      var hr = this.addHunters(kind);
+      hr.text = hr.hunters + (kind === 'wolf' ? ' Wolfsjäger' : ' Jäger') + ' im Dorf';
+      return hr;
     }
     if (card === 'dorf') {
       var r = this.expand();

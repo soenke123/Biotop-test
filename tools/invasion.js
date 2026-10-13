@@ -1,5 +1,5 @@
 /**
- * Fassen Schafe und Hunde Fuss? Rechnet jede Insel zweimal: nur mit Landung
+ * Fassen Schafe und Hunde Fuss? Was richtet die Jagd an? Rechnet jede Insel zweimal: nur mit Landung
  * (Vergleich) und mit Landung und Karten (wie balance.js --karten). Gemeldet
  * wird je Insel, ob die eingeschleppten Arten am Ende leben, und wie viele
  * heimische Tiere es im Vergleich zum Lauf ohne die Karten gibt.
@@ -10,7 +10,9 @@
  * --set  ueberschreibt Werte der Artentabelle zum Ausprobieren (Lebensraeume beim Namen).
  *
  * Etabliert heisst: am Ende mindestens 20 wilde Schafe bzw. ein wildes
- * Hunderudel mit Revier. Die Inseln laufen parallel in eigenen Prozessen.
+ * Hunderudel mit Revier. Mit Jagdkarten (woelfeJagen, wildJagen) steht dazu, was
+ * die Jaeger erlegt haben und wie oft Woelfe sie angegriffen haben. Die Inseln
+ * laufen parallel in eigenen Prozessen.
  */
 const { spawn } = require('child_process');
 
@@ -67,7 +69,8 @@ if (flags.lauf) {
   for (const id of ids) if (sim.stats.extinct[id] != null) extinct[id] = BT.Time.calendar(sim.stats.extinct[id]).year;
   const escapes = sim.events.filter((e) => e.card === 'schafeAus' || e.card === 'hundeWild').map((e) => e.card[0] + BT.Time.calendar(e.day).year);
   process.stdout.write(JSON.stringify({ seed, end: yearly[yearly.length - 1], mean, peak, dogPacks, herds, extinct, escapes,
-    deaths: { schaf: sim.stats.deaths.schaf, hund: sim.stats.deaths.hund } }));
+    deaths: { schaf: sim.stats.deaths.schaf, hund: sim.stats.deaths.hund },
+    hunt: { bag: sim.humans.bag, attacks: sim.humans.attacks } }));
   process.exit(0);
 }
 
@@ -116,7 +119,9 @@ function report() {
     const ext = Object.keys(mit.extinct).map((id) => short[id] + ' J' + mit.extinct[id]).join(', ');
     console.log(`  ${seed}: Schafe ${sheep ? '✓' : '✗'} ${mit.end.schaf} (Spitze ${mit.peak.schaf}, Herden ${mit.herds.join('/') || '-'})` +
       ` · Hunde ${dogs ? '✓' : '✗'} ${mit.end.hund} (${mit.dogPacks} Rudel, Spitze ${mit.peak.hund}) · ${nat}` +
-      (ext ? '  ✗ ' + ext : '') + `\n          Ausbrüche ${mit.escapes.join(' ')} · Tod Schafe ${JSON.stringify(mit.deaths.schaf)} · Hunde ${JSON.stringify(mit.deaths.hund)}`);
+      (ext ? '  ✗ ' + ext : '') + `\n          Ausbrüche ${mit.escapes.join(' ')} · Tod Schafe ${JSON.stringify(mit.deaths.schaf)} · Hunde ${JSON.stringify(mit.deaths.hund)}` +
+      (/jagen/i.test(karten) ? `\n          Erlegt ${Object.entries(mit.hunt.bag).map(([id, n]) => short[id] + ' ' + n).join(', ') || '-'}` +
+        ` · Angriffe auf Jäger ${mit.hunt.attacks.total} (Jäger tot ${mit.hunt.attacks.hunters}, Wolf tot ${mit.hunt.attacks.wolves})` : ''));
   }
   console.log(`Schafe etabliert: ${sheepOk} von ${SEEDS} · Hunde etabliert: ${dogOk} von ${SEEDS}`);
   const med = (a) => { const s = a.slice().sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };

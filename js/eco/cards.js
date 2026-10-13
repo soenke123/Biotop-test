@@ -83,14 +83,25 @@
       text: 'Die verwilderten Hunde tragen Staupe. Wölfe in ihrer Nähe stecken sich an, werden schwach und sterben oft daran.'
     },
     woelfeJagen: {
-      id: 'woelfeJagen', kind: 'aktiv', icon: '🏹', soon: true, needs: 'landung', repeat: true,
+      id: 'woelfeJagen', kind: 'aktiv', icon: '🏹', needs: 'landung', repeat: true,
       name: 'Wölfe jagen',
-      text: 'Jäger ziehen in die Wolfsreviere, zum Schutz von Dorf und Herden.'
+      text: 'Zwei Wolfsjäger ziehen in die Wolfsreviere, zum Schutz von Dorf und Herden. Greifen Wölfe sie an, gewinnen meist die Jäger.'
     },
     wildJagen: {
-      id: 'wildJagen', kind: 'aktiv', icon: '🍖', soon: true, needs: 'landung', repeat: true,
+      id: 'wildJagen', kind: 'aktiv', icon: '🍖', needs: 'landung', repeat: true,
       name: 'Wild jagen',
-      text: 'Hirsche und Laufvögel werden als Nahrung gejagt.'
+      text: 'Zwei Jäger erlegen Hirsche und Laufvögel als Nahrung. Die Laufvögel fliehen nicht. Hungrige Wölfe greifen die Jäger manchmal an.'
+    },
+    // Folgen der Jagd (eco/humans.js)
+    jagdbilanz: {
+      id: 'jagdbilanz', kind: 'info', icon: '🎯',
+      name: 'Jagdbilanz',
+      text: 'Was die Jäger im letzten Jahr erlegt haben.'
+    },
+    jaegerTot: {
+      id: 'jaegerTot', kind: 'folge', icon: '🐺',
+      name: 'Wölfe töten einen Jäger',
+      text: 'Hungrige Wölfe haben einen Jäger angegriffen und getötet. Im Frühling kommt ein neuer Jäger.'
     },
     sammeln: {
       id: 'sammeln', kind: 'aktiv', icon: '🧺', soon: true, needs: 'landung', repeat: true,
