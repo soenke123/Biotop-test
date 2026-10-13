@@ -138,6 +138,18 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 5. **Mehrere Dörfer und Zurücknehmen:** Die Landung lässt sich mehrfach spielen (je ein Dorf).
    Jede Karte hat + und −; mit − wird sie zurückgenommen, die Folgen bleiben (siehe 8.).
 
+6. **Kartentexte:** Die Karten sagen nur, was die Menschen tun, nicht, was daraus für die Tiere
+   folgt (keine ausbüchsenden Schafe, verwilderten Hunde, Staupe, fehlende Beute …). Die Folgen
+   sollen die Lernenden selbst entdecken; sie erscheinen als Folgekarten in der Chronik. Ausnahme:
+   die Rodung beim Dorf (Wald wird zu Erde, dann Wiese).
+7. **Kein Bauen ineinander:** Häuser, Äcker und Weiden liegen nie übereinander
+   (`humans.occupied`). Ein neuer Acker darf direkt neben einen alten (dann wird dieser größer),
+   aber nicht auf Häuser oder Weiden; eine Weide nicht auf Häuser, Äcker oder andere Weiden; ein
+   Haus nicht auf Äcker oder Weiden. Eine neue Landung muss 300 von jedem Dorf (und von jeder
+   Küste, die gerade ein Schiff ansteuert) entfernt sein, sonst: „Hier ist schon ein Dorf.“
+   Findet sich kein Platz, steht „kein Platz für …“ in der Chronik. Test mit 2 Dörfern und je 8
+   Äckern, 8 Weiden, 4 Dorferweiterungen auf 5 Inseln: vorher 112 Überschneidungen, jetzt keine.
+
 ## 7a. Noch offen
 
 - Darf eine Art endgültig aussterben, oder gibt es immer einen Weg zur Rettung (Schritt 9)?

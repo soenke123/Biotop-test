@@ -11,7 +11,9 @@
  *            Doerfer, klickt man bei den anderen Karten das Dorf an (sim.cardTarget)
  *   hint     Text, solange auf das Ziel gewartet wird
  *   repeat   darf mehrfach gespielt werden (jede weitere Karte verstaerkt)
- *   more     ausfuehrliche Erklaerung (Infofenster der Kartenleiste)
+ *   more     ausfuehrliche Erklaerung (Infofenster der Kartenleiste). Karten nennen nur, was
+ *            die Menschen tun, nicht die Folgen fuer die Tiere: Die sollen die Lernenden selbst
+ *            entdecken (Ausnahme: die Rodung beim Dorf)
  *   undo     was beim Zuruecknehmen (−) passiert; die Folgen bleiben
  *   needs    Karte, die vorher gespielt sein muss
  *   soon     noch nicht umgesetzt (wird in der Leiste nur angezeigt)
@@ -41,8 +43,8 @@
       text: 'Ein Schiff mit Siedlern landet an der Küste. Das erste Haus entsteht.',
       target: 'kueste', hint: 'Klicke an die Küste, wo das Schiff landen soll.',
       repeat: true,
-      more: 'Ein Schiff bringt fünf Siedler. Sie bauen ein Haus hinter dem Strand und laufen tagsüber in der Umgebung umher. Scheue Tiere wie Hirsche und Wölfe meiden die Gegend ums Dorf, die Laufvögel kennen keine Menschen und bleiben. Jede weitere Landung gründet ein neues Dorf an einer anderen Küste.',
-      undo: 'Die Siedler verlassen das Dorf mit allem, was dazugehört: Häuser, Äcker, Weiden, Hunde, Jäger und Sammler. Der Dorfplatz wird zu Erde und wächst langsam wieder zu. Gerodeter Wald bleibt Wiese, wilde Schafe und Hunde bleiben auf der Insel.'
+      more: 'Ein Schiff bringt fünf Siedler. Sie bauen ein Haus hinter dem Strand und laufen tagsüber in der Umgebung umher. Jede weitere Landung gründet ein neues Dorf an einer anderen Küste.',
+      undo: 'Die Siedler verlassen das Dorf mit allem, was dazugehört: Häuser, Äcker, Weiden, Hunde, Jäger und Sammler. Der Dorfplatz wird zu Erde und wächst langsam wieder zu. Gerodeter Wald bleibt Wiese.'
     },
     dorf: {
       id: 'dorf', kind: 'aktiv', icon: '🏘️', image: 'assets/haus_fachwerk.png', needs: 'landung', repeat: true,
@@ -54,8 +56,8 @@
     acker: {
       id: 'acker', kind: 'aktiv', icon: '🌾', needs: 'landung', repeat: true,
       name: 'Acker anlegen',
-      text: 'Ein Getreidefeld nahe am Dorf. Geerntet wird im Herbst. Hirsche finden das Getreide auch lecker.',
-      more: 'Ein Acker entsteht nahe am Dorf, wenn nötig wird dafür Wald gerodet. Im Frühling und Sommer wächst Getreide, im Herbst wird geerntet, danach ist der Acker kahl. Hirsche kommen nachts und fressen am Getreide. Wie viel, steht nach jeder Ernte in der Chronik.',
+      text: 'Ein Getreidefeld nahe am Dorf. Geerntet wird im Herbst.',
+      more: 'Ein Acker entsteht nahe am Dorf, wenn nötig wird dafür Wald gerodet. Im Frühling und Sommer wächst Getreide, im Herbst wird geerntet, danach ist der Acker kahl. Wie die Ernte ausfällt, steht nach jeder Ernte in der Chronik.',
       undo: 'Der Acker wird aufgegeben. Erst ist dort nackte Erde, nach einigen Jahren wächst wieder, was vorher da war (aus Wald wird Wiese).'
     },
     // Meldungen, die von selbst entstehen (nur Chronik, keine Marke im Diagramm)
@@ -73,16 +75,16 @@
     schafe: {
       id: 'schafe', kind: 'aktiv', icon: '🐑', image: 'assets/schaf/schaf_m_stehend.png', needs: 'landung', repeat: true,
       name: 'Schafweide',
-      text: 'Eine eingezäunte Weide mit Schafen nahe am Dorf. Die Schafe fressen das Gras kurz. Nach einigen Jahren büchsen Schafe aus.',
-      more: 'Eine eingezäunte Weide mit zwölf Schafen entsteht auf dem Grasland nahe am Dorf. Die Schafe fressen das Gras sehr kurz. Nach etwa vier Jahren brechen einige aus und leben dann wild auf der Insel: Sie fressen den Hirschen das Gras weg und sind Beute für Wölfe und Adler.',
-      undo: 'Die Weide wird aufgegeben, die Siedler nehmen ihre Schafe mit, der Zaun kommt weg. Schafe, die schon ausgebüchst sind, bleiben wild.'
+      text: 'Eine eingezäunte Weide mit Schafen nahe am Dorf.',
+      more: 'Eine eingezäunte Weide mit zwölf Schafen entsteht auf dem Grasland nahe am Dorf. Die Siedler halten die Herde: Jedes Frühjahr kommen Lämmer.',
+      undo: 'Die Weide wird aufgegeben, die Siedler nehmen ihre Schafe mit, der Zaun kommt weg.'
     },
     hunde: {
       id: 'hunde', kind: 'aktiv', icon: '🐕', image: 'assets/hund/hund_f_stehend.png', needs: 'landung', repeat: true,
       name: 'Hütehunde',
-      text: 'Hunde bewachen Dorf und Weiden: Wölfe und Hirsche halten mehr Abstand. Nach einigen Jahren verwildern Hunde und bringen eine Krankheit zu den Wölfen.',
-      more: 'Drei Hunde laufen zwischen Dorf und Weiden umher. Wölfe und Hirsche halten mehr Abstand. Nach etwa vier Jahren verwildern einige Hunde: Sie leben dann im Rudel wie Wölfe, jagen Laufvögel (die sie nicht kennen) und stecken die Wölfe mit Staupe an.',
-      undo: 'Die drei Hunde dieser Karte kommen weg, und sie verwildern auch nicht mehr. Hunde, die schon verwildert sind, bleiben wild.'
+      text: 'Hunde bewachen Dorf und Weiden: Wölfe und Hirsche halten mehr Abstand.',
+      more: 'Drei Hunde laufen zwischen Dorf und Weiden umher. Wölfe und Hirsche halten mehr Abstand.',
+      undo: 'Die drei Hunde dieser Karte kommen weg.'
     },
     // Folgekarten der Schafe und Hunde (eco/humans.js, etwa 4 Jahre nach der Karte, je Karte einmal)
     schafeAus: {
@@ -104,16 +106,16 @@
     woelfeJagen: {
       id: 'woelfeJagen', kind: 'aktiv', icon: '🏹', image: 'assets/doerfler/jagdwolf_2.png', needs: 'landung', repeat: true,
       name: 'Wölfe jagen',
-      text: 'Zwei Wolfsjäger ziehen in die Wolfsreviere, zum Schutz von Dorf und Herden. Greifen Wölfe sie an, gewinnen meist die Jäger.',
-      more: 'Zwei Wolfsjäger ziehen immer wieder für einige Tage los, suchen Wolfsrudel und schießen. Beschossene Rudel fliehen weit weg. Werden die Wölfe weniger, nehmen die Hirsche zu und fressen mehr Gras.',
-      undo: 'Zwei Wolfsjäger hören auf zu jagen. Erlegte Wölfe bleiben tot, aber die Wölfe können sich wieder erholen.'
+      text: 'Zwei Wolfsjäger ziehen in die Wolfsreviere, zum Schutz von Dorf und Herden.',
+      more: 'Zwei Wolfsjäger ziehen immer wieder für einige Tage los, suchen Wolfsrudel und schießen. Beschossene Rudel fliehen weit weg. Was sie erlegt haben, steht jedes Jahr in der Chronik.',
+      undo: 'Zwei Wolfsjäger hören auf zu jagen.'
     },
     wildJagen: {
       id: 'wildJagen', kind: 'aktiv', icon: '🍖', image: 'assets/doerfler/jagdwild_2.png', needs: 'landung', repeat: true,
       name: 'Wild jagen',
-      text: 'Zwei Jäger erlegen Hirsche und Laufvögel als Nahrung. Die Laufvögel fliehen nicht. Hungrige Wölfe greifen die Jäger manchmal an.',
-      more: 'Zwei Jäger erlegen, was sie zuerst sehen: Hirsche, Laufvögel oder wilde Schafe. Die Hirsche fliehen vor ihnen, die Laufvögel nicht, deshalb treffen sie meist Laufvögel. Den Adlern fehlt dann Beute. Hungrige Wölfe greifen Jäger manchmal an.',
-      undo: 'Zwei Jäger hören auf zu jagen. Was sie erlegt haben, fehlt weiter, bis sich die Tiere erholt haben.'
+      text: 'Zwei Jäger erlegen Hirsche und Laufvögel als Nahrung.',
+      more: 'Zwei Jäger ziehen immer wieder für einige Tage los und erlegen, was sie zuerst sehen, Hirsche oder Laufvögel. Die Beute tragen sie ins Dorf. Was sie erlegt haben, steht jedes Jahr in der Chronik.',
+      undo: 'Zwei Jäger hören auf zu jagen.'
     },
     // Folgen der Jagd (eco/humans.js)
     jagdbilanz: {
@@ -134,14 +136,14 @@
     sammeln: {
       id: 'sammeln', kind: 'aktiv', icon: '🫐', image: 'assets/doerfler/sammeln_2.png', needs: 'landung', repeat: true,
       name: 'Sammeln',
-      text: 'Zwei Sammler holen Früchte und Samen, mal nah am Dorf, mal weit draußen. Die fehlen dann den Laufvögeln. Hungrige Wölfe greifen auch Sammler an.',
-      more: 'Zwei Sammler gehen los und pflücken Früchte und Samen, bis ihre Körbe voll sind, mal nah am Dorf, mal weit draußen. Diese Früchte fehlen den Laufvögeln, vor allem im Herbst und Winter. Die Sammler haben keine Waffen, hungrige Wölfe greifen sie an.',
-      undo: 'Zwei Sammler hören auf. Die Früchte wachsen im nächsten Jahr wieder.'
+      text: 'Zwei Sammler holen Früchte und Samen, mal nah am Dorf, mal weit draußen.',
+      more: 'Zwei Sammler gehen los und pflücken Früchte und Samen, bis ihre Körbe voll sind, mal nah am Dorf, mal weit draußen. Wie viele Körbe sie heimbringen, steht jedes Jahr in der Chronik.',
+      undo: 'Zwei Sammler hören auf.'
     },
     ratten: {
       id: 'ratten', kind: 'aktiv', icon: '🐀', image: 'assets/ratten.png', soon: true, needs: 'landung', repeat: true,
       name: 'Ratten an Bord',
-      text: 'Mit einem Vorratsschiff kommen Ratten an Land. Sie fressen Eier, Samen und Küken.'
+      text: 'Mit einem Vorratsschiff kommen Ratten an Land.'
     }
   };
 

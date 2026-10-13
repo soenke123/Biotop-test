@@ -39,7 +39,8 @@
     landing: {
       settlers: 5,
       searchRadius: 150,      // so weit darf der Klick von der Kueste entfernt sein
-      shipDistance: 320,      // hier taucht das Schiff auf
+      shipDistance: 320,
+      apart: 300,             // so weit muss eine neue Landung von jedem Dorf weg sein      // hier taucht das Schiff auf
       shipDays: 4,            // so lange faehrt es bis zur Kueste
       stayDays: 3,            // so lange liegt es vor Anker
       inland: 4               // das Haus steht so viele Rasterzellen hinter der Kueste
@@ -275,8 +276,44 @@
 
   /** Pruefung vor dem Spielen der Karte: Fehlertext oder null. */
   Humans.prototype.checkLanding = function (params) {
-    if (!params || !this.findCoast(params.x, params.y)) return 'Hier ist keine Küste. Klicke näher an den Strand.';
+    var c = params && this.findCoast(params.x, params.y);
+    if (!c) return 'Hier ist keine Küste. Klicke näher an den Strand.';
+    // nicht in ein anderes Dorf hinein (auch nicht dahin, wo gerade ein Schiff hinfaehrt)
+    var near = BT.HUMANS.landing.apart;
+    var close = this.villages.some(function (v) { return BT.M.hypot(v.x - c.x, v.y - c.y) < near; }) ||
+      this.ships.some(function (s) { return s.phase === 'anfahrt' && BT.M.hypot(s.coast.x - c.x, s.coast.y - c.y) < near; });
+    if (close || this.occupied(c.x, c.y, 60, { houses: true, fields: true, pastures: true })) {
+      return 'Hier ist schon ein Dorf. Wähle eine Küste weiter weg.';
+    }
     return null;
+  };
+
+  /**
+   * Liegt ein Kreis (x, y, r) auf Haeusern, Aeckern oder Weiden (what: welche
+   * davon)? Aecker und Weiden sind unregelmaessig, ihr Rand reicht bis etwa
+   * 1,16 mal Radius. Damit nichts ineinander gebaut wird.
+   */
+  Humans.prototype.occupied = function (x, y, r, what) {
+    var pad = 8, i, o;
+    if (what.houses) {
+      for (i = 0; i < this.houses.length; i++) {
+        o = this.houses[i];
+        if (BT.M.hypot(o.x - x, o.y - y) < r + BT.HUMANS.village.yard + pad) return true;
+      }
+    }
+    if (what.fields) {
+      for (i = 0; i < this.fields.length; i++) {
+        o = this.fields[i];
+        if (BT.M.hypot(o.x - x, o.y - y) < r + BT.HUMANS.field.radius * 1.16 + pad) return true;
+      }
+    }
+    if (what.pastures) {
+      for (i = 0; i < this.pastures.length; i++) {
+        o = this.pastures[i];
+        if (BT.M.hypot(o.x - x, o.y - y) < r + o.r * 1.16 + pad) return true;
+      }
+    }
+    return false;
   };
 
   Humans.prototype.land = function (params) {
@@ -415,6 +452,8 @@
       if (!BT.BIOME_INFO[b].land || b === BT.BIOME.PEAK || BT.Move.blockedAt(w, null, px, py)) continue;
       // nicht direkt am Wasser bauen
       if (w.query.freshWaterDistance(px, py) < 12 || w.fields.distSea[w.query.index(px, py)] < 2) continue;
+      // nicht auf einen Acker oder in eine Weide
+      if (this.occupied(px, py, 16, { fields: true, pastures: true })) continue;
       var free = true;
       for (var i = 0; i < this.houses.length && free; i++) {
         var o = this.houses[i];
@@ -483,6 +522,8 @@
       var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(cfg.distMin, cfg.distMax);
       var px = c.x + BT.M.cos(a) * r, py = c.y + BT.M.sin(a) * r;
       if (BT.Move.blockedAt(w, null, px, py)) continue;
+      // nicht auf Haeuser oder Weiden (neben einen Acker darf er, dann wird der groesser)
+      if (this.occupied(px, py, R * 1.16, { houses: true, pastures: true })) continue;
       var f = lu.fieldAround(px, py, R);
       // neben bestehenden Aeckern liegt man gut, auf ihnen nicht
       var score = f.ok - f.woody * 0.5 - f.field * 2 + (f.field > 0 && f.field < f.ok ? 15 : 0);
@@ -641,9 +682,8 @@
       var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(cfg.distMin, cfg.distMax);
       var px = c.x + BT.M.cos(a) * r, py = c.y + BT.M.sin(a) * r;
       if (BT.Move.blockedAt(w, null, px, py)) continue;
-      // nicht auf eine andere Weide
-      var free = this.pastures.every(function (o) { return BT.M.hypot(o.x - px, o.y - py) > o.r + R; });
-      if (!free) continue;
+      // nicht auf Haeuser, Aecker oder eine andere Weide
+      if (this.occupied(px, py, R * 1.16, { houses: true, fields: true, pastures: true })) continue;
       var score = 0;
       BT.Landuse.eachCell(w, px, py, R, null, function (i) {
         var b = g[i];
