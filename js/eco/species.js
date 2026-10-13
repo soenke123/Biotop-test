@@ -51,7 +51,7 @@
       growth: 0.13, seed: 0.05,
       season: [1.5, 1.0, 0.7, 0.3],
       damage: { below: 0.25, loss: 0.05, recover: 0.006, rest: 60, dead: 0.02 },
-      capacity: cap({ TUSSOCK: 11, SCRUB: 5.5, SWAMP: 6.6, BEACH: 1.66, FERN: 1.66, MOSS: 1.1, THERMAL: 1.66, ROCK: 1.1, MEADOW: 8.8 })
+      capacity: cap({ TUSSOCK: 20, SCRUB: 8, SWAMP: 9, BEACH: 1.66, FERN: 1.66, MOSS: 1.1, THERMAL: 1.66, ROCK: 1.1, MEADOW: 8.8 })
     },
     laub: {
       name: 'Triebe und Laub',
@@ -142,23 +142,27 @@
       size: 24,                       // Weltunits (Darstellung)
       color: '#c9874a',
       group: { kind: 'herd', min: 2, max: 16, spread: 26, start: [5, 10] },
-      start: 160,                     // Tiere zu Beginn
+      start: 300,                     // Tiere zu Beginn
       scarce: 1.2,                    // Beutewechsel: als Beute halb so gefragt bei diesem Anteil des Startbestands
       // Nahrung: Energie je verzehrter Einheit
       diet: { gras: 0.11, laub: 0.09, korn: 0.14 },   // Getreide: nahrhaft und lecker
       bite: 0.38,                     // Einheiten je Fressschritt und Tier
       costPerDay: 0.05,
       winterCost: 0.015,              // zusaetzlich im Winter
-      thirstDays: 14,                 // so lange ohne Wasser, dann Tod
+      // Kein Durst: Auf der regenreichen Insel finden die Tiere ueberall Wasser.
+      // thirstDays > 0 schaltet ihn wieder ein (so viele Tage ohne Wasser, dann Tod)
+      thirstDays: 0,
       speed: 4.5, fleeSpeed: 13, sprintTicks: 4,
       vision: 180,                    // erkennt Raeuber
       scheu: 1.0,                     // meidet Menschen (0..1, eco/humans.js)
       searchRadius: 260,              // sucht Futter
       habitat: pref({ TUSSOCK: 1.0, SCRUB: 1.0, FERN: 0.8, SWAMP: 0.5, MOSS: 0.5, BEACH: 0.3, THERMAL: 0.3, ROCK: 0.15, PEAK: 0, MEADOW: 1.0, SOIL: 0.1, FIELD: 1.0 }),
       maturity: Y(1), maxAge: Y(8),
-      breed: { kind: 'each-female', season: 0, day: 4, chance: 0.85, litter: [1, 1], minEnergy: 0.4, cost: 0.15 },
+      // food: weniger Kaelber, je weiter die Weiden ringsum abgefressen sind
+      breed: { kind: 'each-female', season: 0, day: 4, chance: 0.85, litter: [1, 1], minEnergy: 0.4, cost: 0.15,
+        food: { key: 'gras', r: 3, low: 0.45, high: 0.8 } },
       newbornEnergy: 0.6,
-      meat: 1.5                       // Energie, die ein erlegtes Tier liefert
+      meat: 3.5                       // Energie, die ein erlegtes Tier liefert
     },
 
     laufvogel: {
@@ -176,7 +180,7 @@
       bite: 0.32,
       costPerDay: 0.055,
       winterCost: 0.015,
-      thirstDays: 14,
+      thirstDays: 0,                  // kein Durst (siehe Zwerghirsch)
       speed: 3.2, fleeSpeed: 11, sprintTicks: 3,
       vision: 120,
       scheu: 0.2,                     // inselzahm: kennt keine Menschen
@@ -197,16 +201,17 @@
       sprites: { name: 'wolf', facing: 'left', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
       size: 22,
       color: '#7c7c86',
-      group: { kind: 'pack', min: 1, max: 6, spread: 18, start: [3, 5] },
-      start: 20,                      // Tiere, verteilt auf Rudel
+      group: { kind: 'pack', min: 1, max: 12, spread: 18, start: [3, 5] },
+      start: 40,                      // Tiere, verteilt auf Rudel
       prey: { zwerghirsch: 1.0, laufvogel: 0.15 },
       // Wie sein Vorbild frisst er nebenher Insekten und Fruechte - das traegt
       // ihn durch Zeiten mit wenig Beute, reicht aber nicht fuer Nachwuchs
       diet: { frucht: 0.06, insekten: 0.06 },
+      dietSeason: [0.3, 0.3, 0.5, 1], // so viel davon je Jahreszeit: vor allem eine Notration im Winter
       bite: 0.15,
       costPerDay: 0.042,
       winterCost: 0.015,
-      thirstDays: 10,
+      thirstDays: 0,                  // kein Durst (siehe Zwerghirsch)
       speed: 6, chaseSpeed: 19,
       vision: 230,
       scheu: 0.9,
@@ -311,8 +316,8 @@
     bite: 0.42,
     costPerDay: 0.035,                // genuegsam: Hirsch 0,05
     winterCost: 0.008,                // Wolle: Hirsch 0,015
-    thirstDays: 20,                   // braucht wenig Wasser (Tau, saftiges Gras)
-    fleeToWater: [0.5, 0.7],         // gejagt und durstig: zum Wasser fliehen (eco/behavior.js)
+    thirstDays: 0,                    // kein Durst (siehe Zwerghirsch); mit Durst: 20
+    fleeToWater: [0.5, 0.7],         // gejagt und durstig: zum Wasser fliehen (nur mit Durst)
     speed: 3.5, fleeSpeed: 11.5, sprintTicks: 4,
     vision: 150,
     scheu: 0.4,                       // kennt Menschen, haelt aber Abstand

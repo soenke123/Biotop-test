@@ -50,9 +50,12 @@ Welche Haltung gezeigt wird (`js/render/agentRenderer.js`, `pose`):
 
 Eine Weidezelle fasst 4 × 4 Rasterzellen zusammen (24 × 24 Einheiten).
 
-**Kapazität** je Weidezelle (Gras: Tussock 11, Sumpf 6,6, Buschland 5,5; Laub: Farnwald 7,04,
-Buschland 6,16, Moosnebelwald 5,28). Gras und Laub wurden verdoppelt bzw. um 60 % erhöht, damit die
-Insel deutlich mehr Hirsche trägt, als die Wölfe übrig lassen (siehe „Wozu die Räuber da sind“).
+**Kapazität** je Weidezelle (Gras: Tussock 20, Sumpf 9, Buschland 8; Laub: Farnwald 7,04,
+Buschland 6,16, Moosnebelwald 5,28). Das Gras wurde zweimal erhöht (zuerst verdoppelt, dann von 11
+auf 20), damit die Insel 300–500 Hirsche trägt (siehe „Abstimmung“, Viele Hirsche und viele Wölfe).
+Dazu gibt es mehr Grasland: Tussock wächst bis zu einer Feuchte von 0,50 (vorher 0,40), Farnwald
+erst ab 0,66 (vorher 0,56). Tussock bedeckt so etwa 40 % des Landes (vorher 32 %), Farnwald 20 %
+(vorher 25 %), Buschland bleibt bei 13 %.
 
 **Nachwachsen:** Pflanzen wachsen aus ihren Blättern. Halb abgefressen wächst am meisten nach,
 kahl gefressen kaum noch (nur aus Wurzeln und Samen, 5 % der Kapazität). Pro Tag:
@@ -106,11 +109,14 @@ Winter so zum Engpass, Mastjahre lassen seinen Bestand wachsen.
 
 ## Wasser
 
-Durst steigt jeden Tag. Er sinkt beim **Trinken** (an See oder Fluss) und beim **Fressen**, denn
-Nahrung enthält Wasser: Gras wenig (0,04 je Einheit), Laub etwas mehr (0,06), Insekten (0,14) und
-Früchte (0,16) viel. Räuber decken einen Teil über das Fleisch. Trinken bleibt trotzdem nötig.
-Ohne Wasser halten Zwerghirsch und Laufvogel 14 Tage durch, der Inselwolf 10. Der Inseladler
-trinkt nicht.
+**Kein Durst** (`thirstDays: 0` bei allen Arten). Auf der fruchtbaren Insel regnet es oft, die Tiere
+finden überall Pfützen und nehmen Wasser mit der Nahrung auf. Vorher stieg der Durst jeden Tag, und
+die Tiere mussten an See oder Fluss (Zwerghirsch und Laufvogel 14 Tage ohne Wasser, Inselwolf 10,
+Schaf 20). Das machte viele Probleme: Wölfe trieben ganze Herden immer wieder vom Wasser weg, bis sie
+30–200 Einheiten vor dem Ufer verdursteten (bis zu 20 Hirsche im Jahr), und durstige Herden kamen
+kaum zum Fressen. Der Mechanismus steht noch im Code (`thirstDays` > 0, `fleeToWater`, Wasser in
+der Nahrung: Gras 0,04 je Einheit, Laub 0,06, Insekten 0,14, Früchte 0,16) und lässt sich wieder
+einschalten. Ohne Durst ziehen die Tiere nicht mehr gezielt zum Wasser.
 
 ## Zwerghirsch
 
@@ -119,10 +125,17 @@ trinkt nicht.
 - **Gruppe:** Herde mit 2–16 Tieren. Wird sie größer, teilt sie sich.
 - **Nahrung:** Gras, Laub.
 - **Lebensraum:** Grasland, Buschland, Waldrand.
-- **Fortpflanzung:** Jedes erwachsene Weibchen bekommt im Frühling 1 Kalb, wenn es genug
-  Energie hat (≥ 40 %) und ein erwachsenes Männchen in der Herde ist. Erwachsen mit 1 Jahr,
+- **Fortpflanzung:** Jedes erwachsene Weibchen bekommt im Frühling 1 Kalb (Chance 85 %), wenn es
+  genug Energie hat (≥ 40 %) und ein erwachsenes Männchen in der Herde ist. Erwachsen mit 1 Jahr,
   Höchstalter etwa 8 Jahre.
-- **Verhalten:** grast, zieht auf abgeweideten Flächen zügig weiter, geht trinken, flieht vor
+- **Weniger Kälber bei knapper Weide** (`breed.food`): Die Chance sinkt mit dem Füllstand des Grases
+  im Umkreis von 3 Weidezellen (72 Einheiten), gemessen an dem, was die Weiden heute tragen. Ab 80 %
+  gilt die volle Chance, bei 45 % gibt es keine Kälber. So bremst sich der Bestand, bevor er die
+  Weiden zerstört. Ohne diese Bremse blieben die Hirsche satt, bis das Gras plötzlich weg war: Sie
+  wuchsen auch mit 100 Wölfen von 400 auf 1250 und brachen dann nach Kahlfraß auf 140 ein.
+- **Startbestand:** 300 (vorher 160). Ein Riss liefert 3,5 Energie (vorher 1,5, Kalb die Hälfte).
+- **Verhalten:** grast, zieht weiter, wenn die Weide unter 35 % ihrer vollen Menge abgefressen ist
+  (knapp über der Schwelle der Überweidung, mindestens aber bei 0,4 Energie), flieht vor
   jagenden Räubern (kurzer Sprint, dann Trab). Mehr Tiere in der Herde bemerken Gefahr früher.
 
 ## Laufvogel
@@ -162,14 +175,18 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
 
 - **Vorbild:** Falklandfuchs (Warrah), der einzige heimische Landräuber der Falklandinseln, von
   Siedlern ausgerottet.
-- **Gruppe:** Rudel mit bis zu 6 Tieren und festem Revier (Radius 380).
+- **Gruppe:** Rudel mit bis zu 12 Tieren (vorher 6) und festem Revier (Radius 380). Startbestand 40.
 - **Beute:** vor allem Zwerghirsch, Laufvögel nur selten. Frisst auch Aas. Wie sein Vorbild frisst er
-  nebenher Insekten und Früchte, wenn er hungrig umherstreift. Das trägt ihn durch magere
-  Zeiten, reicht aber nicht für Nachwuchs.
+  nebenher Insekten und Früchte, wenn er hungrig umherstreift, vor allem im Winter (`dietSeason`:
+  Frühling und Sommer 30 %, Herbst 50 %, Winter voll). Das trägt ihn durch magere Winter. Vorher
+  kamen 42 % seiner Energie aus dieser Nebenkost; seine Zahl hing dann kaum an den Hirschen.
+- **Bewacht seinen Riss:** Liegt ein Rudel näher als 80 an einem Aas, kommt kein Adler heran.
+  Sonst lebten die Adler von den großen Hirschrissen (58 % ihrer Energie aus Aas, vorher 14 %),
+  vermehrten sich und fraßen die Laufvögel leer.
 - **Jagd:** erst anschleichen, dann sprinten. Der Erfolg steigt mit der Zahl der Jäger und
   sinkt mit der Deckung, der Herdengröße und der Verfassung der Beute (ausgehungerte Tiere
   entkommen schlechter). Bevorzugte Opfer sind Jungtiere, schwache und alte Tiere. Ein erlegter
-  Hirsch liefert 1,5 Energie (ein Laufvogel 0,6). Nach einem Riss ruht das Rudel nur, wenn es satt
+  Hirsch liefert 3,5 Energie (ein Laufvogel 0,6). Nach einem Riss ruht das Rudel nur, wenn es satt
   ist, sonst jagt es weiter. Gejagt wird unter 70 % Energie. Erfolg je Angriff und Jäger 0,32,
   Verbrauch 0,042 Energie am Tag.
 - **Fortpflanzung:** nur das älteste Paar des Rudels, 2–4 Welpen im Frühling, und nur wenn das
@@ -260,7 +277,7 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   Schafe beißen so tief (Energie 0,1); auf kahl gefressenem Grasland finden sie so noch Futter, der
   Hirsch nicht. Frisst kräftiger als der Hirsch (0,42 je Schritt, Hirsch 0,38).
 - **Genügsam:** Verbrauch 0,035 am Tag (Hirsch 0,05), im Winter 0,008 mehr (Wolle; Hirsch 0,015).
-  Trinkt seltener (20 Tage ohne Wasser). Wird eine durstige Herde gejagt (`fleeToWater`), flieht sie
+  Ohne Durst (siehe Wasser) wirkt der folgende Satz nicht mehr. Trank seltener (20 Tage ohne Wasser). Wird eine durstige Herde gejagt (`fleeToWater`), flieht sie
   ab Durst 0,5 zum Wasser, wenn es vom Räuber weg liegt; ab 0,7 auch seitlich, und sie flieht dann
   nur noch vor Räubern näher als 60. Sonst verdursteten Herden, die tagelang von mehreren Rudeln
   gehetzt wurden.
@@ -378,7 +395,9 @@ stirbt in der Simulation fast immer eine Art aus.
 5. **Fortpflanzung je nach Futterlage:** Hungrige Räuber bekommen keinen Nachwuchs.
 6. **Inselgröße:** Auf einer kleinen Insel sind die Räuberbestände so klein, dass Pech reicht,
    um sie auszulöschen.
-7. **Allesfresser-Räuber:** Der Inselwolf überbrückt magere Jahre mit Insekten und Früchten.
+7. **Allesfresser-Räuber:** Der Inselwolf überbrückt magere Winter mit Insekten und Früchten.
+8. **Futterlage bei den Pflanzenfressern:** Wird das Gras knapp, bekommen die Hirsche weniger Kälber.
+   Dadurch bleiben sie unter dem Kahlfraß, auch wenn die Wölfe an der Zahl ihrer Reviere anstoßen.
 
 ## Wozu die Räuber da sind
 
@@ -409,6 +428,32 @@ Hirsche, das Grasland leidet. Erholen sich die Wölfe, sinken die Hirsche, und d
 Adler, Laufvögel und Insekten zusammen.
 
 ## Abstimmung (Stand)
+
+**Viele Hirsche und viele Wölfe** (Ziel: 300–500 Hirsche, rund 100 Wölfe auf der mittleren Insel).
+Vorher kamen auf einen Wolf nur 3–4 Hirsche (~117 Hirsche, ~27 Wölfe). Der Wolf lebte zu 42 % von
+Insekten und Früchten, seine Zahl hing kaum an den Hirschen. Geändert:
+
+- Durst abgeschaltet (siehe Wasser), mehr Grasland, Gras 20 statt 11, Hirsch 3,5 Energie statt 1,5,
+  Startbestand Hirsch 300 und Wolf 40.
+- Wolf: Nebenkost vor allem im Winter (`dietSeason`), Rudel bis 12. Kleinere Reviere (300, 340)
+  brachten zu viele Rudel; die Wölfe schossen dann auf über 200 und brachen ein.
+- **Weniger Kälber bei knapper Weide** (`breed.food`): Das war der entscheidende Schritt. Stoßen die
+  Wölfe an die Zahl der Reviere, können sie nicht mehr Hirsche reißen. Ohne die Bremse wuchsen die
+  Hirsche dann bis zum Kahlfraß.
+- Herden ziehen weiter, bevor die Weide überweidet ist (35 % der vollen Menge). Vorher galt eine
+  feste Menge (0,4 Energie), die bei höherer Kapazität weit unter der Schwelle der Überweidung lag:
+  Mehr Gras führte zu mehr Überweidung.
+- Rudel bewachen ihren Riss gegen Adler (sonst Adler 28, Laufvögel 212).
+- Verworfen: Hungernde Pflanzenfresser fliehen nur vor Räubern, die sie jagen, und fressen auf dem
+  Weg zum Wasser. Die Hirsche schwankten stärker (bis 950), das Gras litt (67 % statt 89 %).
+
+Ergebnis `balance.js 8 30`: alle Arten 8 von 8. Mittel ab Jahr 10: Hirsche 450 (Spanne der Inseln
+219–720), Laufvögel 250, Wölfe 121, Adler 21; Zustand Gras 72 %. Ohne Räuber (`--ohne=inselwolf,inseladler`):
+Hirsche 248, Gras 24 % (Kaibab). Über 60 Jahre (8 Inseln ab Seed 5000): Hirsche 346, Wölfe 101 (nie
+ausgestorben), Laufvögel 301, Adler 15; die Adler sterben auf 2 von 8 Inseln aus. Mit Karten
+(`--karten=schafe@1,hunde@1`, 4 Inseln, 20 Jahre) sinken die Wölfe auf ~55.
+
+Älter:
 
 **Räuber über 150 Jahre** (16 Inseln, Seeds ab 1000 und 5000):
 

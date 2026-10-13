@@ -365,11 +365,12 @@
       var onThermal = this.biomeAt(g.x, g.y) === BT.BIOME.THERMAL;
       var cost = (spec.costPerDay + (winter ? spec.winterCost * this.weatherNow.winter * (onThermal ? 0.3 : 1) : 0)) * perTick;
       var thirst = spec.thirstDays ? perTick / spec.thirstDays : 0;
+      var bite = spec.dietSeason ? spec.bite * spec.dietSeason[this.calendar.season] : spec.bite;
       // Rueckwaerts, weil Tiere dabei sterben koennen
       for (var m = g.members.length - 1; m >= 0; m--) {
         var a = g.members[m];
         if (g.grazing && a.energy < 0.98) {
-          var gain = this.fields.eat(this.fields.index(a.x, a.y), spec.diet, spec.bite);
+          var gain = this.fields.eat(this.fields.index(a.x, a.y), spec.diet, bite);
           a.energy = Math.min(1, a.energy + gain);
           a.thirst = Math.max(0, a.thirst - this.fields.lastWater);
         }
@@ -557,7 +558,8 @@
     if (!mothers.length) return;
 
     if (b.kind === 'each-female') {
-      for (var i = 0; i < mothers.length; i++) if (this.rng.chance(b.chance)) this.birth(g, mothers[i]);
+      var chance = b.chance * this.breedFood(b, g);
+      for (var i = 0; i < mothers.length; i++) if (this.rng.chance(chance)) this.birth(g, mothers[i]);
     } else if (b.kind === 'group-pair') {
       // Nur das ranghoechste (aelteste) Paar pflanzt sich fort
       mothers.sort(function (x, y) { return y.age - x.age; });
@@ -585,6 +587,22 @@
         this.stats.nest(spec.id, eggs);
       }
     }
+  };
+
+  /**
+   * Futterlage fuer den Nachwuchs (spec.breed.food = { key, r, low, high }): Je
+   * weiter die Weiden rund um die Gruppe abgefressen sind, desto weniger Junge.
+   * Fuellstand der Schicht `key` im Umkreis r (Weidezellen): ab `high` volle
+   * Chance, bei `low` keine. So bremst sich ein Bestand, bevor er die Weiden
+   * zerstoert. Ohne `food` immer 1.
+   */
+  Simulation.prototype.breedFood = function (b, g) {
+    var f = b.food;
+    if (!f) return 1;
+    var c = this._breedShare;
+    if (!c || c.day !== this.day || c.key !== f.key) c = this._breedShare = { day: this.day, key: f.key, share: this.fields.regionShare(f.key, f.r).slice() };
+    var s = c.share[this.fields.index(g.x, g.y)];
+    return Math.max(0, Math.min(1, (s - f.low) / (f.high - f.low)));
   };
 
   Simulation.prototype.hatch = function (g) {

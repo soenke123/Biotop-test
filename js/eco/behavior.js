@@ -33,6 +33,13 @@
   // So viele Tage kostet es, eine seltene Beute vergeblich zu suchen
   var SEARCH_DAYS = 1;
 
+  // Pflanzenfresser ziehen weiter, wenn die Weide unter diesen Anteil ihrer
+  // vollen Menge abgefressen ist (knapp ueber der Schwelle der Ueberweidung)
+  var MOVE_ON = 0.35;
+
+  // So nah muss ein Rudel an seinem Riss sein, um ihn gegen Greifvoegel zu verteidigen
+  var GUARD = 80;
+
   function dist(a, b) { return BT.M.hypot(a.x - b.x, a.y - b.y); }
 
   function avg(members, key) {
@@ -286,16 +293,20 @@
     g.state = g.nest ? 'brueten' : 'fressen';
     var cx = g.nest ? g.nest.x : g.x, cy = g.nest ? g.nest.y : g.y;
     var radius = g.nest ? 50 : spec.searchRadius;
-    var here = sim.fields.energyAt(sim.fields.index(g.x, g.y), spec.diet);
+    var fi = sim.fields.index(g.x, g.y);
+    var here = sim.fields.energyAt(fi, spec.diet);
+    // Weiterziehen, bevor die Weide unter die Schwelle der Ueberweidung faellt
+    // (Anteil MOVE_ON dessen, was sie voll traegt) oder kaum noch etwas bietet
+    var poor = here < Math.max(0.4, MOVE_ON * sim.fields.fullEnergyAt(fi, spec.diet));
     var reached = g.tx !== null && BT.M.hypot(g.tx - g.x, g.ty - g.y) < 12;
-    if (g.tx === null || (reached && here < 0.4) || g.stateTicks-- <= 0) {
+    if (g.tx === null || (reached && poor) || g.stateTicks-- <= 0) {
       var target = chooseForageTarget(sim, g, cx, cy, radius);
       if (target) { g.tx = target.x; g.ty = target.y; }
       else { g.tx = g.x; g.ty = g.y; }
       g.stateTicks = 18;
     }
     // Auf abgeweideter Flaeche zuegig weiterziehen, am Futterplatz langsam grasen
-    var sp = here < 0.4 && !g.nest ? spec.speed * 2.5 : spec.speed;
+    var sp = poor && !g.nest ? spec.speed * 2.5 : spec.speed;
     go(sim, spec, g, g.tx, g.ty, sp);
     g.speedNow = sp;
     g.grazing = true;
@@ -515,6 +526,15 @@
     return best;
   }
 
+  /** Ein Rudel bewacht seinen Riss: Liegt ein Landraeuber daneben, kommt kein Greifvogel heran. */
+  function guarded(sim, c) {
+    for (var i = 0; i < sim.predatorGroups.length; i++) {
+      var o = sim.predatorGroups[i];
+      if (!o.spec.flies && o.members.length && BT.M.hypot(o.x - c.x, o.y - c.y) < GUARD) return true;
+    }
+    return false;
+  }
+
   /** Zum naechsten Aas gehen und fressen. true, solange damit beschaeftigt. */
   function scavenge(sim, g) {
     var spec = g.spec;
@@ -522,6 +542,7 @@
     for (var i = 0; i < sim.carcasses.length; i++) {
       var c = sim.carcasses[i];
       if (c.meat < 0.25 && BT.M.hypot(c.x - g.x, c.y - g.y) > 40) continue;   // lohnt den Weg nicht
+      if (spec.flies && guarded(sim, c)) continue;
       var d = BT.M.hypot(c.x - g.x, c.y - g.y);
       if (d < bestD) { bestD = d; best = c; }
     }

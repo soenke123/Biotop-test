@@ -217,6 +217,14 @@
     return e;
   };
 
+  /** Energie, die Zelle i fuer diese Kost truege, wenn alles voll stuende (ohne Schaden). */
+  Fields.prototype.fullEnergyAt = function (i, diet) {
+    if (i < 0) return 0;
+    var e = 0;
+    for (var key in diet) e += this.capacity[key][i] * diet[key];
+    return e;
+  };
+
   /**
    * Fressen: bis zu `amount` Einheiten, ergiebigste Nahrung zuerst.
    * Liefert die gewonnene Energie; das mitgefressene Wasser steht danach in

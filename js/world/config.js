@@ -129,8 +129,8 @@
       swampMaxHeight: 0.24,
       swampMaxSlope: 0.012,
       swampFreshCells: 7,             // Sumpf nur nahe Fluss oder See
-      fernMoisture: 0.56,
-      scrubMoisture: 0.40,            // darunter Tussock
+      fernMoisture: 0.66,
+      scrubMoisture: 0.50,            // darunter Tussock
       thermalPatches: [2, 4],
       thermalRadius: [55, 95],        // Weltunits
       minPatchCells: 30               // kleinere Flecken werden vom Umfeld geschluckt

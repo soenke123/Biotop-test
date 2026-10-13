@@ -73,7 +73,7 @@ tools/      load.js (Skripte in Node laden), smoketest.js, balance.js (Abstimmun
 ```
 
 Simulation: Pro Tick zuerst gespielte Karten und Menschen, dann die Tiere. Entschieden wird je **Gruppe** (Herde, Rudel …), die Tiere folgen dem Anker der
-Gruppe mit eigenem Versatz. Pro Tick: Verhalten, Bewegung, Fressen, Energie, Durst. Pro Tag:
+Gruppe mit eigenem Versatz. Pro Tick: Verhalten, Bewegung, Fressen, Energie (Durst ist abgeschaltet, `thirstDays: 0`). Pro Tag:
 Wachstum, Alter, Geburt, Nester und Horste, Abwanderung, Gruppen teilen/zusammenlegen, Statistik.
 
 Generator-Reihenfolge in `island.js`: Form → Relief → Feuchte (ohne Gewässer) → Wasser
