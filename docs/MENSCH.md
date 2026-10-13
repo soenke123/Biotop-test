@@ -336,6 +336,7 @@ je Art in `data/arten.md` („Jagd“).
   | Wild jagen, immer am Dorf (`out` 0) | 550–720 Laufvögel, 2–17 Hirsche; 0–2 Angriffe | 83 % | 115 % | 85 % | **21 %** (5 von 8) |
   | Wölfe jagen | 36–89 Wölfe | 122 % | 91 % | **20 %** (3 von 8 ausgestorben) | 67 % |
   | beide | Laufvögel wie oben, 36–56 Wölfe, 5–96 Hirsche | 128 % | 79 % | **6 %** (5 von 8) | 65 % |
+  | beide, mit „mal nah, mal weit“ und geradem Heimweg | 376–412 Laufvögel, 38–70 Wölfe, 24–62 Hirsche; 0–2 Angriffe | 158 % | 101 % | **16 %** (5 von 8) | **2 %** (6 von 8) |
 
   Laufvögel gibt es viel mehr als Hirschherden, und sie fliehen nicht; deshalb erlegen die Jäger
   auch weit draußen meist Laufvögel. Die Hirsche gehen trotzdem zurück (sie fliehen oft vor den
@@ -345,6 +346,36 @@ je Art in `data/arten.md` („Jagd“).
   Gewicht wählen, Laufvogel 0,6, kein Wechsel unterwegs; 8 Inseln × 30 Jahre) erlegten sie 70–130
   Hirsche und 180–330 Laufvögel, wurden 3–15-mal angegriffen (2–5 Jäger tot), Adler 83 %.
   Die Wolfsjäger lassen nur Rudel weit vom Dorf übrig; die Hirsche nehmen zu.
+
+  Neu (letzte Zeile): Mit beiden Karten sterben jetzt die Adler fast überall aus. Auf Insel 24757
+  brechen die Laufvögel in Jahr 13–19 ein (Jäger und Adler zugleich auf ihnen, die Wölfe fehlen
+  als Lieferanten von Aas), die Adler verhungern und kommen nicht zurück. Noch nicht genauer
+  untersucht.
+
+### Schritt 8: Sammeln
+
+Nach dem Prinzip der Jagd (`BT.HUMANS.gather`, `js/eco/humans.js`; die Sammler stehen mit den
+Jägern in `humans.hunters`, `kind: 'sammel'`).
+
+- **Karte „Sammeln“:** 2 Sammler je Karte. Je Gang wird gewürfelt, wie weit sie hinausgehen
+  (0–500 vom Dorf). Ab dort pflücken sie Früchte und Samen, wo sie zuerst welche finden
+  (mindestens 0,5 je Weidezelle), 3 je Tick aus der Zelle und ihren Nachbarn, dann weiter zur
+  nächsten vollen Zelle in der Nähe. Heim gehen sie mit 60 (3 Körben) oder nach 10 Tagen, danach
+  1–2 Tage im Dorf. Wo keine Früchte sind (Winterende, Frühling), bleiben sie daheim.
+- **Wölfe:** Hungrige Wölfe greifen auch Sammler an. Die haben keine Waffen: der Sammler stirbt zu
+  40 %, der Wolf zu 5 %. Folgekarte 🐺 „Wölfe töten einen Menschen“ (vorher „… einen Jäger“).
+- **Chronik:** jedes Jahr 🫐 **Sammelbilanz** (Körbe, Angriffe). Reiter Menschen: Sammler,
+  Körbe gesammelt. Auf der Karte: Sammler mit Korb, der sich mit Früchten füllt.
+- **Messung** (`invasion.js 8 30 --karten=…`, Median gegenüber nur Landung; die Laufvögel fressen
+  auf der mittleren Insel etwa 3600 Früchte im Jahr):
+
+  | Karten | gesammelt in 30 Jahren (je Insel) | Angriffe (Sammler tot) | Hirsch | Laufvogel | Wolf | Adler |
+  |---|---|---|---|---|---|---|
+  | 1 × Sammeln | 4900–7100 (etwa 200 im Jahr) | 3–19 (1–8) | 81 % | 90 % | 88 % | 99 % |
+  | 3 × Sammeln (Jahr 1, 3, 5) | 12800–17800 | 4–24 (1–14) | 93 % | 90 % | 74 % | schwankt |
+
+  Die Laufvögel gehen um etwa 10 % zurück. Die Sammler werden oft angegriffen, weil sie lange an
+  einer Stelle bleiben.
 
 ### Oberfläche: Reiter und Marken
 
