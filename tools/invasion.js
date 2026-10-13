@@ -11,7 +11,8 @@
  *
  * Etabliert heisst: am Ende mindestens 20 wilde Schafe bzw. ein wildes
  * Hunderudel mit Revier. Mit Jagdkarten (woelfeJagen, wildJagen) steht dazu, was
- * die Jaeger erlegt haben und wie oft Woelfe sie angegriffen haben. Die Inseln
+ * die Jaeger erlegt und die Sammler gesammelt haben und wie oft Woelfe sie
+ * angegriffen haben. Die Inseln
  * laufen parallel in eigenen Prozessen.
  */
 const { spawn } = require('child_process');
@@ -70,7 +71,7 @@ if (flags.lauf) {
   const escapes = sim.events.filter((e) => e.card === 'schafeAus' || e.card === 'hundeWild').map((e) => e.card[0] + BT.Time.calendar(e.day).year);
   process.stdout.write(JSON.stringify({ seed, end: yearly[yearly.length - 1], mean, peak, dogPacks, herds, extinct, escapes,
     deaths: { schaf: sim.stats.deaths.schaf, hund: sim.stats.deaths.hund },
-    hunt: { bag: sim.humans.bag, attacks: sim.humans.attacks } }));
+    hunt: { bag: sim.humans.bag, attacks: sim.humans.attacks, gathered: Math.round(sim.humans.gathered) } }));
   process.exit(0);
 }
 
@@ -120,7 +121,8 @@ function report() {
     console.log(`  ${seed}: Schafe ${sheep ? '✓' : '✗'} ${mit.end.schaf} (Spitze ${mit.peak.schaf}, Herden ${mit.herds.join('/') || '-'})` +
       ` · Hunde ${dogs ? '✓' : '✗'} ${mit.end.hund} (${mit.dogPacks} Rudel, Spitze ${mit.peak.hund}) · ${nat}` +
       (ext ? '  ✗ ' + ext : '') + `\n          Ausbrüche ${mit.escapes.join(' ')} · Tod Schafe ${JSON.stringify(mit.deaths.schaf)} · Hunde ${JSON.stringify(mit.deaths.hund)}` +
-      (/jagen/i.test(karten) ? `\n          Erlegt ${Object.entries(mit.hunt.bag).map(([id, n]) => short[id] + ' ' + n).join(', ') || '-'}` +
+      (/sammeln/.test(karten) ? `\n          Gesammelt ${mit.hunt.gathered} (Körbe ${Math.round(mit.hunt.gathered / 20)})` : '') +
+      (/jagen|sammeln/i.test(karten) ? `\n          Erlegt ${Object.entries(mit.hunt.bag).map(([id, n]) => short[id] + ' ' + n).join(', ') || '-'}` +
         ` · Angriffe auf Jäger ${mit.hunt.attacks.total} (Jäger tot ${mit.hunt.attacks.hunters}, Wolf tot ${mit.hunt.attacks.wolves})` : ''));
   }
   console.log(`Schafe etabliert: ${sheepOk} von ${SEEDS} · Hunde etabliert: ${dogOk} von ${SEEDS}`);

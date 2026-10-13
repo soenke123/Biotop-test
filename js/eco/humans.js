@@ -103,7 +103,19 @@
       attackRange: 50,
       attack: 0.08,           // Chance je Tick, mal 2, wenn der Jaeger Beute traegt
       // Ausgang eines Angriffs: Wolfsjaeger rechnen damit, Wildjaeger nicht
-      outcome: { wolf: { hunter: 0.05, wolf: 0.85 }, wild: { hunter: 0.3, wolf: 0.4 } }
+      outcome: { wolf: { hunter: 0.05, wolf: 0.85 }, wild: { hunter: 0.3, wolf: 0.4 }, sammel: { hunter: 0.4, wolf: 0.05 } }
+    },
+    gather: {                 // Karte "Sammeln" (nach dem Prinzip der Jagd, Werte, die fehlen, aus hunt)
+      perCard: 2,             // Sammler je Karte
+      speed: 30,              // Weltunits je Tick auf dem Weg
+      out: [0, 500],          // so weit vom Dorf fangen sie an zu sammeln (je Gang neu gewuerfelt) ...
+      ring: 250,              // ... das Ziel liegt out bis out + ring vom Dorf
+      min: 0.5,               // gesammelt wird, wo eine Weidezelle so viele Fruechte traegt (Busch voll: 3,3)
+      bite: 3,                // Fruechte je Tick
+      load: 60,               // so viel tragen sie heim (3 Koerbe), dann geht es heim
+      basket: 20,             // ein Korb (fuer die Sammelbilanz)
+      tripDays: 10,
+      restDays: [1, 2]
     },
     village: {                // Karte "Dorf vergroessern"
       houses: 2,              // neue Haeuser je Karte
@@ -139,10 +151,12 @@
     this.fence = null;              // Weidezaeune: 1 je Rasterzelle innerhalb einer Weide
     this.waterDist = null;          // Abstand zum Suesswasser um die Zaeune herum (Zellen), sonst null
     this.hunters = [];              // Jaeger: { kind: 'wolf'|'wild', state, target, carry, ... }
-    this.huntersKept = { wolf: 0, wild: 0 };
+    this.huntersKept = { wolf: 0, wild: 0, sammel: 0 };
+    this.gathered = 0;              // Fruechte, die die Sammler heimgebracht haben (Einheiten)
+    this.gatheredYear = 0;
     this.bag = {};                  // erlegt seit der Landung, je Art
     this.bagYear = {};              // ... im laufenden Jahr (Jagdbilanz in der Chronik)
-    this.attacks = { total: 0, hunters: 0, wolves: 0, year: 0, yearHunters: 0 };
+    this.attacks = { total: 0, hunters: 0, wolves: 0, year: {}, yearDead: {} };   // year, yearDead: je Art der Menschen
     var f = sim.fields;
     this.disturb = new Float32Array(f.cols * f.rows);
   }
@@ -448,7 +462,7 @@
   Humans.prototype.newDay = function () {
     this.checkEscape();
     this.spring();
-    if (this.huntersKept.wolf || this.huntersKept.wild) this.huntDay();
+    if (this.hunters.length || this.huntersKept.wolf || this.huntersKept.wild || this.huntersKept.sammel) this.huntDay();
     if (!this.fields.length) return;
     var cal = this.sim.calendar, cfg = BT.HUMANS.field;
     if (cal.season !== cfg.harvestSeason || cal.dayOfSeason !== 1) return;
@@ -813,7 +827,7 @@
    * werden im naechsten Fruehling ersetzt.
    */
   Humans.prototype.addHunters = function (kind) {
-    var n = BT.HUMANS.hunt.perCard;
+    var n = (kind === 'sammel' ? BT.HUMANS.gather : BT.HUMANS.hunt).perCard;
     for (var k = 0; k < n; k++) this.addHunter(kind);
     this.huntersKept[kind] += n;
     var c = this.center();
@@ -825,7 +839,7 @@
     var x = house.x + this.rng.range(-15, 15), y = house.y + this.rng.range(-15, 15);
     this.hunters.push({
       id: this.nextId++, kind: kind, house: house, x: x, y: y, px: x, py: y, heading: 0,
-      state: 'daheim', rest: this.rng.int(0, 2), target: null, carry: null, trip: 0, reload: 0
+      state: 'daheim', rest: this.rng.int(0, 2), target: null, carry: null, trip: 0, reload: 0, load: 0
     });
   };
 
@@ -870,13 +884,16 @@
       h.px = h.x; h.py = h.y;
       if (h.state === 'daheim') {
         if (h.rest > 0 || this.night) continue;
-        h.out = this.rng.range(cfg.out[0], cfg.out[1]);
-        h.target = this.huntTarget(h);
+        var gather = h.kind === 'sammel';
+        var out = gather ? BT.HUMANS.gather.out : cfg.out;
+        h.out = this.rng.range(out[0], out[1]);
+        h.target = gather ? this.fruitTarget(h, false) : this.huntTarget(h);
         if (!h.target) { h.rest = 1; continue; }
-        h.state = 'unterwegs'; h.trip = 0; h.trail = []; h.stuck = 0;
+        h.state = 'unterwegs'; h.trip = 0; h.trail = []; h.stuck = 0; h.useTrail = false;
       }
       if (this.hunterAttacked(h)) { if (!h.alive) this.hunters.splice(i, 1); continue; }
       if (this.night) continue;                         // nachts lagern sie
+      if (h.state === 'unterwegs' && h.kind === 'sammel') { this.gatherStep(h); if (h.state === 'unterwegs') continue; }
       if (h.state === 'unterwegs') {
         h.trip++;
         if (h.reload > 0) h.reload--;
@@ -905,12 +922,98 @@
           }
         }
       }
-      // heim: auf der eigenen Spur zurueck zum Haus
-      var tr = h.trail, p = tr.length ? tr[tr.length - 1] : { x: h.house.x, y: h.house.y + 6 };
+      // heim: geradewegs zum Haus; wer dabei haengen bleibt, geht auf der eigenen Spur zurueck
+      var tr = h.trail;
+      var hx = h.house.x, hy = h.house.y + 6;
+      if (BT.M.hypot(hx - h.x, hy - h.y) <= 4) { this.homeFromHunt(h); continue; }
+      if (!h.useTrail) {
+        var x1 = h.x, y1 = h.y;
+        BT.Move.stepToward(w, null, h, hx, hy, Math.min(h.kind === 'sammel' ? BT.HUMANS.gather.speed : cfg.speed, BT.M.hypot(hx - h.x, hy - h.y)));
+        if (BT.M.hypot(h.x - x1, h.y - y1) >= 1) continue;
+        h.useTrail = true;
+      }
+      var p = tr.length ? tr[tr.length - 1] : { x: h.house.x, y: h.house.y + 6 };
       var dh = BT.M.hypot(p.x - h.x, p.y - h.y);
-      if (dh > 4) BT.Move.stepToward(w, null, h, p.x, p.y, Math.min(cfg.speed, dh));
-      if (dh <= cfg.speed) { if (tr.length) tr.pop(); else if (dh <= 4) this.homeFromHunt(h); }
+      var hs = h.kind === 'sammel' ? BT.HUMANS.gather.speed : cfg.speed;
+      if (dh > 4) BT.Move.stepToward(w, null, h, p.x, p.y, Math.min(hs, dh));
+      if (dh <= hs) { if (tr.length) tr.pop(); else if (dh <= 4) this.homeFromHunt(h); }
     }
+  };
+
+  /**
+   * Sammler (Karte "Sammeln"): wie die Jaeger, aber ihr Ziel sind Fruechte und
+   * Samen. Je Gang wird gewuerfelt, wie weit sie hinausgehen; ab dort sammeln
+   * sie, wo sie zuerst genug Fruechte finden, bis der Korb voll ist. Die
+   * Fruechte fehlen dann den Laufvoegeln. Hungrige Woelfe greifen auch Sammler
+   * an, und die haben keine Waffen.
+   */
+  Humans.prototype.fruitTarget = function (h, near) {
+    var G = BT.HUMANS.gather, f = this.sim.fields, w = this.world, c = this.center();
+    var best = null, bestV = G.min;
+    for (var t = 0; t < 24; t++) {
+      var a = this.rng.range(0, Math.PI * 2), r, px, py;
+      if (near) { r = 70 * Math.sqrt(this.rng.next()); px = h.x + BT.M.cos(a) * r; py = h.y + BT.M.sin(a) * r; }
+      else { r = h.out + this.rng.range(0, G.ring); px = c.x + BT.M.cos(a) * r; py = c.y + BT.M.sin(a) * r; }
+      if (BT.Move.blockedAt(w, null, px, py) || this.fenced(px, py)) continue;
+      var i = f.index(px, py);
+      if (i < 0) continue;
+      var v = f.value.frucht[i];
+      if (v > bestV) { bestV = v; best = { x: px, y: py }; }
+    }
+    return best;
+  };
+
+  /** Beste Weidezelle mit Fruechten im Umkreis von zwei Zellen, sonst null. */
+  Humans.prototype.fruitNextTo = function (h) {
+    var f = this.sim.fields, G = BT.HUMANS.gather, v = f.value.frucht, best = null, bestV = G.min;
+    for (var dy = -2; dy <= 2; dy++) {
+      for (var dx = -2; dx <= 2; dx++) {
+        var px = h.x + dx * f.size, py = h.y + dy * f.size, i = f.index(px, py);
+        if (i < 0 || v[i] <= bestV) continue;
+        var c = f.center(i);
+        if (BT.Move.blockedAt(this.world, null, c.x, c.y) || this.fenced(c.x, c.y)) continue;
+        bestV = v[i]; best = c;
+      }
+    }
+    return best;
+  };
+
+  /** Ein Tick eines Sammlers unterwegs: hingehen, sammeln, mit vollem Korb heim. */
+  Humans.prototype.gatherStep = function (h) {
+    var G = BT.HUMANS.gather, f = this.sim.fields, w = this.world, c = this.center();
+    h.trip++;
+    if (h.trip > G.tripDays * (this.sim.ticksPerDay - 2) || h.load >= G.load) { h.state = 'heim'; h.target = null; h.gathering = false; return; }
+    var i = f.index(h.x, h.y);
+    var here = i >= 0 ? f.value.frucht[i] : 0;
+    // Was sie zuerst finden: unterwegs, sobald sie weit genug draussen sind
+    if (here >= G.min && (h.gathering || BT.M.hypot(h.x - c.x, h.y - c.y) >= h.out)) {
+      h.gathering = true;
+      // Eine Gruppe Sammler: Sie pfluecken hier und in den Nachbarzellen
+      var want = Math.min(G.bite, G.load - h.load), got = 0;
+      for (var dy = -1; dy <= 1 && got < want; dy++) {
+        for (var dx = -1; dx <= 1 && got < want; dx++) {
+          var j = f.index(h.x + dx * f.size, h.y + dy * f.size);
+          if (j >= 0 && !this.fenced(f.center(j).x, f.center(j).y)) got += f.eat(j, { frucht: 1 }, want - got);
+        }
+      }
+      h.load += got;
+      this.gathered += got; this.gatheredYear += got;
+      return;
+    }
+    if (h.gathering || !h.target) {
+      // Hier ist nichts mehr: in den Nachbarzellen, sonst etwas weiter weitersuchen
+      h.target = this.fruitNextTo(h) || this.fruitTarget(h, true);
+      h.gathering = false;
+      if (!h.target) { h.state = 'heim'; return; }
+    }
+    var t = h.target, d = BT.M.hypot(t.x - h.x, t.y - h.y);
+    if (d < 6) { h.target = null; return; }
+    var x0 = h.x, y0 = h.y;
+    BT.Move.stepToward(w, null, h, t.x, t.y, Math.min(G.speed, d));
+    var last = h.trail[h.trail.length - 1] || h.house;
+    if (BT.M.hypot(h.x - last.x, h.y - last.y) > 30) h.trail.push({ x: h.x, y: h.y });
+    h.stuck = BT.M.hypot(h.x - x0, h.y - y0) < 1 ? h.stuck + 1 : 0;
+    if (h.stuck > 8) h.target = null;
   };
 
   /** Ein Schuss auf die Gruppe g. */
@@ -957,12 +1060,13 @@
       if (e / g.members.length >= spec.hungry) continue;
       if (!this.rng.chance(cfg.attack * (h.carry ? 2 : 1))) continue;
       var out = cfg.outcome[h.kind], r = this.rng.next(), text;
-      this.attacks.total++; this.attacks.year++;
+      var A = this.attacks;
+      A.total++; A.year[h.kind] = (A.year[h.kind] || 0) + 1;
       if (r < out.hunter) {
         h.alive = false;
-        this.attacks.hunters++; this.attacks.yearHunters++;
+        A.hunters++; A.yearDead[h.kind] = (A.yearDead[h.kind] || 0) + 1;
         if (h.carry) sim.feed(g, h.carry.meat);
-        text = (h.kind === 'wolf' ? 'Ein Wolfsjäger' : 'Ein Jäger') + ' wurde von ' + spec.plural + 'n getötet';
+        text = HUNTER_NAME[h.kind] + ' wurde von ' + spec.plural + 'n getötet';
         sim.events.push({ day: sim.day, tick: sim.tick, card: 'jaegerTot', params: {}, at: { x: h.x, y: h.y, text: text } });
         return true;
       }
@@ -982,27 +1086,42 @@
     return false;
   };
 
+  var HUNTER_NAME = { wolf: 'Ein Wolfsjäger', wild: 'Ein Jäger', sammel: 'Ein Sammler' };
+
   Humans.prototype.homeFromHunt = function (h) {
-    var R = BT.HUMANS.hunt.restDays;
-    h.state = 'daheim'; h.carry = null; h.target = null;
+    var R = (h.kind === 'sammel' ? BT.HUMANS.gather : BT.HUMANS.hunt).restDays;
+    h.state = 'daheim'; h.carry = null; h.target = null; h.load = 0; h.gathering = false;
     h.rest = this.rng.int(R[0], R[1]);
   };
 
-  /** Einmal am Tag: Ruhetage zaehlen, zu Jahresbeginn die Jagdbilanz in die Chronik. */
+  /** Einmal am Tag: Ruhetage zaehlen, zu Jahresbeginn Jagd- und Sammelbilanz in die Chronik. */
   Humans.prototype.huntDay = function () {
     for (var i = 0; i < this.hunters.length; i++) if (this.hunters[i].rest > 0) this.hunters[i].rest--;
     if (this.sim.calendar.dayOfYear !== 0) return;
-    var parts = [], sim = this.sim;
-    for (var k = 0; k < BT.SPECIES_ORDER.length; k++) {
-      var id = BT.SPECIES_ORDER[k], n = this.bagYear[id];
-      if (n) parts.push(n + ' ' + (n === 1 ? BT.SPECIES[id].name : BT.SPECIES[id].plural));
+    var sim = this.sim, A = this.attacks, K = this.huntersKept;
+    function attacks(kinds, who) {
+      var n = 0, dead = 0;
+      for (var k = 0; k < kinds.length; k++) { n += A.year[kinds[k]] || 0; dead += A.yearDead[kinds[k]] || 0; }
+      return n ? n + (n === 1 ? ' Angriff' : ' Angriffe') + ' von Wölfen auf ' + who + (dead ? ' (' + dead + ' tot)' : '') : null;
     }
-    var a = this.attacks;
-    if (a.year) parts.push(a.year + (a.year === 1 ? ' Angriff' : ' Angriffe') + ' von Wölfen auf Jäger' + (a.yearHunters ? ' (' + a.yearHunters + ' tot)' : ''));
-    sim.events.push({ day: sim.day, tick: sim.tick, card: 'jagdbilanz', params: {},
-      at: { text: parts.length ? 'Im letzten Jahr erlegt: ' + parts.join(', ') : 'Im letzten Jahr nichts erlegt' } });
+    if (K.wolf || K.wild) {
+      var parts = [];
+      for (var k = 0; k < BT.SPECIES_ORDER.length; k++) {
+        var id = BT.SPECIES_ORDER[k], n = this.bagYear[id];
+        if (n) parts.push(n + ' ' + (n === 1 ? BT.SPECIES[id].name : BT.SPECIES[id].plural));
+      }
+      var at = attacks(['wolf', 'wild'], 'Jäger');
+      sim.events.push({ day: sim.day, tick: sim.tick, card: 'jagdbilanz', params: {},
+        at: { text: (parts.length ? 'Im letzten Jahr erlegt: ' + parts.join(', ') : 'Im letzten Jahr nichts erlegt') + (at ? '; ' + at : '') } });
+    }
+    if (K.sammel) {
+      var as = attacks(['sammel'], 'Sammler');
+      sim.events.push({ day: sim.day, tick: sim.tick, card: 'sammelbilanz', params: {},
+        at: { text: 'Im letzten Jahr gesammelt: ' + Math.round(this.gatheredYear / BT.HUMANS.gather.basket) + ' Körbe Früchte und Samen' + (as ? '; ' + as : '') } });
+    }
     this.bagYear = {};
-    a.year = 0; a.yearHunters = 0;
+    this.gatheredYear = 0;
+    A.year = {}; A.yearDead = {};
   };
 
   /** Karte ausfuehren (aus Simulation.step, zwischen zwei Ticks). */
@@ -1027,6 +1146,11 @@
       var dr = this.addDogs();
       dr.text = dr.dogs + ' Hütehunde im Dorf';
       return dr;
+    }
+    if (card === 'sammeln') {
+      var sr = this.addHunters('sammel');
+      sr.text = sr.hunters + ' Sammler im Dorf';
+      return sr;
     }
     if (card === 'woelfeJagen' || card === 'wildJagen') {
       var kind = card === 'woelfeJagen' ? 'wolf' : 'wild';

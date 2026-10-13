@@ -1,12 +1,12 @@
 /**
- * Zeichnet die Menschen: Schiffe, Haeuser, Siedler, Jaeger, Weiden mit Zaun,
+ * Zeichnet die Menschen: Schiffe, Haeuser, Siedler, Jaeger und Sammler, Weiden mit Zaun,
  * Schafe auf der Weide und Huetehunde (mit den Bildern der Arten schaf, hund).
  *
  * Bis es Bilder gibt, zeichnet das Programm einfache Platzhalter. Sobald eine
  * Grafik da ist, wird sie in FILES eingetragen (Pfad relativ zu index.html)
  * und statt des Platzhalters benutzt. Blickrichtung der Bilder: rechts.
  * Haeuser: haus_1, haus_2, haus_3 (Varianten), Siedler: siedler_gehend,
- * siedler_stehend, siedler_arbeitend, Jaeger: jaeger, wolfsjaeger.
+ * siedler_stehend, siedler_arbeitend, Jaeger: jaeger, wolfsjaeger, Sammler: sammler.
  */
 (function (global) {
   'use strict';
@@ -197,9 +197,11 @@
   /**
    * Jaeger: wie ein Siedler, mit Speer (Wolfsjaeger dunkel mit Fellmuetze,
    * Wildjaeger gruen). Wer Beute traegt, hat sie ueber der Schulter.
+   * Sammler: ohne Speer, mit Korb, der sich mit Fruechten fuellt.
    */
   function drawHunter(ctx, h, q, size) {
-    var img = image(h.kind === 'wolf' ? 'wolfsjaeger' : 'jaeger');
+    var img = image(h.kind === 'wolf' ? 'wolfsjaeger' : h.kind === 'sammel' ? 'sammler' : 'jaeger');
+    var gatherer = h.kind === 'sammel';
     var right = Math.cos(h.heading) >= 0;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
     ctx.beginPath(); ctx.ellipse(q.x, q.y + size * 0.42, size * 0.3, size * 0.11, 0, 0, Math.PI * 2); ctx.fill();
@@ -213,12 +215,14 @@
     } else {
       ctx.lineWidth = Math.max(0.5, size * 0.07);
       ctx.strokeStyle = '#2a1d14';
-      // Speer
+      // Speer (Jaeger)
       var sx = right ? size * 0.3 : -size * 0.3;
-      ctx.beginPath(); ctx.moveTo(q.x + sx, q.y + size * 0.45); ctx.lineTo(q.x + sx * 1.15, q.y - size * 0.6); ctx.stroke();
-      ctx.fillStyle = '#c8c8c8';
-      ctx.beginPath(); ctx.moveTo(q.x + sx * 1.15 - size * 0.06, q.y - size * 0.55); ctx.lineTo(q.x + sx * 1.17, q.y - size * 0.78); ctx.lineTo(q.x + sx * 1.15 + size * 0.06, q.y - size * 0.55); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = h.kind === 'wolf' ? '#4a4f45' : '#5f7a2e';
+      if (!gatherer) {
+        ctx.beginPath(); ctx.moveTo(q.x + sx, q.y + size * 0.45); ctx.lineTo(q.x + sx * 1.15, q.y - size * 0.6); ctx.stroke();
+        ctx.fillStyle = '#c8c8c8';
+        ctx.beginPath(); ctx.moveTo(q.x + sx * 1.15 - size * 0.06, q.y - size * 0.55); ctx.lineTo(q.x + sx * 1.17, q.y - size * 0.78); ctx.lineTo(q.x + sx * 1.15 + size * 0.06, q.y - size * 0.55); ctx.closePath(); ctx.fill();
+      }
+      ctx.fillStyle = h.kind === 'wolf' ? '#4a4f45' : gatherer ? '#b0643a' : '#5f7a2e';
       ctx.beginPath();
       ctx.moveTo(q.x - size * 0.22, q.y + size * 0.42);
       ctx.lineTo(q.x - size * 0.15, q.y - size * 0.08);
@@ -228,8 +232,22 @@
       ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#f0c8a0';
       ctx.beginPath(); ctx.arc(q.x, q.y - size * 0.24, size * 0.16, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = h.kind === 'wolf' ? '#8a7a66' : '#3f5520';
+      ctx.fillStyle = h.kind === 'wolf' ? '#8a7a66' : gatherer ? '#e8d6a0' : '#3f5520';
       ctx.beginPath(); ctx.arc(q.x, q.y - size * 0.32, size * 0.15, Math.PI, 0); ctx.fill();
+    }
+    if (gatherer) {
+      // Korb, mit Fruechten, je voller er ist
+      var bx = q.x + (right ? size * 0.3 : -size * 0.3), by = q.y + size * 0.12, bw = size * 0.26;
+      ctx.fillStyle = '#c99a52';
+      ctx.strokeStyle = '#5a3a1a';
+      ctx.lineWidth = Math.max(0.5, size * 0.05);
+      ctx.fillRect(bx - bw / 2, by, bw, size * 0.2);
+      ctx.strokeRect(bx - bw / 2, by, bw, size * 0.2);
+      var full = Math.min(1, (h.load || 0) / BT.HUMANS.gather.load);
+      ctx.fillStyle = '#c0392b';
+      for (var k = 0; k < Math.round(full * 4); k++) {
+        ctx.beginPath(); ctx.arc(bx - bw * 0.3 + k * bw * 0.2, by - size * 0.02, size * 0.06, 0, Math.PI * 2); ctx.fill();
+      }
     }
     if (h.carry) {
       ctx.fillStyle = BT.SPECIES[h.carry.id].color;

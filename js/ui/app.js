@@ -429,7 +429,13 @@
         [hunters(H, 'wild') + ' / ' + hunters(H, 'wolf'), 'Jäger / Wolfsjäger'],
         [bagOf(H, ['zwerghirsch', 'laufvogel', 'schaf']), 'Wild erlegt'],
         [bagOf(H, ['inselwolf', 'hund']), 'Wölfe und Hunde erlegt'],
-        [H.attacks.total + ' / ' + H.attacks.hunters, 'Angriffe auf Jäger / Jäger getötet']);
+        [H.attacks.total + ' / ' + H.attacks.hunters, 'Angriffe von Wölfen / Menschen getötet']);
+    }
+    if (H.huntersKept.sammel) {
+      stats.push(
+        [hunters(H, 'sammel'), 'Sammler'],
+        [Math.round(H.gathered / BT.HUMANS.gather.basket), 'Körbe Früchte gesammelt']);
+      if (!H.huntersKept.wolf && !H.huntersKept.wild) stats.push([H.attacks.total + ' / ' + H.attacks.hunters, 'Angriffe von Wölfen / Menschen getötet']);
     }
     $('peopleStats').innerHTML = !H.houses.length
       ? '<p class="ps-empty">' + (H.ships.length ? 'Ein Schiff ist unterwegs …' : 'Noch keine Menschen auf der Insel. Spiele die Karte „Landung“.') + '</p>'
@@ -706,6 +712,7 @@
       text = hp.kind === 'haus' ? 'Haus · gebaut ' + BT.Time.label(hp.obj.day)
         : hp.kind === 'schaf' ? 'Schaf auf der Weide (gehört den Siedlern)' + (sim.humans.escaped.schaf == null ? '' : ' · ein Teil der Herde ist ausgebüchst')
         : hp.kind === 'hund' ? 'Hütehund (gehört den Siedlern)'
+        : hp.kind === 'jaeger' && hp.obj.kind === 'sammel' ? 'Sammler · ' + ({ daheim: 'im Dorf', unterwegs: hp.obj.gathering ? 'sammelt Früchte und Samen' : 'sucht Früchte', heim: 'bringt ' + Math.round(hp.obj.load / BT.HUMANS.gather.basket * 10) / 10 + ' Körbe heim' })[hp.obj.state].replace('.', ',')
         : hp.kind === 'jaeger' ? (hp.obj.kind === 'wolf' ? 'Wolfsjäger' : 'Jäger') + ' · ' + ({ daheim: 'im Dorf', unterwegs: hp.obj.target ? 'auf der Jagd nach ' + hp.obj.target.spec.plural : 'auf der Jagd', heim: hp.obj.carry ? 'bringt Beute heim (' + BT.SPECIES[hp.obj.carry.id].name + ')' : 'geht heim' })[hp.obj.state]
         : hp.kind === 'schiff' ? 'Schiff · ' + ({ anfahrt: 'fährt zur Küste', liegt: 'liegt vor Anker', abfahrt: 'fährt zurück' })[hp.obj.phase]
         : 'Siedler · ' + (hp.obj.working ? 'arbeitet' : 'unterwegs');

@@ -122,7 +122,7 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 | 5 | **Hunde:** Hütehunde (Störung), verwilderte Hunde als Art, Staupe bei Wölfen (vorgezogen) | erledigt |
 | 6 | **Ratten:** Ratten als Feld, Gelegeraub, Ratten als Beute | |
 | 7 | **Jagd:** Wölfe jagen, Wild jagen, Wölfe gegen Jäger (vorgezogen vor die Ratten) | erledigt |
-| 8 | **Sammeln** | |
+| 8 | **Sammeln** (nach dem Prinzip der Jagd) | erledigt |
 | 9 | **Gegenmaßnahmen:** Katzen, Gift, Schutzgebiet (nach Absprache) | |
 
 ## 7. Entschieden
@@ -312,8 +312,8 @@ je Art in `data/arten.md` („Jagd“).
 
 - **Jäger** (`humans.hunters`): Jede Karte bringt 2 Jäger. Sie ziehen auf Jagdzüge (bis 12 Tage,
   nachts lagern sie draußen) bis 1000 vom Dorf (jede weitere Karte derselben Sorte 30 % weiter),
-  schleichen sich an und schießen aus 90. Heim gehen sie auf ihrer eigenen Spur (sonst blieben sie
-  an Seen hängen). Danach 2–4 Tage im Dorf.
+  schleichen sich an und schießen aus 90. Heim gehen sie geradewegs; bleiben sie dabei hängen (an Seen),
+  gehen sie auf ihrer eigenen Spur zurück. Danach 2–4 Tage im Dorf.
 - **Karte „Wild jagen“:** Die Jäger nehmen, was sie zuerst sehen (Hirsch, Laufvogel, wildes
   Schaf), und bringen ein Tier heim. Wie weit sie hinausgehen, wird je Jagdzug neu gewürfelt
   (0–500 vom Dorf): erst ab dort wählen sie Beute und wechseln auf das, was sie sehen. So jagen sie

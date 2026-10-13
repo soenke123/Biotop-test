@@ -100,13 +100,18 @@
     },
     jaegerTot: {
       id: 'jaegerTot', kind: 'folge', icon: '🐺',
-      name: 'Wölfe töten einen Jäger',
-      text: 'Hungrige Wölfe haben einen Jäger angegriffen und getötet. Im Frühling kommt ein neuer Jäger.'
+      name: 'Wölfe töten einen Menschen',
+      text: 'Hungrige Wölfe haben einen Jäger oder Sammler angegriffen und getötet. Im Frühling kommt ein neuer.'
+    },
+    sammelbilanz: {
+      id: 'sammelbilanz', kind: 'info', icon: '🫐',
+      name: 'Sammelbilanz',
+      text: 'Was die Sammler im letzten Jahr heimgebracht haben.'
     },
     sammeln: {
-      id: 'sammeln', kind: 'aktiv', icon: '🧺', soon: true, needs: 'landung', repeat: true,
+      id: 'sammeln', kind: 'aktiv', icon: '🫐', needs: 'landung', repeat: true,
       name: 'Sammeln',
-      text: 'Siedler sammeln Früchte und Samen rund ums Dorf.'
+      text: 'Zwei Sammler holen Früchte und Samen, mal nah am Dorf, mal weit draußen. Die fehlen dann den Laufvögeln. Hungrige Wölfe greifen auch Sammler an.'
     },
     ratten: {
       id: 'ratten', kind: 'aktiv', icon: '🐀', soon: true, needs: 'landung', repeat: true,
