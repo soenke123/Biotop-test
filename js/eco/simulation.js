@@ -149,8 +149,10 @@
   };
 
   Simulation.prototype.addCarcass = function (x, y, meat) {
-    if (meat < 0.05) return;
-    this.carcasses.push({ x: x, y: y, meat: meat, day: this.day });
+    if (meat < 0.05) return null;
+    var c = { x: x, y: y, meat: meat, day: this.day };
+    this.carcasses.push(c);
+    return c;
   };
 
   /** Beute unter den Gruppenmitgliedern aufteilen, die Hungrigsten zuerst. */
@@ -387,9 +389,10 @@
 
   /** Die Tiere folgen dem Anker ihrer Gruppe, jedes mit eigenem, langsam wanderndem Versatz. */
   Simulation.prototype.moveMembers = function (g) {
-    var spread = spreadOf(g.spec, g.members.length) * (g.state === 'fliehen' || g.state === 'jagen' ? 0.6 : 1);
+    var spread = spreadOf(g.spec, g.members.length) * (g.state === 'fliehen' || g.state === 'jagen' ? 0.6 : g.state === 'aas' ? 0.4 : 1);
     var spaced = !!g.spec.group.spacing;
-    var maxStep = Math.max(g.speedNow * 1.4, g.spec.speed * 0.6);
+    // Am Aas laufen die Nachzuegler zuegig zum Kadaver
+    var maxStep = Math.max(g.speedNow * 1.4, g.spec.speed * (g.state === 'aas' ? 1 : 0.6));
     var H = this.humans;
     for (var i = 0; i < g.members.length; i++) {
       var a = g.members[i];

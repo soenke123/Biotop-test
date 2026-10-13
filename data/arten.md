@@ -33,7 +33,9 @@ Möglichkeit für Platzhalter in `sprites.js`.
 Welche Haltung gezeigt wird (`js/render/agentRenderer.js`, `pose`):
 
 - **Fressen:** Die Tiere wechseln reihum zwischen Fressen und Stehen; ziehen sie schnell
-  weiter, gehen sie. Trinken und Aas zeigen ebenfalls das Fressbild.
+  weiter, gehen sie. Trinken zeigt ebenfalls das Fressbild.
+- **Aas:** Gefressen wird erst am Kadaver; wer noch hinläuft, geht. Satte Tiere liegen
+  daneben (der Adler steht).
 - **Fliehen, Jagen, Streifen, Wandern:** Gehen (Adler: Fliegen), Stehen nur ohne Bewegung.
 - **Ruhen:** Liegen bzw. Sitzen, ohne sich zu bewegen; der Adler steht beim Ruhen.
 - **Brüten:** Laufvögel am Nest wechseln zwischen Sitzen und Fressen. Brutvogel und Küken im
@@ -184,6 +186,12 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
 - **Bewacht seinen Riss:** Liegt ein Rudel näher als 80 an einem Aas, kommt kein Adler heran.
   Sonst lebten die Adler von den großen Hirschrissen (58 % ihrer Energie aus Aas, vorher 14 %),
   vermehrten sich und fraßen die Laufvögel leer.
+- **Bleibt am Aas:** Ein Rudel bleibt an seinem Riss oder an gefundenem Aas, bis es leer oder
+  verwest ist: hungrig frisst es (höchstens 0,6 Energie je Tick), satt liegt es daneben. Vorher
+  zog es satt weiter und kehrte hungrig zurück, ein ständiges Hin und Her. Ein größeres Rudel
+  (auch Hunde), das an dasselbe Aas will, vertreibt es; das Aas meidet es dann. Das ist vor allem
+  zum Beobachten da. Weil weniger Aas ungenutzt verwest, gibt es etwas mehr Wölfe (Mittel ab
+  Jahr 10: 53 statt 42; alle Arten überlebt 8 von 8 statt 7 von 8).
 - **Jagd:** erst anschleichen, dann sprinten. Der Erfolg steigt mit der Zahl der Jäger und
   sinkt mit der Deckung, der Herdengröße und der Verfassung der Beute (ausgehungerte Tiere
   entkommen schlechter). Bevorzugte Opfer sind Jungtiere, schwache und alte Tiere. Ein erlegter

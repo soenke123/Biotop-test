@@ -448,7 +448,8 @@
     // Am Horst wird die Beute heimgebracht und dort verteilt
     if (g.horst) { g.carry = (g.carry || 0) + meat; return true; }
     var rest = sim.feed(g, meat);
-    sim.addCarcass(vx, vy, rest * 0.8);     // Reste fuer Aasfresser
+    var left = sim.addCarcass(vx, vy, rest * 0.8);     // Reste fuer Aasfresser
+    if (left && !spec.flies) g.carcass = left;         // das Rudel bleibt am Riss (stayAtCarcass)
     g.ateTick = sim.tick;                   // nur fuers Bild: die Tiere fressen an der Beute
     return true;
   }
@@ -541,6 +542,7 @@
     var best = null, bestD = spec.vision * 0.7;
     for (var i = 0; i < sim.carcasses.length; i++) {
       var c = sim.carcasses[i];
+      if (c === g.shunned) continue;                                       // von dort vertrieben
       if (c.meat < 0.25 && BT.M.hypot(c.x - g.x, c.y - g.y) > 40) continue;   // lohnt den Weg nicht
       if (spec.flies && guarded(sim, c)) continue;
       var d = BT.M.hypot(c.x - g.x, c.y - g.y);
@@ -548,16 +550,61 @@
     }
     if (!best) return false;
     g.state = 'aas';
-    if (bestD < 20) {
-      var before = best.meat;
-      best.meat = sim.feed(g, Math.min(best.meat, 0.6));
-      best.meat += before - Math.min(before, 0.6);
-      g.speedNow = 0;
-      if (best.meat < 0.05) sim.carcasses.splice(sim.carcasses.indexOf(best), 1);
-      return true;
-    }
+    g.carcass = best;
+    if (bestD < 20) { eatAt(sim, g, best); return true; }
+    g.bite = 0;
     go(sim, spec, g, best.x, best.y, spec.speed * 1.3);
     g.speedNow = spec.speed * 1.3;
+    return true;
+  }
+
+  /**
+   * Am Aas fressen, hoechstens 0.6 je Tick. Der Anker rueckt auf den Kadaver,
+   * damit die Tiere darum herum stehen. g.bite: so viel wurde gerade gefressen
+   * (fuer die Darstellung: fressen oder satt daneben liegen).
+   */
+  function eatAt(sim, g, c) {
+    g.state = 'aas';
+    g.carcass = c;
+    g.x += (c.x - g.x) * 0.5; g.y += (c.y - g.y) * 0.5;
+    g.speedNow = 0;
+    var before = c.meat, bite = Math.min(before, 0.6);
+    c.meat = sim.feed(g, bite) + before - bite;
+    g.bite = before - c.meat;
+    if (c.meat < 0.05) sim.carcasses.splice(sim.carcasses.indexOf(c), 1);
+  }
+
+  /** Ein groesseres Rudel, das am Aas frisst oder darauf zuhaelt. */
+  function biggerPackAt(sim, g, c) {
+    for (var i = 0; i < sim.predatorGroups.length; i++) {
+      var o = sim.predatorGroups[i];
+      if (o === g || o.spec.flies || o.carcass !== c || o.state !== 'aas') continue;
+      if (o.members.length > g.members.length && BT.M.hypot(o.x - c.x, o.y - c.y) < GUARD) return o;
+    }
+    return null;
+  }
+
+  /**
+   * Landraeuber bleiben an ihrem Aas, bis es leer ist: hungrig fressen sie,
+   * satt liegen sie daneben. Ein groesseres Rudel vertreibt sie.
+   */
+  function stayAtCarcass(sim, g) {
+    var c = g.carcass;
+    if (!c || g.spec.flies) return false;
+    if (c.meat < 0.05 || sim.carcasses.indexOf(c) < 0 || BT.M.hypot(c.x - g.x, c.y - g.y) > 30) {
+      g.carcass = null;
+      return false;
+    }
+    var rival = biggerPackAt(sim, g, c);
+    if (rival) {
+      g.carcass = null; g.shunned = c; g.bite = 0;
+      g.state = 'streifen'; g.stateTicks = 20;
+      var dx = g.x - rival.x, dy = g.y - rival.y, d = Math.max(1, BT.M.hypot(dx, dy));
+      g.tx = g.x + dx / d * GUARD * 2; g.ty = g.y + dy / d * GUARD * 2;
+      if (BT.Move.blockedAt(sim.world, g.spec, g.tx, g.ty)) g.tx = null;
+      return false;
+    }
+    eatAt(sim, g, c);
     return true;
   }
 
@@ -647,6 +694,9 @@
     }
 
     if (avoidPeople(sim, g)) return;
+
+    // Am Aas bleiben, bis es leer ist
+    if (stayAtCarcass(sim, g)) return;
 
     // Aas in der Naehe? Leichter als jagen.
     if (energy < hungry && scavenge(sim, g)) return;

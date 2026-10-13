@@ -129,7 +129,8 @@
     var feeding = g.state === 'ruhen' && g.ateTick !== undefined && sim.tick - g.ateTick < EAT_TICKS;
     if (spec.flies) {
       if (g.horst && BT.Behavior.inHorst(g, a)) return 'rest';
-      if (g.state === 'aas' || feeding) return 'eat';
+      if (g.state === 'aas') return atCarcass(g, moved, turn, 'stand');
+      if (feeding) return 'eat';
       if (g.state === 'ruhen') return 'stand';
       return moved > 0.3 ? 'move' : 'stand';
     }
@@ -141,7 +142,7 @@
         if (turn === 0 && moved < 0.3) return g.state === 'brueten' ? 'rest' : 'stand';
         return 'eat';
       case 'aas':
-        return 'eat';
+        return atCarcass(g, moved, turn, 'rest');
       case 'trinken':
         return moved < 0.3 ? 'eat' : 'move';
       case 'ruhen':
@@ -149,6 +150,16 @@
       default:
         return moved > 0.3 ? 'move' : 'stand';
     }
+  }
+
+  /**
+   * Am Aas: Gefressen wird erst am Kadaver - wer noch hinlaeuft, laeuft. Wer
+   * satt ist, liegt (Voegel: steht) daneben und wartet.
+   */
+  function atCarcass(g, moved, turn, full) {
+    if (g.speedNow > 0 || moved > 0.5) return moved > 0.3 ? 'move' : 'stand';
+    if (!(g.bite > 0.01)) return full;
+    return turn === 0 ? 'stand' : 'eat';
   }
 
   /**
