@@ -44,7 +44,7 @@
       this.startCounts[id] = opts.start && opts.start[id] != null ? opts.start[id] : defaults[id];
     }
     this.humans = new BT.Humans(this);
-    this.events = [];               // gespielte Karten: { day, tick, card, params, at }
+    this.events = [];               // gespielte Karten: { day, tick, card, params, at, undo }
     this.cardPause = opts.cardPause != null ? opts.cardPause : BT.Time.years(BT.CARD_RULES.pauseYears);
     this.pending = [];              // gespielt, wird beim naechsten Tick ausgefuehrt
     this.stats = new BT.Stats(this);
@@ -228,12 +228,15 @@
 
   // ------------------------------------------------------------ Karten (Menschen)
 
-  /** Tag der zuletzt gespielten Karte (auch wartende), sonst null. Meldungen und Folgekarten zaehlen nicht. */
+  /**
+   * Tag der zuletzt gespielten Karte (auch wartende), sonst null. Meldungen,
+   * Folgekarten und zurueckgenommene Karten zaehlen nicht.
+   */
   Simulation.prototype.lastCardDay = function () {
-    if (this.pending.length) return this.day;
-    for (var i = this.events.length - 1; i >= 0; i--) {
+    for (var i = 0; i < this.pending.length; i++) if (!this.pending[i].undo) return this.day;
+    for (i = this.events.length - 1; i >= 0; i--) {
       var k = BT.CARDS[this.events[i].card].kind;
-      if (k === 'start' || k === 'aktiv') return this.events[i].day;
+      if (!this.events[i].undo && (k === 'start' || k === 'aktiv')) return this.events[i].day;
     }
     return null;
   };
@@ -244,12 +247,19 @@
     return last == null ? 0 : last + this.cardPause;
   };
 
-  /** Wie oft wurde diese Karte schon gespielt (einschliesslich wartender)? */
+  /** Wie oft wurde diese Karte schon gespielt (einschliesslich wartender, ohne Zuruecknahmen)? */
   Simulation.prototype.played = function (id) {
     var n = 0, i;
-    for (i = 0; i < this.events.length; i++) if (this.events[i].card === id) n++;
-    for (i = 0; i < this.pending.length; i++) if (this.pending[i].card === id) n++;
+    for (i = 0; i < this.events.length; i++) if (this.events[i].card === id && !this.events[i].undo) n++;
+    for (i = 0; i < this.pending.length; i++) if (this.pending[i].card === id && !this.pending[i].undo) n++;
     return n;
+  };
+
+  /** Wie oft wirkt die Karte gerade (gespielt minus zurueckgenommen, wartende mitgezaehlt)? */
+  Simulation.prototype.cardCount = function (id) {
+    var n = this.humans.count(id);
+    for (var i = 0; i < this.pending.length; i++) if (this.pending[i].card === id) n += this.pending[i].undo ? -1 : 1;
+    return Math.max(0, n);
   };
 
   /** Darf die Karte jetzt gespielt werden? Fehlertext oder null. */
@@ -257,16 +267,40 @@
     var c = BT.CARDS[id];
     if (!c) return 'Unbekannte Karte';
     if (c.soon) return 'Kommt bald';
-    if (c.needs && !this.played(c.needs)) return 'Erst „' + BT.CARDS[c.needs].name + '“ spielen';
-    if (c.needs === 'landung' && !this.humans.houses.length) return 'Das Schiff ist noch nicht angekommen';
+    if (c.needs === 'landung' && !this.humans.villages.length) {
+      return this.cardCount('landung') ? 'Das Schiff ist noch nicht angekommen' : 'Erst „' + BT.CARDS.landung.name + '“ spielen';
+    }
     if (!c.repeat && this.played(id)) return 'Schon gespielt';
-    if (c.kind === 'aktiv' && this.day < this.nextCardDay()) return 'Nächste Karte ' + BT.Time.label(this.nextCardDay()).replace(' · ', ', ');
+    if ((c.kind === 'aktiv' || c.kind === 'start') && this.day < this.nextCardDay()) return 'Nächste Karte ' + BT.Time.label(this.nextCardDay()).replace(' · ', ', ');
     return null;
+  };
+
+  /** Darf die Karte jetzt zurueckgenommen werden? Fehlertext oder null. Fuer die Pause zaehlt das nicht. */
+  Simulation.prototype.undoBlocked = function (id) {
+    var c = BT.CARDS[id];
+    if (!c || c.soon || (c.kind !== 'start' && c.kind !== 'aktiv')) return 'Lässt sich nicht zurücknehmen';
+    for (var i = 0; i < this.pending.length; i++) if (this.pending[i].card === id) return 'Moment, die Karte wird gerade ausgeführt';
+    if (!this.humans.villagesWith(id).length) {
+      return id === 'landung' && this.cardCount('landung') ? 'Das Schiff ist noch nicht angekommen' : 'Nichts zurückzunehmen';
+    }
+    return null;
+  };
+
+  /**
+   * Muss man fuer die Karte auf die Insel klicken? 'kueste' (Landung), 'dorf'
+   * (es gibt mehrere Doerfer, welches ist gemeint?) oder null.
+   */
+  Simulation.prototype.cardTarget = function (id, undo) {
+    var c = BT.CARDS[id];
+    if (undo) return this.humans.villagesWith(id).length > 1 ? 'dorf' : null;
+    if (c.target) return c.target;
+    return c.needs === 'landung' && this.humans.villages.length > 1 ? 'dorf' : null;
   };
 
   /**
    * Karte spielen. Ausgefuehrt wird beim naechsten Tick (oder bei params.tick),
    * damit der Verlauf nicht davon abhaengt, wann im Bild geklickt wurde.
+   * params.x/y: Ort (Kueste bei der Landung, sonst das Dorf, fuer das die Karte gilt).
    * Liefert null oder einen Fehlertext.
    */
   Simulation.prototype.play = function (id, params) {
@@ -278,11 +312,27 @@
     return null;
   };
 
+  /**
+   * Karte zuruecknehmen (die zuletzt gespielte dieser Sorte; params.x/y waehlt
+   * das Dorf). Die Folgen bleiben, siehe eco/humans.js remove. Wie play.
+   */
+  Simulation.prototype.unplay = function (id, params) {
+    var err = this.undoBlocked(id);
+    if (err) return err;
+    var p = params || {};
+    this.pending.push({ card: id, params: p, tick: p.tick != null ? p.tick : this.tick, undo: true });
+    return null;
+  };
+
   Simulation.prototype.applyPending = function () {
     for (var i = 0; i < this.pending.length; i++) {
       var ev = this.pending[i];
       if (ev.tick > this.tick) continue;
       this.pending.splice(i--, 1);
+      if (ev.undo) {
+        this.events.push({ day: this.day, tick: this.tick, card: ev.card, params: ev.params, undo: true, at: this.humans.remove(ev.card, ev.params) });
+        continue;
+      }
       var at = this.humans.apply(ev.card, ev.params);
       this.events.push({ day: this.day, tick: this.tick, card: ev.card, params: ev.params, at: at });
     }

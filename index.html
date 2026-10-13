@@ -89,7 +89,7 @@
             <button id="openBig" type="button" aria-expanded="false" aria-controls="bigView" title="Alle Diagramme groß untereinander">⤢ Groß</button>
           </div>
           <div id="charts"></div>
-          <p class="chart-note"><i class="mast"></i> Mastjahr (viele Früchte) <i class="winter"></i> harter Winter <i class="ev-card"></i> Karte gespielt <i class="ev-folge"></i> Folge, von selbst</p>
+          <p class="chart-note"><i class="mast"></i> Mastjahr (viele Früchte) <i class="winter"></i> harter Winter <i class="ev-card"></i> Karte gespielt <i class="ev-undo"></i> zurückgenommen <i class="ev-folge"></i> Folge, von selbst</p>
         </section>
 
         <section>
@@ -111,7 +111,7 @@
         </section>
 
         <section class="people">
-          <h2>Karten <small>antippen zum Spielen</small></h2>
+          <h2>Karten <small>+ spielen · − zurücknehmen · Karte antippen: Erklärung</small></h2>
           <div id="cards" class="cards"></div>
           <div class="card-rule">
             <span id="nextCard" class="next-card"></span>
@@ -135,11 +135,29 @@
     <div class="big-head">
       <h2>Verlauf</h2>
       <div id="bigTools"></div>
-      <p class="chart-note"><i class="mast"></i> Mastjahr (viele Früchte) <i class="winter"></i> harter Winter <i class="ev-card"></i> Karte gespielt <i class="ev-folge"></i> Folge, von selbst</p>
+      <p class="chart-note"><i class="mast"></i> Mastjahr (viele Früchte) <i class="winter"></i> harter Winter <i class="ev-card"></i> Karte gespielt <i class="ev-undo"></i> zurückgenommen <i class="ev-folge"></i> Folge, von selbst</p>
       <span class="spacer"></span>
       <button id="closeBig" type="button" title="Schließen (Esc)">✕ Schließen</button>
     </div>
     <div id="bigCharts" class="big-charts"></div>
+  </div>
+
+  <!-- Infofenster einer Karte: Bild, Erklaerung, was − bewirkt -->
+  <div id="cardInfo" class="card-info" role="dialog" aria-modal="true" aria-labelledby="ciTitle" hidden>
+    <div class="ci-box">
+      <button id="ciClose" class="ci-close" type="button" title="Schließen (Esc)">✕</button>
+      <canvas id="ciImage" class="ci-image" width="480" height="240"></canvas>
+      <h2 id="ciTitle"></h2>
+      <p id="ciText"></p>
+      <h3 id="ciUndoHead">Zurücknehmen (−)</h3>
+      <p id="ciUndo"></p>
+      <div class="ci-ctl">
+        <button id="ciMinus" type="button" title="Zurücknehmen">−</button>
+        <span id="ciCount" class="ci-count">0</span>
+        <button id="ciPlus" type="button" title="Spielen">+</button>
+        <span id="ciState" class="ci-state"></span>
+      </div>
+    </div>
   </div>
 
   <!-- Ladereihenfolge = Abhaengigkeitsaufloesung (kein Modulsystem, laeuft unter file://) -->
@@ -176,6 +194,7 @@
   <script src="js/render/agentRenderer.js"></script>
   <script src="js/render/humanRenderer.js"></script>
   <script src="js/ui/charts.js"></script>
+  <script src="js/ui/cardInfo.js"></script>
   <script src="js/ui/app.js"></script>
 </body>
 </html>

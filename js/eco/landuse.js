@@ -80,16 +80,39 @@
    * der gerodeten Zellen.
    */
   Landuse.prototype.clear = function (x, y, radius, shape) {
-    var self = this, cfg = BT.LANDUSE, day = this.sim.day, n = 0;
+    var self = this, cfg = BT.LANDUSE, n = 0;
     eachCell(this.world, x, y, radius, shape, function (i) {
       if (cfg.woody.indexOf(self.ground[i]) < 0) return;
-      self.ground[i] = B.SOIL;
-      // je Zelle eine eigene Wartezeit (fester Hash, kein Zufall noetig)
-      var h = Math.imul(i ^ (i >>> 7), 2654435761) >>> 0;
-      var wait = BT.Time.years(cfg.bareYears) + h % (BT.Time.years(cfg.bareSpread) + 1);
-      self.regrow.push({ i: i, day: day + wait });
+      self.soil(i);
       n++;
     });
+    if (n) this.update();
+    return n;
+  };
+
+  /** Zelle wird nackte Erde und waechst nach einigen Jahren wieder zu. */
+  Landuse.prototype.soil = function (i) {
+    var cfg = BT.LANDUSE;
+    this.ground[i] = B.SOIL;
+    // je Zelle eine eigene Wartezeit (fester Hash, kein Zufall noetig)
+    var h = Math.imul(i ^ (i >>> 7), 2654435761) >>> 0;
+    var wait = BT.Time.years(cfg.bareYears) + h % (BT.Time.years(cfg.bareSpread) + 1);
+    this.regrow.push({ i: i, day: this.sim.day + wait });
+  };
+
+  /**
+   * Aufgeben (Karte zurueckgenommen): Acker und Dorfplatz in `cells` werden
+   * zu Erde. Was einmal Wald war, wird spaeter Wiese, alles andere wieder,
+   * was es von Natur aus war (eco/landuse.js newDay).
+   */
+  Landuse.prototype.abandon = function (cells) {
+    var n = 0;
+    for (var k = 0; k < cells.length; k++) {
+      var b = this.ground[cells[k]];
+      if (b !== B.FIELD && b !== B.VILLAGE) continue;
+      this.soil(cells[k]);
+      n++;
+    }
     if (n) this.update();
     return n;
   };
@@ -106,13 +129,14 @@
     return out;
   };
 
-  /** Acker anlegen: geeignetes Land in der Flaeche wird Acker. Liefert die Zahl der Zellen. */
-  Landuse.prototype.plow = function (x, y, radius, shape) {
+  /** Acker anlegen: geeignetes Land in der Flaeche wird Acker. Liefert die Zahl der Zellen (die Zellen selbst in `out`). */
+  Landuse.prototype.plow = function (x, y, radius, shape, out) {
     var self = this, cfg = BT.LANDUSE, n = 0;
     eachCell(this.world, x, y, radius, shape, function (i) {
       var b = self.ground[i];
       if (b === B.FIELD || cfg.noField.indexOf(b) >= 0) return;
       self.ground[i] = B.FIELD;
+      if (out) out.push(i);
       n++;
     });
     if (n) {
@@ -141,14 +165,18 @@
     return n;
   };
 
-  /** Einmal am Tag: gerodete Erde, deren Zeit gekommen ist, wird Wiese. */
+  /**
+   * Einmal am Tag: Erde, deren Zeit gekommen ist, waechst zu: wo Wald war,
+   * zu Wiese (Wald kommt nicht zurueck), sonst zu dem, was dort von Natur aus
+   * war (ein aufgegebener Acker im Tussock wird wieder Tussock).
+   */
   Landuse.prototype.newDay = function () {
     if (!this.regrow.length) return;
-    var day = this.sim.day, g = this.ground, n = 0;
+    var day = this.sim.day, g = this.ground, nat = this.world.biome.data, woody = BT.LANDUSE.woody, n = 0;
     for (var k = this.regrow.length - 1; k >= 0; k--) {
       var r = this.regrow[k];
       if (r.day > day) continue;
-      if (g[r.i] === B.SOIL) { g[r.i] = B.MEADOW; n++; }
+      if (g[r.i] === B.SOIL) { g[r.i] = woody.indexOf(nat[r.i]) >= 0 ? B.MEADOW : nat[r.i]; n++; }
       this.regrow.splice(k, 1);
     }
     if (n) this.update();

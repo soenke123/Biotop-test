@@ -254,21 +254,46 @@ button:disabled { opacity: 0.5; cursor: default; }
 .next-card { opacity: 0.8; }
 .next-card.ready { color: #f2c94c; opacity: 1; }
 .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-.card { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 3px 5px; border-radius: 8px;
-  background: #1a4d69; border: 2px solid #2d6684; position: relative; min-height: 58px; font-size: 11px; line-height: 1.15; text-align: center; }
+.card { display: flex; flex-direction: column; border-radius: 8px; overflow: hidden;
+  background: #1a4d69; border: 2px solid #2d6684; font-size: 11px; line-height: 1.15; text-align: center; }
+.card .card-face { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 3px 4px; min-height: 46px;
+  background: none; border: 0; border-radius: 0; font-size: 11px; line-height: 1.15; }
+.card .card-face:hover { background: rgba(255, 255, 255, 0.06); }
 .card .card-icon { font-size: 20px; line-height: 1.1; }
-.card .card-count { position: absolute; top: 2px; right: 4px; font-size: 10px; font-weight: 700; color: #f2c94c; }
+.card-ctl { display: flex; align-items: stretch; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+.card-ctl button { flex: 1; padding: 2px 0; border: 0; border-radius: 0; background: rgba(0, 0, 0, 0.18); font-size: 15px; font-weight: 700; line-height: 1.2; }
+.card-ctl button:hover:not(:disabled) { background: rgba(82, 194, 192, 0.3); }
+.card-ctl button:disabled { opacity: 0.3; cursor: default; }
+.card .card-count { min-width: 2.2em; align-self: center; font-size: 12px; font-weight: 700; opacity: 0.55; }
+.card.active .card-count { color: #f2c94c; opacity: 1; }
 .card.start { border-color: #e08a3c; background: #5a3b22; }
-.card.start:not(:disabled) { animation: card-pulse 1.6s ease-in-out infinite; }
+.card.start.playable:not(.active) { animation: card-pulse 1.6s ease-in-out infinite; }
 .card.aiming { border-color: #f2c94c; background: #6b5320; animation: none; }
 .card.soon { opacity: 0.38; }
-.card:disabled { cursor: default; }
 @keyframes card-pulse { 50% { box-shadow: 0 0 0 3px rgba(224, 138, 60, 0.45); } }
 .chronicle { list-style: none; margin: 8px 0 0; padding: 0; font-size: 11.5px; max-height: 110px; overflow-y: auto; }
 .chronicle li { padding: 2px 0; border-top: 1px solid #1d4a63; display: flex; gap: 6px; }
 .chronicle li .when { opacity: 0.65; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .chronicle li small { display: block; opacity: 0.7; }
 .chronicle li.pending { opacity: 0.6; font-style: italic; }
+.chronicle li.undo { color: #a9cfee; }
+
+/* Infofenster einer Karte */
+.card-info { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(5, 20, 30, 0.6); }
+.card-info[hidden] { display: none; }
+.ci-box { position: relative; width: min(480px, 100%); max-height: 100%; overflow-y: auto; background: var(--bar-bg);
+  border: 2px solid #2d6684; border-radius: 12px; padding: 0 0 14px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
+.ci-image { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; border-radius: 10px 10px 0 0; background: #86b65a; }
+.ci-box h2 { margin: 10px 16px 4px; font-size: 18px; }
+.ci-box h3 { margin: 10px 16px 2px; font-size: 13px; opacity: 0.8; }
+.ci-box p { margin: 0 16px; font-size: 14px; line-height: 1.45; }
+.ci-close { position: absolute; top: 8px; right: 8px; padding: 2px 9px; background: rgba(16, 53, 75, 0.85); }
+.ci-ctl { display: flex; align-items: center; gap: 8px; margin: 14px 16px 0; flex-wrap: wrap; }
+.ci-ctl button { font-size: 18px; font-weight: 700; padding: 2px 14px; }
+.ci-ctl button:disabled { opacity: 0.35; cursor: default; }
+.ci-count { min-width: 2ch; text-align: center; font-size: 18px; font-weight: 700; color: #f2c94c; }
+.ci-state { font-size: 12px; opacity: 0.75; flex: 1 1 160px; }
 .aim-badge { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: rgba(90, 59, 34, 0.94);
   border: 2px solid #e08a3c; border-radius: 10px; padding: 8px 14px; font-size: 14px; pointer-events: none; max-width: 80%; text-align: center; }
 .aim-badge.error { border-color: #e66767; }
@@ -289,6 +314,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 .people-stats .ps b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
 .people-stats .ps span { font-size: 11px; opacity: 0.7; }
 .chart-note .ev-card { width: 3px; height: 11px; border-radius: 0; background: rgb(255, 170, 90); }
+.chart-note .ev-undo { width: 3px; height: 11px; border-radius: 0; background: repeating-linear-gradient(180deg, rgb(150, 195, 235) 0 6px, transparent 6px 8px); }
 .chart-note .ev-folge { width: 3px; height: 11px; border-radius: 0; background: repeating-linear-gradient(180deg, rgb(240, 110, 110) 0 3px, transparent 3px 5px); }
 .ps-empty { grid-column: 1 / -1; margin: 0; font-size: 12px; opacity: 0.8; }
 .tab-badge[hidden] { display: none; }

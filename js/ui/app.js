@@ -25,6 +25,8 @@
   var SEASON_ICON = ['🌸', '☀️', '🍂', '❄️'];
   var highlight = null;   // Art-ID, deren Tiere auf der Karte markiert sind
   var aiming = null;      // Karte, fuer die gerade ein Ziel auf der Karte gewaehlt wird
+  var aimUndo = false;    // ... um sie zurueckzunehmen (−)
+  var infoCard = null;    // Karte im Infofenster
   var aimBadge = $('aim');
   // Karte: Weidezustand (Standard), reine Landschaft oder eine Nahrungsschicht
   var mapMode = $('mapMode');
@@ -378,12 +380,16 @@
   }
 
   // ---------------------------------------------------------------- Karten (Menschen)
+  /** Je Karte: antippen fuer die Erklaerung, darunter − Anzahl +. */
   function buildCards() {
     $('cards').innerHTML = BT.CARD_ORDER.map(function (id) {
       var c = BT.CARDS[id];
-      return '<button type="button" class="card ' + c.kind + (c.soon ? ' soon' : '') + '" data-id="' + id + '">' +
-        '<span class="card-icon">' + c.icon + '</span><span class="card-name">' + c.name + '</span>' +
-        '<span class="card-count" id="cc-' + id + '"></span></button>';
+      return '<div class="card ' + c.kind + (c.soon ? ' soon' : '') + '" data-id="' + id + '">' +
+        '<button type="button" class="card-face" data-act="info" title="' + c.name + ': Was macht die Karte?">' +
+        '<span class="card-icon">' + c.icon + '</span><span class="card-name">' + c.name + '</span></button>' +
+        '<div class="card-ctl"><button type="button" class="card-minus" data-act="minus" aria-label="' + c.name + ' zurücknehmen">−</button>' +
+        '<span class="card-count" id="cc-' + id + '">0</span>' +
+        '<button type="button" class="card-plus" data-act="plus" aria-label="' + c.name + ' spielen">+</button></div></div>';
     }).join('');
   }
 
@@ -405,18 +411,25 @@
     if (!sim) return;
     BT.CARD_ORDER.forEach(function (id) {
       var c = BT.CARDS[id];
-      var btn = doc.querySelector('#cards .card[data-id="' + id + '"]');
-      var blocked = sim.cardBlocked(id);
-      btn.disabled = !!blocked;
-      btn.title = c.name + ': ' + c.text + (blocked ? ' (' + blocked + ')' : '');
-      btn.classList.toggle('aiming', aiming === id);
-      var n = sim.played(id);
-      $('cc-' + id).textContent = !n ? '' : c.repeat ? '×' + n : '✓';
+      var el = doc.querySelector('#cards .card[data-id="' + id + '"]');
+      var blocked = sim.cardBlocked(id), undoBlocked = sim.undoBlocked(id);
+      var plus = el.querySelector('.card-plus'), minus = el.querySelector('.card-minus');
+      plus.disabled = !!blocked;
+      plus.title = blocked ? 'Spielen: ' + blocked : 'Spielen: ' + c.name;
+      minus.disabled = !!undoBlocked;
+      minus.title = undoBlocked ? 'Zurücknehmen: ' + undoBlocked : 'Zurücknehmen: ' + c.name;
+      el.classList.toggle('aiming', aiming === id);
+      el.classList.toggle('playable', !blocked);
+      var n = sim.cardCount(id);
+      $('cc-' + id).textContent = n;
+      el.classList.toggle('active', n > 0);
     });
+    if (infoCard) updateInfo();
     var H = sim.humans, lu = sim.landuse;
     var last = H.harvests.length ? H.harvests[H.harvests.length - 1] : null;
     var stats = [
       [H.people.length, 'Siedler'],
+      [H.villages.length, H.villages.length === 1 ? 'Dorf' : 'Dörfer'],
       [H.houses.length, H.houses.length === 1 ? 'Haus' : 'Häuser'],
       [H.fields.length, H.fields.length === 1 ? 'Acker' : 'Äcker'],
       [sheepOnPastures(H), 'Schafe auf ' + (H.pastures.length === 1 ? 'der Weide' : H.pastures.length + ' Weiden')],
@@ -438,18 +451,19 @@
       if (!H.huntersKept.wolf && !H.huntersKept.wild) stats.push([H.attacks.total + ' / ' + H.attacks.hunters, 'Angriffe von Wölfen / Menschen getötet']);
     }
     $('peopleStats').innerHTML = !H.houses.length
-      ? '<p class="ps-empty">' + (H.ships.length ? 'Ein Schiff ist unterwegs …' : 'Noch keine Menschen auf der Insel. Spiele die Karte „Landung“.') + '</p>'
+      ? '<p class="ps-empty">' + (H.ships.length ? 'Ein Schiff ist unterwegs …' : sim.played('landung') ? 'Die Siedler haben die Insel verlassen.' : 'Noch keine Menschen auf der Insel. Spiele die Karte „Landung“.') + '</p>'
       : stats.map(function (st) { return '<div class="ps"><b>' + st[0] + '</b><span>' + st[1] + '</span></div>'; }).join('');
     // Wann darf die naechste Karte gespielt werden?
     var next = $('nextCard'), nd = sim.nextCardDay();
-    var ready = H.houses.length && sim.day >= nd;
-    next.textContent = !sim.played('landung') ? 'Zuerst: Landung'
-      : !H.houses.length ? 'Das Schiff ist unterwegs …'
+    var sailing = !H.villages.length && sim.cardCount('landung') > 0;
+    var ready = !sailing && sim.day >= nd;
+    next.textContent = sailing ? 'Das Schiff ist unterwegs …'
+      : !H.villages.length ? 'Zuerst: Landung'
       : ready ? 'Nächste Karte: jetzt' : 'Nächste Karte: ' + BT.Time.label(nd).replace(' · ', ', ');
     next.classList.toggle('ready', !!ready);
     // Am Reiter zeigen, dass wieder eine Karte gespielt werden darf
-    $('tabBadge').hidden = !(ready || !sim.played('landung')) || currentTab === 'menschen';
-    $('tabBadge').textContent = sim.played('landung') ? 'Karte bereit' : 'Landung';
+    $('tabBadge').hidden = !ready || currentTab === 'menschen';
+    $('tabBadge').textContent = H.villages.length ? 'Karte bereit' : 'Landung';
   }
 
   // ---------------------------------------------------------------- Reiter
@@ -470,46 +484,86 @@
 
   function updateChronicle() {
     if (!sim) return;
-    var items = sim.events.map(function (ev) {
+    function title(ev) {
       var c = BT.CARDS[ev.card];
-      return '<li><span class="when">' + BT.Time.label(ev.day).replace(' · ', ', ') + '</span><span>' + c.icon + ' ' + c.name +
+      return ev.undo ? '↩ ' + c.icon + ' ' + c.name + ' zurückgenommen' : c.icon + ' ' + c.name;
+    }
+    var items = sim.events.map(function (ev) {
+      return '<li' + (ev.undo ? ' class="undo"' : '') + '><span class="when">' + BT.Time.label(ev.day).replace(' · ', ', ') + '</span><span>' + title(ev) +
         (ev.at && ev.at.text ? '<small>' + ev.at.text + '</small>' : '') + '</span></li>';
     }).reverse();
     sim.pending.forEach(function (ev) {
-      items.unshift('<li class="pending"><span class="when">gleich</span><span>' + BT.CARDS[ev.card].icon + ' ' + BT.CARDS[ev.card].name + '</span></li>');
+      items.unshift('<li class="pending"><span class="when">gleich</span><span>' + title(ev) + '</span></li>');
     });
     $('chronicle').innerHTML = items.join('');
   }
 
-  /** Karte waehlen: mit Ziel auf der Karte erst zielen, sonst sofort spielen. */
-  function chooseCard(id) {
-    if (!sim || sim.cardBlocked(id)) return;
-    if (aiming === id) { setAim(null); return; }
-    if (BT.CARDS[id].target) setAim(id);
-    else playCard(id, {});
+  /**
+   * Karte spielen (+) oder zuruecknehmen (−): Muss man dafuer auf die Insel
+   * klicken (Kueste, oder welches Dorf), erst zielen, sonst sofort.
+   */
+  function chooseCard(id, undo) {
+    if (!sim || (undo ? sim.undoBlocked(id) : sim.cardBlocked(id))) return;
+    if (aiming === id && aimUndo === !!undo) { setAim(null); return; }
+    if (sim.cardTarget(id, undo)) setAim(id, null, undo);
+    else playCard(id, {}, undo);
   }
 
-  function setAim(id, error) {
+  function setAim(id, error, undo) {
     aiming = id;
+    aimUndo = !!(id && undo);
     canvas.classList.toggle('aiming', !!id);
     if (id) {
       var c = BT.CARDS[id];
-      aimBadge.innerHTML = c.icon + ' ' + (error || c.hint) + '<small>Esc oder Karte nochmal antippen: abbrechen</small>';
+      var hint = sim.cardTarget(id, undo) === 'dorf'
+        ? (undo ? 'Klicke auf das Dorf, in dem du „' + c.name + '“ zurücknimmst.' : 'Klicke auf das Dorf, für das die Karte gilt.')
+        : c.hint;
+      aimBadge.innerHTML = (aimUndo ? '− ' : '') + c.icon + ' ' + (error || hint) + '<small>Esc oder nochmal ' + (aimUndo ? '−' : '+') + ' antippen: abbrechen</small>';
       aimBadge.classList.toggle('error', !!error);
     }
     aimBadge.hidden = !id;
     updateCards();
   }
 
-  function playCard(id, params) {
-    var err = sim.play(id, params);
-    if (err) { setAim(id, err); return err; }
+  function playCard(id, params, undo) {
+    var err = undo ? sim.unplay(id, params) : sim.play(id, params);
+    if (err) { setAim(id, err, undo); return err; }
     setAim(null);
     // Das Schiff soll man fahren sehen: die Zeit laeuft los
-    if (!running && !skipping) setRunning(true);
+    if (!undo && !running && !skipping) setRunning(true);
     updateCards();
     updateChronicle();
     return null;
+  }
+
+  // ---------------------------------------------------------------- Infofenster einer Karte
+  function openInfo(id) {
+    infoCard = id;
+    var c = BT.CARDS[id];
+    $('ciTitle').textContent = c.icon + ' ' + c.name;
+    $('ciText').textContent = c.more || c.text;
+    $('ciUndo').textContent = c.undo || '';
+    $('ciUndoHead').hidden = !c.undo;
+    $('cardInfo').hidden = false;
+    BT.CardInfo.draw($('ciImage'), id);
+    updateInfo();
+    $('ciClose').focus();
+  }
+
+  function closeInfo() {
+    infoCard = null;
+    $('cardInfo').hidden = true;
+  }
+
+  function updateInfo() {
+    var id = infoCard, c = BT.CARDS[id];
+    var blocked = c.soon ? 'Kommt bald' : sim.cardBlocked(id), undoBlocked = c.soon ? 'Kommt bald' : sim.undoBlocked(id);
+    var n = sim.cardCount(id);
+    $('ciCount').textContent = n;
+    $('ciPlus').disabled = !!blocked;
+    $('ciMinus').disabled = !!undoBlocked;
+    $('ciState').textContent = c.soon ? 'Diese Karte kommt bald.'
+      : (n ? 'Gerade ' + n + '× im Spiel. ' : 'Noch nicht im Spiel. ') + (blocked ? 'Spielen: ' + blocked + '.' : '');
   }
 
   function buildPanel() {
@@ -657,7 +711,7 @@
       var pos = localPos(e);
       if (Math.abs(pos.x - clickStart.x) + Math.abs(pos.y - clickStart.y) < 5) {
         var w = camera.screenToWorld(pos.x, pos.y);
-        if (aiming) playCard(aiming, { x: w.x, y: w.y });
+        if (aiming) playCard(aiming, { x: w.x, y: w.y }, aimUndo);
         else {
           var a = BT.AgentRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale));
           if (a) setHighlight(a.spec.id);
@@ -709,7 +763,7 @@
     var text;
     var hp = !a && sim ? BT.HumanRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale)) : null;
     if (hp) {
-      text = hp.kind === 'haus' ? 'Haus · gebaut ' + BT.Time.label(hp.obj.day)
+      text = hp.kind === 'haus' ? 'Haus' + (sim.humans.villages.length > 1 ? ' · ' + sim.humans.villageName(hp.obj.village) : '') + ' · gebaut ' + BT.Time.label(hp.obj.day)
         : hp.kind === 'schaf' ? 'Schaf auf der Weide (gehört den Siedlern)' + (sim.humans.escaped.schaf == null ? '' : ' · ein Teil der Herde ist ausgebüchst')
         : hp.kind === 'hund' ? 'Hütehund (gehört den Siedlern)'
         : hp.kind === 'jaeger' && hp.obj.kind === 'sammel' ? 'Sammler · ' + ({ daheim: 'im Dorf', unterwegs: hp.obj.gathering ? 'sammelt Früchte und Samen' : 'sucht Früchte', heim: 'bringt ' + Math.round(hp.obj.load / BT.HUMANS.gather.basket * 10) / 10 + ' Körbe heim' })[hp.obj.state].replace('.', ',')
@@ -786,9 +840,16 @@
     updateCards();
   });
   $('cards').addEventListener('click', function (e) {
-    var card = e.target.closest('.card');
-    if (card && !card.disabled) chooseCard(card.dataset.id);
+    var btn = e.target.closest('button[data-act]'), card = e.target.closest('.card');
+    if (!btn || !card || btn.disabled) return;
+    var id = card.dataset.id, act = btn.dataset.act;
+    if (act === 'info') openInfo(id);
+    else chooseCard(id, act === 'minus');
   });
+  $('ciClose').addEventListener('click', closeInfo);
+  $('cardInfo').addEventListener('click', function (e) { if (e.target === $('cardInfo')) closeInfo(); });
+  $('ciPlus').addEventListener('click', function () { var id = infoCard; closeInfo(); chooseCard(id, false); });
+  $('ciMinus').addEventListener('click', function () { var id = infoCard; closeInfo(); chooseCard(id, true); });
   $('tiles').addEventListener('click', function (e) {
     var tile = e.target.closest('.tile');
     if (tile) setHighlight(tile.dataset.id);
@@ -830,7 +891,7 @@
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
     if (e.key === 'r' || e.key === 'R') { if (camera) { camera.reset(); interacted(); } }
     if (e.key === ' ') { e.preventDefault(); setRunning(!running); }
-    if (e.key === 'Escape') { if (bigOpen()) setBig(false); else if (aiming) setAim(null); else setHighlight(null); }
+    if (e.key === 'Escape') { if (infoCard) closeInfo(); else if (bigOpen()) setBig(false); else if (aiming) setAim(null); else setHighlight(null); }
   });
   global.addEventListener('resize', function () {
     resize();
@@ -864,6 +925,9 @@
     setRunning: setRunning,
     /** Karte spielen, z. B. play('landung', { x: 400, y: 800 }); liefert null oder einen Fehlertext */
     play: function (id, params) { return playCard(id, params || {}); },
+    /** Karte zuruecknehmen, z. B. unplay('acker'); mit { x, y } in dem Dorf, das dort am naechsten liegt */
+    unplay: function (id, params) { return playCard(id, params || {}, true); },
+    info: function (id) { if (id) openInfo(id); else closeInfo(); },
     tab: setTab
   };
 })(typeof window !== 'undefined' ? window : globalThis);

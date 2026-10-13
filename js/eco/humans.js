@@ -6,6 +6,11 @@
  * gibt es keine Menschen, und nichts hier veraendert den Ablauf: Die Menschen
  * haben ihren eigenen Zufallsgenerator, das Stoerungsfeld ist ueberall 0.
  *
+ * Doerfer (this.villages): Jede Landung gruendet ein Dorf. Haeuser, Aecker,
+ * Weiden, Huetehunde, Jaeger und Sammler gehoeren zu einem Dorf und rechnen von
+ * seiner Mitte aus. Jede Karte laesst sich zuruecknehmen (remove); was sie
+ * angerichtet hat, bleibt.
+ *
  * Stoerung: ein Wert 0..1 je Weidezelle. Um jedes Haus faellt sie von 1 auf 0
  * im Abstand HUMANS.disturb.radius ab. Wie stark eine Art sie meidet, steht
  * in spec.scheu (0..1); gemieden wird, wo Stoerung * scheu ueber
@@ -133,6 +138,8 @@
     this.world = sim.world;
     this.rng = new BT.Rng(sim.world.seed).fork('menschen');
     this.ships = [];
+    this.villageCount = 0;          // so viele Doerfer wurden gegruendet (fuer die Namen)
+    this.villages = [];             // Doerfer: { id, x, y (Mitte), houses, fields, pastures, expansions, dogsKept, huntersKept }
     this.houses = [];
     this.people = [];
     this.nextId = 1;
@@ -143,15 +150,14 @@
     this.harvests = [];             // je Ernte: { day, harvested, eaten }
     this.pastures = [];             // Weiden: { x, y, r, shape, sheep: [...], day }
     this.dogs = [];                 // Huetehunde: { x, y, ... }
-    this.dogsKept = 0;              // so viele Huetehunde halten die Siedler
     this.sheepDay = null;           // Tag der ersten Weide
     this.dogDay = null;             // Tag der ersten Huetehunde
-    this.dogEscapes = [];           // Tage, an denen Hunde verwildern (einer je Karte "Huetehunde")
+    this.dogEscapes = [];           // { day, village }: dann verwildern Hunde (einer je Karte "Huetehunde")
     this.escaped = {};              // { schaf: Tag, hund: Tag } des ersten Ausbruchs
     this.fence = null;              // Weidezaeune: 1 je Rasterzelle innerhalb einer Weide
     this.waterDist = null;          // Abstand zum Suesswasser um die Zaeune herum (Zellen), sonst null
     this.hunters = [];              // Jaeger: { kind: 'wolf'|'wild', state, target, carry, ... }
-    this.huntersKept = { wolf: 0, wild: 0, sammel: 0 };
+    this.huntersKept = { wolf: 0, wild: 0, sammel: 0 };   // Summe ueber alle Doerfer
     this.gathered = 0;              // Fruechte, die die Sammler heimgebracht haben (Einheiten)
     this.gatheredYear = 0;
     this.bag = {};                  // erlegt seit der Landung, je Art
@@ -281,7 +287,7 @@
       id: this.nextId++, x: sx, y: sy, px: sx, py: sy,
       from: { x: sx, y: sy }, anchor: anchor, coast: coast, dir: dir,
       heading: BT.M.atan2(anchor.y - sy, anchor.x - sx),
-      phase: 'anfahrt', t: 0, ticks: ticks
+      phase: 'anfahrt', t: 0, ticks: ticks, number: ++this.villageCount
     });
     return coast;
   };
@@ -299,13 +305,21 @@
       var i = w.query.index(px, py);
       if (w.fields.distSea[i] >= cfg.inland && w.query.biomeAt(px, py) !== BT.BIOME.BEACH) break;
     }
-    var house = this.addHouse(site.x, site.y);
+    var v = {
+      id: this.nextId++, x: site.x, y: site.y, day: this.sim.day, houses: [], fields: [], pastures: [],
+      expansions: [], dogsKept: 0, huntersKept: { wolf: 0, wild: 0, sammel: 0 }
+    };
+    v.number = ship.number;
+    this.villages.push(v);
+    var house = this.addHouse(v, site.x, site.y);
     for (var k = 0; k < cfg.settlers; k++) this.addSettler(house, c.x, c.y);
   };
 
-  Humans.prototype.addHouse = function (x, y) {
-    var h = { id: this.nextId++, x: x, y: y, kind: this.houses.length % 3, day: this.sim.day };
+  Humans.prototype.addHouse = function (v, x, y) {
+    var h = { id: this.nextId++, x: x, y: y, kind: this.houses.length % 3, day: this.sim.day, village: v };
     this.houses.push(h);
+    v.houses.push(h);
+    this.recenter(v);
     this.sim.landuse.build(x, y, BT.HUMANS.village.yard);
     this.updateDisturbance();
     return h;
@@ -320,10 +334,29 @@
     });
   };
 
-  Humans.prototype.center = function () {
-    var x = 0, y = 0, n = this.houses.length;
-    for (var i = 0; i < n; i++) { x += this.houses[i].x; y += this.houses[i].y; }
-    return { x: x / n, y: y / n };
+  /** Mitte des Dorfs (Mittel der Haeuser), nach jedem neuen oder verlassenen Haus. */
+  Humans.prototype.recenter = function (v) {
+    var x = 0, y = 0, n = v.houses.length;
+    if (!n) return;
+    for (var i = 0; i < n; i++) { x += v.houses[i].x; y += v.houses[i].y; }
+    v.x = x / n; v.y = y / n;
+  };
+
+  /**
+   * Fuer welches Dorf gilt eine Karte? params.x/y: das Dorf, dessen Mitte am
+   * naechsten liegt (angeklickt), sonst das zuletzt gegruendete. `list`: nur
+   * unter diesen Doerfern waehlen. null, wenn es keines gibt.
+   */
+  Humans.prototype.villageFor = function (params, list) {
+    list = list || this.villages;
+    if (!list.length) return null;
+    if (!params || params.x == null) return list[list.length - 1];
+    var best = null, bestD = Infinity;
+    for (var i = 0; i < list.length; i++) {
+      var d = (list[i].x - params.x) * (list[i].x - params.x) + (list[i].y - params.y) * (list[i].y - params.y);
+      if (d < bestD) { bestD = d; best = list[i]; }
+    }
+    return best;
   };
 
   /**
@@ -331,9 +364,9 @@
    * nah am Dorf am meisten Wald steht), am Rand der Rodung zum Dorf hin
    * entstehen neue Haeuser, neue Siedler ziehen ein.
    */
-  Humans.prototype.expand = function () {
+  Humans.prototype.expand = function (v) {
     var cfg = BT.HUMANS.village, lu = this.sim.landuse, w = this.world;
-    var c = this.center();
+    var c = { x: v.x, y: v.y };
     // Ort der Rodung: einige Kandidaten, der mit dem meisten Wald nah am Dorf gewinnt
     var best = null, bestScore = 0;
     for (var t = 0; t < 24; t++) {
@@ -350,14 +383,16 @@
     }
     // Neue Haeuser: zwischen Dorf und Rodung, mit Abstand zu den anderen
     var grow = best ? { x: c.x + (best.x - c.x) * 0.6, y: c.y + (best.y - c.y) * 0.6 } : c;
-    var built = 0;
+    var built = [];
     for (var k = 0; k < cfg.houses; k++) {
       var site = this.houseSite(grow, c);
       if (!site) continue;
-      var h = this.addHouse(site.x, site.y);
+      var h = this.addHouse(v, site.x, site.y);
       for (var s = 0; s < cfg.settlersPerHouse; s++) this.addSettler(h, c.x, c.y);
-      built++;
+      built.push(h);
     }
+    v.expansions.push({ houses: built, day: this.sim.day });
+    built = built.length;
     return { x: grow.x, y: grow.y, houses: built, cleared: cleared };
   };
 
@@ -432,9 +467,9 @@
    * meisten offenen Land (Wald zaehlt halb, er muss erst gerodet werden). Ein
    * Acker direkt neben einem bestehenden vergroessert diesen.
    */
-  Humans.prototype.addField = function () {
+  Humans.prototype.addField = function (v) {
     var cfg = BT.HUMANS.field, lu = this.sim.landuse, w = this.world;
-    var c = this.center(), R = cfg.radius;
+    var c = { x: v.x, y: v.y }, R = cfg.radius;
     var best = null, bestScore = 0;
     for (var t = 0; t < 30; t++) {
       var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(cfg.distMin, cfg.distMax);
@@ -448,9 +483,11 @@
     if (!best) return null;
     var before = lu.counts.gerodet;
     var shape = [this.rng.range(0.04, 0.1), this.rng.range(0, 6.28), this.rng.range(0.02, 0.06), this.rng.range(0, 6.28)];
-    var cells = lu.plow(best.x, best.y, R, shape);
-    var field = { x: best.x, y: best.y, cells: cells, day: this.sim.day, angle: this.rng.range(0, Math.PI) };
+    var list = [];
+    var cells = lu.plow(best.x, best.y, R, shape, list);
+    var field = { x: best.x, y: best.y, cells: cells, list: list, day: this.sim.day, angle: this.rng.range(0, Math.PI), village: v };
     this.fields.push(field);
+    v.fields.push(field);
     return { x: best.x, y: best.y, cells: cells, cleared: lu.counts.gerodet - before };
   };
 
@@ -530,8 +567,9 @@
         var a = this.rng.range(0, Math.PI * 2), r = cfg.roam * Math.sqrt(this.rng.next());
         var tx = h.x + BT.M.cos(a) * r, ty = h.y + BT.M.sin(a) * r;
         // ein Teil arbeitet auf dem Acker (Fruehling bis zur Ernte)
-        if (this.fields.length && this.sim.calendar.season < 2 && this.rng.chance(BT.HUMANS.field.workers)) {
-          var fl = this.fields[this.rng.int(0, this.fields.length - 1)];
+        var fs = h.village.fields;
+        if (fs.length && this.sim.calendar.season < 2 && this.rng.chance(BT.HUMANS.field.workers)) {
+          var fl = fs[this.rng.int(0, fs.length - 1)];
           r = BT.HUMANS.field.radius * 0.8 * Math.sqrt(this.rng.next());
           tx = fl.x + BT.M.cos(a) * r; ty = fl.y + BT.M.sin(a) * r;
         }
@@ -567,9 +605,9 @@
    * Schafweide: Von einigen Orten nahe am Dorf gewinnt der mit dem meisten
    * Grasland. Die Weide wird eingezaeunt, das Land bleibt, wie es ist.
    */
-  Humans.prototype.addPasture = function () {
+  Humans.prototype.addPasture = function (v) {
     var cfg = BT.HUMANS.pasture, w = this.world, g = this.sim.landuse.ground;
-    var c = this.center(), R = cfg.radius, self = this;
+    var c = { x: v.x, y: v.y }, R = cfg.radius;
     var best = null, bestScore = 0;
     for (var t = 0; t < 30; t++) {
       var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(cfg.distMin, cfg.distMax);
@@ -590,12 +628,13 @@
     }
     if (!best) return null;
     var p = {
-      id: this.nextId++, x: best.x, y: best.y, r: R, day: this.sim.day, sheep: [],
+      id: this.nextId++, x: best.x, y: best.y, r: R, day: this.sim.day, sheep: [], village: v,
       shape: [this.rng.range(0.04, 0.1), this.rng.range(0, 6.28), this.rng.range(0.02, 0.05), this.rng.range(0, 6.28)]
     };
     for (var k = 0; k < cfg.sheep; k++) this.addSheep(p, k >= cfg.sheep - 2);
     p.nextEscape = this.sim.day + BT.Time.years(cfg.escapeYears + this.rng.range(-cfg.escapeJitter, cfg.escapeJitter));
     this.pastures.push(p);
+    v.pastures.push(p);
     this.buildFence(p);
     this.buildWaterDist();
     if (this.sheepDay === null) this.sheepDay = this.sim.day;
@@ -673,15 +712,20 @@
       for (var i = 0; i < p.sheep.length; i++) p.sheep[i].young = false;
       while (p.sheep.length < BT.HUMANS.pasture.sheep) this.addSheep(p, true);
     }
-    if (this.dogs.length < this.dogsKept) {
-      var c = this.center();
-      while (this.dogs.length < this.dogsKept) this.addDog(c);
-      this.updateDisturbance();
+    var dogsNew = false, v, n;
+    for (k = 0; k < this.villages.length; k++) {
+      v = this.villages[k];
+      n = this.dogsOf(v).length;
+      for (; n < v.dogsKept; n++) { this.addDog(v); dogsNew = true; }
     }
+    if (dogsNew) this.updateDisturbance();
     // Fuer jeden toten Jaeger kommt ein neuer
     for (var kind in this.huntersKept) {
-      var have = this.hunters.filter(function (h) { return h.kind === kind; }).length;
-      for (; have < this.huntersKept[kind]; have++) this.addHunter(kind);
+      for (k = 0; k < this.villages.length; k++) {
+        v = this.villages[k];
+        var have = this.hunters.filter(function (h) { return h.kind === kind && h.village === v; }).length;
+        for (; have < v.huntersKept[kind]; have++) this.addHunter(kind, v);
+      }
     }
   };
 
@@ -709,19 +753,24 @@
   };
 
   /** Huetehunde: einige Hunde, die zwischen Dorf und Weiden umherlaufen. */
-  Humans.prototype.addDogs = function () {
-    var cfg = BT.HUMANS.dogs, c = this.center();
-    for (var k = 0; k < cfg.perCard; k++) this.addDog(c);
-    this.dogsKept += cfg.perCard;
+  Humans.prototype.addDogs = function (v) {
+    var cfg = BT.HUMANS.dogs;
+    for (var k = 0; k < cfg.perCard; k++) this.addDog(v);
+    v.dogsKept += cfg.perCard;
     if (this.dogDay === null) this.dogDay = this.sim.day;
-    this.dogEscapes.push(this.sim.day + BT.Time.years(cfg.escapeYears));
+    this.dogEscapes.push({ day: this.sim.day + BT.Time.years(cfg.escapeYears), village: v });
     this.updateDisturbance();
-    return { x: c.x, y: c.y, dogs: this.dogs.length };
+    return { x: v.x, y: v.y, dogs: this.dogsOf(v).length };
   };
 
-  Humans.prototype.addDog = function (c) {
-    var x = c.x + this.rng.range(-20, 20), y = c.y + this.rng.range(-20, 20);
-    this.dogs.push({ id: this.nextId++, sex: this.rng.chance(0.5) ? 'm' : 'f', x: x, y: y, px: x, py: y, tx: x, ty: y, heading: 0, wait: 0 });
+  Humans.prototype.addDog = function (v) {
+    var x = v.x + this.rng.range(-20, 20), y = v.y + this.rng.range(-20, 20);
+    this.dogs.push({ id: this.nextId++, sex: this.rng.chance(0.5) ? 'm' : 'f', x: x, y: y, px: x, py: y, tx: x, ty: y, heading: 0, wait: 0, village: v });
+  };
+
+  /** Huetehunde eines Dorfs. */
+  Humans.prototype.dogsOf = function (v) {
+    return this.dogs.filter(function (d) { return d.village === v; });
   };
 
   Humans.prototype.moveDogs = function () {
@@ -732,11 +781,11 @@
       if (d.wait > 0) d.wait--;
       else if (Math.abs(d.tx - d.x) + Math.abs(d.ty - d.y) < 4) {
         // Mal zu einer Weide, mal zu einem Haus, nachts ins Dorf
-        var q;
-        if (!this.night && this.pastures.length && this.rng.chance(0.6)) {
-          q = this.pointInPasture(this.pastures[this.rng.int(0, this.pastures.length - 1)], 1.15);
+        var q, v = d.village;
+        if (!this.night && v.pastures.length && this.rng.chance(0.6)) {
+          q = this.pointInPasture(v.pastures[this.rng.int(0, v.pastures.length - 1)], 1.15);
         } else {
-          var h = this.houses[this.rng.int(0, this.houses.length - 1)];
+          var h = v.houses[this.rng.int(0, v.houses.length - 1)];
           q = { x: h.x + this.rng.range(-30, 30), y: h.y + this.rng.range(-30, 30) };
         }
         if (!BT.Move.blockedAt(w, null, q.x, q.y)) { d.tx = q.x; d.ty = q.y; }
@@ -758,28 +807,34 @@
       var p = this.pastures[k];
       if (p.nextEscape == null || day < p.nextEscape || p.sheep.length < 2) continue;
       n = Math.min(this.rng.intIn(P.escape), p.sheep.length);
-      c = this.center();
+      c = p.village;
       // ueber den Zaun auf der dem Dorf abgewandten Seite
       var a = BT.M.atan2(p.y - c.y, p.x - c.x) + this.rng.range(-0.8, 0.8);
       var gate = { x: p.x + BT.M.cos(a) * (this.pastureRadius(p, a) + 15), y: p.y + BT.M.sin(a) * (this.pastureRadius(p, a) + 15) };
-      at = this.release(BT.SPECIES.schaf, gate, n, P.runaway, null);
+      at = this.release(BT.SPECIES.schaf, gate, n, P.runaway, null, c);
       p.sheep.splice(0, n);
       p.nextEscape = null;          // jede Weide nur einmal
       if (this.escaped.schaf == null) this.escaped.schaf = day;
       this.sim.events.push({ day: day, tick: this.sim.tick, card: 'schafeAus', params: {},
         at: { x: at.x, y: at.y, text: n + ' Schafe sind ausgebüchst' } });
     }
-    if (this.dogEscapes.length && day >= this.dogEscapes[0] && this.dogs.length) {
-      this.dogEscapes.shift();
-      c = this.center();
+    // die erste faellige Karte "Huetehunde", deren Dorf gerade Hunde hat
+    var de = null, dogs = null;
+    for (k = 0; k < this.dogEscapes.length && day >= this.dogEscapes[k].day; k++) {
+      dogs = this.dogsOf(this.dogEscapes[k].village);
+      if (dogs.length) { de = this.dogEscapes[k]; this.dogEscapes.splice(k, 1); break; }
+    }
+    if (de) {
+      c = de.village;
       var first = this.escaped.hund == null;
-      n = Math.min(this.rng.intIn(D.escape), this.dogs.length);
+      n = Math.min(this.rng.intIn(D.escape), dogs.length);
       var pack = this.sim.nearestGroupOf(BT.SPECIES.hund, c, D.join, function (o) {
         return o.members.length < o.spec.group.max;
       });
-      var start = { x: this.dogs[0].x, y: this.dogs[0].y };
-      at = this.release(BT.SPECIES.hund, start, n, D.runaway, pack);
-      this.dogs.splice(0, n);
+      var start = { x: dogs[0].x, y: dogs[0].y };
+      at = this.release(BT.SPECIES.hund, start, n, D.runaway, pack, c);
+      var gone = dogs.slice(0, n);
+      this.dogs = this.dogs.filter(function (o) { return gone.indexOf(o) < 0; });
       if (first) this.escaped.hund = day;
       this.updateDisturbance();
       this.sim.events.push({ day: day, tick: this.sim.tick, card: 'hundeWild', params: {},
@@ -792,9 +847,9 @@
    * erwachsen, satt und ohne Durst: sie kommen ja aus der Obhut der Menschen).
    * Sie laufen erst dist[0]..dist[1] vom Dorf weg bzw. zur Gruppe `join`.
    */
-  Humans.prototype.release = function (spec, from, n, dist, join) {
+  Humans.prototype.release = function (spec, from, n, dist, join, v) {
     var sim = this.sim, pt = { x: from.x, y: from.y };
-    if (BT.Move.blockedAt(this.world, spec, pt.x, pt.y)) pt = this.center();
+    if (BT.Move.blockedAt(this.world, spec, pt.x, pt.y)) pt = { x: v.x, y: v.y };
     var g = sim.makeGroup(spec, pt.x, pt.y);
     if (spec.role === 'predator') g.state = 'wandern';
     for (var k = 0; k < n; k++) {
@@ -804,7 +859,7 @@
       sim.addToGroup(g, an);
       an.x = pt.x + an.ox; an.y = pt.y + an.oy; an.px = an.x; an.py = an.y;
     }
-    var to = join ? null : BT.Behavior.farPoint(sim, spec, this.center(), dist[0], dist[1]);
+    var to = join ? null : BT.Behavior.farPoint(sim, spec, { x: v.x, y: v.y }, dist[0], dist[1]);
     if (join || to) {
       g.runaway = { x: to ? to.x : join.x, y: to ? to.y : join.y, join: join, state: 'ausgebuechst', ticks: sim.ticksPerDay * 8 };
       g.state = 'ausgebuechst';
@@ -826,27 +881,27 @@
    * Wolf, Wildjaeger sterben oefter selbst (HUMANS.hunt.outcome). Tote Jaeger
    * werden im naechsten Fruehling ersetzt.
    */
-  Humans.prototype.addHunters = function (kind) {
+  Humans.prototype.addHunters = function (kind, v) {
     var n = (kind === 'sammel' ? BT.HUMANS.gather : BT.HUMANS.hunt).perCard;
-    for (var k = 0; k < n; k++) this.addHunter(kind);
+    for (var k = 0; k < n; k++) this.addHunter(kind, v);
+    v.huntersKept[kind] += n;
     this.huntersKept[kind] += n;
-    var c = this.center();
-    return { x: c.x, y: c.y, hunters: this.hunters.filter(function (h) { return h.kind === kind; }).length };
+    return { x: v.x, y: v.y, hunters: this.hunters.filter(function (h) { return h.kind === kind && h.village === v; }).length };
   };
 
-  Humans.prototype.addHunter = function (kind) {
-    var house = this.houses[this.rng.int(0, this.houses.length - 1)];
+  Humans.prototype.addHunter = function (kind, v) {
+    var house = v.houses[this.rng.int(0, v.houses.length - 1)];
     var x = house.x + this.rng.range(-15, 15), y = house.y + this.rng.range(-15, 15);
     this.hunters.push({
-      id: this.nextId++, kind: kind, house: house, x: x, y: y, px: x, py: y, heading: 0,
+      id: this.nextId++, kind: kind, house: house, village: v, x: x, y: y, px: x, py: y, heading: 0,
       state: 'daheim', rest: this.rng.int(0, 2), target: null, carry: null, trip: 0, reload: 0, load: 0
     });
   };
 
   /** Beutegruppe fuer einen Jaeger: nah beim Jaeger, hoechstens range vom Dorf, nach Gewicht. */
   Humans.prototype.huntTarget = function (h) {
-    var cfg = BT.HUMANS.hunt, prey = cfg[h.kind].prey, c = this.center(), sim = this.sim;
-    var range = cfg.range * (1 + cfg.rangePlus * (this.huntersKept[h.kind] / cfg.perCard - 1));
+    var cfg = BT.HUMANS.hunt, prey = cfg[h.kind].prey, c = h.village, sim = this.sim;
+    var range = cfg.range * (1 + cfg.rangePlus * (c.huntersKept[h.kind] / cfg.perCard - 1));
     var list = h.kind === 'wolf' ? sim.predatorGroups : sim.herbivoreGroups;
     var best = null, bestScore = 0;
     for (var i = 0; i < list.length; i++) {
@@ -902,7 +957,7 @@
           var g = h.target;
           if (!g || !g.members.length) g = h.target = this.huntTarget(h);
           // Was zuerst in Sicht kommt, wird gejagt (Hirsch oder Laufvogel)
-          var c = this.center();
+          var c = h.village;
           var seen = g && BT.M.hypot(h.x - c.x, h.y - c.y) >= h.out && this.preyInSight(h, g);
           if (seen) g = h.target = seen;
           if (!g) { h.state = 'heim'; }
@@ -948,7 +1003,7 @@
    * an, und die haben keine Waffen.
    */
   Humans.prototype.fruitTarget = function (h, near) {
-    var G = BT.HUMANS.gather, f = this.sim.fields, w = this.world, c = this.center();
+    var G = BT.HUMANS.gather, f = this.sim.fields, w = this.world, c = h.village;
     var best = null, bestV = G.min;
     for (var t = 0; t < 24; t++) {
       var a = this.rng.range(0, Math.PI * 2), r, px, py;
@@ -980,7 +1035,7 @@
 
   /** Ein Tick eines Sammlers unterwegs: hingehen, sammeln, mit vollem Korb heim. */
   Humans.prototype.gatherStep = function (h) {
-    var G = BT.HUMANS.gather, f = this.sim.fields, w = this.world, c = this.center();
+    var G = BT.HUMANS.gather, f = this.sim.fields, w = this.world, c = h.village;
     h.trip++;
     if (h.trip > G.tripDays * (this.sim.ticksPerDay - 2) || h.load >= G.load) { h.state = 'heim'; h.target = null; h.gathering = false; return; }
     var i = f.index(h.x, h.y);
@@ -1124,46 +1179,195 @@
     A.year = {}; A.yearDead = {};
   };
 
+  // ------------------------------------------------------------ Karten
+
+  /** Karten, die Menschen bringen (je Karte so viele), und welche Art Jaeger. */
+  var HUNTER_CARD = { woelfeJagen: 'wolf', wildJagen: 'wild', sammeln: 'sammel' };
+
+  /**
+   * Wie oft wirkt die Karte gerade (gespielt minus zurueckgenommen, und nur,
+   * was es noch gibt)? Mit v nur in diesem Dorf.
+   */
+  Humans.prototype.count = function (card, v) {
+    if (card === 'landung') {
+      if (v) return 1;
+      var n = this.villages.length;
+      for (var i = 0; i < this.ships.length; i++) if (this.ships[i].phase === 'anfahrt') n++;
+      return n;
+    }
+    if (!v) {
+      var sum = 0;
+      for (var k = 0; k < this.villages.length; k++) sum += this.count(card, this.villages[k]);
+      return sum;
+    }
+    if (card === 'dorf') return v.expansions.length;
+    if (card === 'acker') return v.fields.length;
+    if (card === 'schafe') return v.pastures.length;
+    if (card === 'hunde') return Math.round(v.dogsKept / BT.HUMANS.dogs.perCard);
+    var kind = HUNTER_CARD[card];
+    if (kind) return Math.round(v.huntersKept[kind] / (kind === 'sammel' ? BT.HUMANS.gather : BT.HUMANS.hunt).perCard);
+    return 0;
+  };
+
+  /** Doerfer, in denen die Karte wirkt (dort kann man sie zuruecknehmen). */
+  Humans.prototype.villagesWith = function (card) {
+    var self = this;
+    return this.villages.filter(function (v) { return self.count(card, v) > 0; });
+  };
+
   /** Karte ausfuehren (aus Simulation.step, zwischen zwei Ticks). */
   Humans.prototype.apply = function (card, params) {
     if (card === 'landung') {
       var c = this.land(params);
-      return { x: c.x, y: c.y };
+      return { x: c.x, y: c.y, text: this.villageCount > 1 ? 'Dorf ' + this.villageCount : undefined };
     }
+    var v = this.villageFor(params);
+    if (!v) return { text: 'kein Dorf auf der Insel' };
+    var named = this.villages.length > 1 ? ' (' + this.villageName(v) + ')' : '';
+    var r = null;
     if (card === 'acker') {
-      var fr = this.addField();
-      if (!fr) return { text: 'kein Platz für einen Acker' };
-      fr.text = fr.cells + ' Zellen Acker' + (fr.cleared ? ', davon ' + fr.cleared + ' Wald gerodet' : '');
-      return fr;
-    }
-    if (card === 'schafe') {
-      var pr = this.addPasture();
-      if (!pr) return { text: 'kein Platz für eine Weide' };
-      pr.text = pr.sheep + ' Schafe auf der Weide';
-      return pr;
-    }
-    if (card === 'hunde') {
-      var dr = this.addDogs();
-      dr.text = dr.dogs + ' Hütehunde im Dorf';
-      return dr;
-    }
-    if (card === 'sammeln') {
-      var sr = this.addHunters('sammel');
-      sr.text = sr.hunters + ' Sammler im Dorf';
-      return sr;
-    }
-    if (card === 'woelfeJagen' || card === 'wildJagen') {
-      var kind = card === 'woelfeJagen' ? 'wolf' : 'wild';
-      var hr = this.addHunters(kind);
-      hr.text = hr.hunters + (kind === 'wolf' ? ' Wolfsjäger' : ' Jäger') + ' im Dorf';
-      return hr;
-    }
-    if (card === 'dorf') {
-      var r = this.expand();
+      r = this.addField(v);
+      if (r) r.text = r.cells + ' Zellen Acker' + (r.cleared ? ', davon ' + r.cleared + ' Wald gerodet' : '');
+      else r = { text: 'kein Platz für einen Acker' };
+    } else if (card === 'schafe') {
+      r = this.addPasture(v);
+      if (r) r.text = r.sheep + ' Schafe auf der Weide';
+      else r = { text: 'kein Platz für eine Weide' };
+    } else if (card === 'hunde') {
+      r = this.addDogs(v);
+      r.text = r.dogs + ' Hütehunde im Dorf';
+    } else if (HUNTER_CARD[card]) {
+      var kind = HUNTER_CARD[card];
+      r = this.addHunters(kind, v);
+      r.text = r.hunters + ' ' + HUNTER_PLURAL[kind] + ' im Dorf';
+    } else if (card === 'dorf') {
+      r = this.expand(v);
       r.text = r.houses + (r.houses === 1 ? ' Haus' : ' Häuser') + (r.cleared ? ', ' + r.cleared + ' Zellen Wald gerodet' : ', kein Wald in der Nähe');
-      return r;
     }
-    return null;
+    if (r) r.text += named;
+    return r;
+  };
+
+  var HUNTER_PLURAL = { wolf: 'Wolfsjäger', wild: 'Jäger', sammel: 'Sammler' };
+
+  /** Name eines Dorfs fuer die Chronik: Dorf 1, Dorf 2, ... in der Reihenfolge der Landung. */
+  Humans.prototype.villageName = function (v) {
+    return 'Dorf ' + v.number;
+  };
+
+  /**
+   * Karte zuruecknehmen (die zuletzt gespielte dieser Sorte im Dorf). Was sie
+   * angerichtet hat, bleibt: gerodeter Wald bleibt gerodet, ausgebuechste
+   * Schafe und verwilderte Hunde bleiben wild. Verlassene Aecker und
+   * Dorfplaetze werden zu Erde und wachsen langsam wieder zu.
+   */
+  Humans.prototype.remove = function (card, params) {
+    var v = this.villageFor(params, this.villagesWith(card));
+    if (!v) return { text: 'nichts mehr zurückzunehmen' };
+    var named = this.villages.length > 1 ? ' (' + this.villageName(v) + ')' : '';
+    var text;
+    if (card === 'landung') {
+      var n = v.houses.length;
+      this.removeVillage(v);
+      text = 'Die Siedler verlassen ' + (named ? this.villageName(v) : 'das Dorf') + ' (' + n + (n === 1 ? ' Haus' : ' Häuser') + ')';
+      named = '';
+    } else if (card === 'dorf') {
+      var e = v.expansions.pop();
+      for (var k = 0; k < e.houses.length; k++) this.removeHouse(e.houses[k]);
+      text = e.houses.length + (e.houses.length === 1 ? ' Haus' : ' Häuser') + ' verlassen, die Rodung bleibt';
+    } else if (card === 'acker') {
+      this.removeField(v.fields[v.fields.length - 1]);
+      text = 'Acker aufgegeben, dort wächst langsam wieder etwas';
+    } else if (card === 'schafe') {
+      var p = v.pastures[v.pastures.length - 1];
+      this.removePasture(p);
+      text = 'Weide aufgegeben, ' + p.sheep.length + ' Schafe weggebracht';
+    } else if (card === 'hunde') {
+      var gone = this.removeDogs(v, BT.HUMANS.dogs.perCard);
+      text = gone + (gone === 1 ? ' Hütehund' : ' Hütehunde') + ' weniger';
+    } else {
+      var kind = HUNTER_CARD[card];
+      var m = this.removeHunters(kind, v, (kind === 'sammel' ? BT.HUMANS.gather : BT.HUMANS.hunt).perCard);
+      text = m + ' ' + HUNTER_PLURAL[kind] + ' weniger';
+    }
+    this.updateDisturbance();
+    return { x: v.x, y: v.y, text: text + named };
+  };
+
+  /** Ein Haus wird verlassen: seine Siedler gehen, der Dorfplatz wird zu Erde (ausser bei Nachbarhaeusern). */
+  Humans.prototype.removeHouse = function (h) {
+    var v = h.village;
+    this.houses.splice(this.houses.indexOf(h), 1);
+    v.houses.splice(v.houses.indexOf(h), 1);
+    this.people = this.people.filter(function (p) { return p.house !== h; });
+    for (var i = 0; i < this.hunters.length; i++) {
+      if (this.hunters[i].house === h && v.houses.length) this.hunters[i].house = v.houses[0];
+    }
+    var w = this.world, Y = BT.HUMANS.village.yard, houses = this.houses, cells = [];
+    BT.Landuse.eachCell(w, h.x, h.y, Y, null, function (i) {
+      var gx = i % w.cols, gy = (i - gx) / w.cols, x = (gx + 0.5) * w.cellSize, y = (gy + 0.5) * w.cellSize;
+      for (var k = 0; k < houses.length; k++) {
+        var dx = x - houses[k].x, dy = y - houses[k].y;
+        if (dx * dx + dy * dy <= Y * Y) return;      // gehoert auch zu einem anderen Haus
+      }
+      cells.push(i);
+    });
+    this.sim.landuse.abandon(cells);
+    this.recenter(v);
+  };
+
+  Humans.prototype.removeField = function (f) {
+    var v = f.village;
+    this.fields.splice(this.fields.indexOf(f), 1);
+    v.fields.splice(v.fields.indexOf(f), 1);
+    this.sim.landuse.abandon(f.list);
+  };
+
+  /** Weide aufgeben: Die Schafe darauf nehmen die Siedler mit, der Zaun kommt weg. */
+  Humans.prototype.removePasture = function (p) {
+    var v = p.village;
+    this.pastures.splice(this.pastures.indexOf(p), 1);
+    v.pastures.splice(v.pastures.indexOf(p), 1);
+    this.fence = null;
+    this.waterDist = null;
+    for (var k = 0; k < this.pastures.length; k++) this.buildFence(this.pastures[k]);
+    if (this.pastures.length) this.buildWaterDist();
+  };
+
+  /** n Huetehunde weniger (die zuletzt gekommenen); die Hunde dieser Karte verwildern dann auch nicht mehr. */
+  Humans.prototype.removeDogs = function (v, n) {
+    v.dogsKept = Math.max(0, v.dogsKept - n);
+    var mine = this.dogsOf(v), gone = mine.slice(Math.max(0, mine.length - n));
+    this.dogs = this.dogs.filter(function (d) { return gone.indexOf(d) < 0; });
+    for (var i = this.dogEscapes.length - 1; i >= 0; i--) {
+      if (this.dogEscapes[i].village === v) { this.dogEscapes.splice(i, 1); break; }
+    }
+    return gone.length;
+  };
+
+  Humans.prototype.removeHunters = function (kind, v, n) {
+    var kept = Math.min(n, v.huntersKept[kind]);
+    v.huntersKept[kind] -= kept;
+    this.huntersKept[kind] -= kept;
+    var gone = 0;
+    for (var i = this.hunters.length - 1; i >= 0 && gone < n; i--) {
+      var h = this.hunters[i];
+      if (h.kind !== kind || h.village !== v) continue;
+      this.hunters.splice(i, 1);
+      gone++;
+    }
+    return gone;
+  };
+
+  /** Die Siedler verlassen das Dorf: alles, was zu ihm gehoert, wird aufgegeben. */
+  Humans.prototype.removeVillage = function (v) {
+    while (v.fields.length) this.removeField(v.fields[v.fields.length - 1]);
+    while (v.pastures.length) this.removePasture(v.pastures[v.pastures.length - 1]);
+    this.removeDogs(v, v.dogsKept + this.dogsOf(v).length);
+    this.dogEscapes = this.dogEscapes.filter(function (e) { return e.village !== v; });
+    for (var kind in this.huntersKept) this.removeHunters(kind, v, Infinity);
+    while (v.houses.length) this.removeHouse(v.houses[v.houses.length - 1]);
+    this.villages.splice(this.villages.indexOf(v), 1);
   };
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }

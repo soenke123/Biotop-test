@@ -57,10 +57,11 @@ js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefsch
 js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung und
             Pflanzenzustand je Weidezelle, Überweidung), landuse (Nutzung: Erde, Dorf, Wiese, Acker
             über der Natur; sim.biomeAt), movement, cards (Kartentabelle, Pause zwischen Karten),
-            humans (Schiffe, Häuser, Siedler, Äcker und Ernte, Weiden, Jäger, Störungsfeld), behavior (Gruppen-Entscheidungen),
+            humans (Schiffe, Dörfer, Häuser, Siedler, Äcker und Ernte, Weiden, Jäger, Störungsfeld,
+            Karten zurücknehmen), behavior (Gruppen-Entscheidungen),
             stats, simulation (Tick/Tag, sim.play für Karten)
-js/ui/      app.js (Karte, Zeitregler, Reiter Tierbestand/Menschen, Kartenleiste und Chronik, Bildpuffer,
-            Großansicht der Diagramme),
+js/ui/      app.js (Karte, Zeitregler, Reiter Tierbestand/Menschen, Kartenleiste mit + und −, Infofenster
+            der Karten, Chronik, Bildpuffer, Großansicht der Diagramme), cardInfo.js (Bild im Infofenster),
             charts.js (LineChart; ChartView: gemeinsamer Zeitraum und Fadenkreuz)
 data/       arten.md (fachliche Wahrheit für species.js)
 assets/     Tierbilder (Platzhalter aus Wild Clusters)

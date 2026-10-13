@@ -40,7 +40,7 @@ Gruppen, die verschiedene Karten spielen, lassen sich direkt vergleichen.
 
 | Karte | Was passiert | Folgen im Modell |
 |---|---|---|
-| **Landung** | Klick an die Küste: Ein Schiff fährt hin, das erste Haus entsteht, 5 Siedler | Störungsfeld um das Dorf; Hirsche und Wölfe meiden es, Laufvögel kaum (inselzahm). Das Gras ums Dorf erholt sich sichtbar, weil dort niemand mehr weidet |
+| **Landung** | Klick an die Küste: Ein Schiff fährt hin, das erste Haus entsteht, 5 Siedler. Jede weitere Landung gründet ein neues Dorf | Störungsfeld um das Dorf; Hirsche und Wölfe meiden es, Laufvögel kaum (inselzahm). Das Gras ums Dorf erholt sich sichtbar, weil dort niemand mehr weidet |
 
 ### Aktive Karten
 
@@ -136,6 +136,8 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
    Unterricht erklären). Das Dorf wächst nur durch die Karte „Dorf vergrößern“.
 4. **Rodung:** Gerodeter Wald wird zu nackter Erde. Erst nach einigen Jahren wächst dort wieder
    etwas, und zwar Wiese, kein Wald.
+5. **Mehrere Dörfer und Zurücknehmen:** Die Landung lässt sich mehrfach spielen (je ein Dorf).
+   Jede Karte hat + und −; mit − wird sie zurückgenommen, die Folgen bleiben (siehe 8.).
 
 ## 7a. Noch offen
 
@@ -376,6 +378,35 @@ Jägern in `humans.hunters`, `kind: 'sammel'`).
 
   Die Laufvögel gehen um etwa 10 % zurück. Die Sammler werden oft angegriffen, weil sie lange an
   einer Stelle bleiben.
+
+### Mehrere Dörfer, Zurücknehmen, Infofenster
+
+- **Dörfer** (`humans.villages`): Jede Landung gründet ein Dorf (Dorf 1, 2, … in der Reihenfolge der
+  Landung). Häuser, Äcker, Weiden, Hütehunde, Jäger und Sammler gehören zu einem Dorf und rechnen
+  von seiner Mitte aus (Rodung, Ackerplatz, Jagdgebiet, Ausreißer). Gibt es mehrere Dörfer, klickt
+  man nach + auf das Dorf, das die Karte bekommen soll (`sim.cardTarget`; `params.x/y` → nächstes
+  Dorf, ohne Ort das zuletzt gegründete). Auch die Landung unterliegt jetzt der Pause.
+- **Zurücknehmen** (`sim.unplay(karte, ort)`, Ereignis mit `undo: true`): nimmt die zuletzt
+  gespielte Karte dieser Sorte im Dorf zurück. Wirkt sie in mehreren Dörfern, klickt man das Dorf an.
+  Zurücknehmen ist nicht an die Pause gebunden und startet keine.
+
+  | Karte | − bewirkt | bleibt |
+  |---|---|---|
+  | Landung | Das Dorf wird verlassen, mit allem, was dazugehört | Rodungen; wilde Schafe und Hunde |
+  | Dorf vergrößern | Die Häuser dieser Karte werden verlassen, ihre Siedler gehen | die Rodung |
+  | Acker | Der Acker wird aufgegeben | – |
+  | Schafweide | Weide und Zaun weg, die Schafe darauf nehmen die Siedler mit | ausgebüchste Schafe |
+  | Hütehunde | 3 Hunde weniger, der Ausbruch dieser Karte entfällt | verwilderte Hunde, Staupe |
+  | Jagd, Sammeln | 2 Jäger bzw. Sammler weniger | was sie erlegt oder gesammelt haben |
+
+  Verlassene Dorfplätze und Äcker werden zu **Erde** und wachsen nach 3–5 Jahren zu: wo Wald war,
+  zu Wiese, sonst wieder zu dem, was dort von Natur aus war (`Landuse.abandon`).
+- **Anzeige:** Die Karten in der Leiste haben − Zahl +; die Zahl sagt, wie oft die Karte gerade
+  wirkt. Karte antippen öffnet das **Infofenster** mit Bild, Erklärung (`more`) und was − bewirkt
+  (`undo`, beides in `BT.CARDS`). Das Bild ist eine gezeichnete Szene (`js/ui/cardInfo.js`), bis es
+  Kartenbilder gibt (`assets/karte_<id>.png`, dann in `BT.CardInfo.FILES` eintragen). Zurückgenommene
+  Karten stehen in der Chronik mit ↩ und als lang gestrichelte blaue Marke im Diagramm.
+- **Mit einem Dorf läuft alles exakt wie vorher** (gleiche Prüfsummen mit allen Karten).
 
 ### Oberfläche: Reiter und Marken
 

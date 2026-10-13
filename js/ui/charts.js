@@ -297,10 +297,11 @@
       var ek = events[e].day - d0;
       if (ek < 0 || ek > n - 1) continue;
       var ex = Math.round(x(ek)) + 0.5;
-      // Gespielte Karte: durchgezogen orange; Folge (tritt von selbst ein): gestrichelt rot
-      var folge = info && info.kind === 'folge';
-      ctx.strokeStyle = folge ? 'rgba(240, 110, 110, 0.85)' : 'rgba(255, 170, 90, 0.9)'; ctx.lineWidth = 1.5;
-      ctx.setLineDash(folge ? [3, 3] : []);
+      // Gespielte Karte: durchgezogen orange; zurueckgenommen: lang gestrichelt blau;
+      // Folge (tritt von selbst ein): gestrichelt rot
+      var folge = info && info.kind === 'folge', undo = events[e].undo;
+      ctx.strokeStyle = folge ? 'rgba(240, 110, 110, 0.85)' : undo ? 'rgba(150, 195, 235, 0.9)' : 'rgba(255, 170, 90, 0.9)'; ctx.lineWidth = 1.5;
+      ctx.setLineDash(folge ? [3, 3] : undo ? [6, 2] : []);
       ctx.beginPath(); ctx.moveTo(ex, Tp); ctx.lineTo(ex, Tp + ph); ctx.stroke();
       ctx.setLineDash([]);
       var card = BT.CARDS && BT.CARDS[events[e].card];
