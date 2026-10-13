@@ -51,7 +51,7 @@
       growth: 0.13, seed: 0.05,
       season: [1.5, 1.0, 0.7, 0.3],
       damage: { below: 0.25, loss: 0.05, recover: 0.006, rest: 60, dead: 0.02 },
-      capacity: cap({ TUSSOCK: 20, SCRUB: 8, SWAMP: 9, BEACH: 1.66, FERN: 1.66, MOSS: 1.1, THERMAL: 1.66, ROCK: 1.1, MEADOW: 8.8 })
+      capacity: cap({ TUSSOCK: 13, SCRUB: 5.5, SWAMP: 6, BEACH: 1.66, FERN: 1.66, MOSS: 1.1, THERMAL: 1.66, ROCK: 1.1, MEADOW: 8.8 })
     },
     laub: {
       name: 'Triebe und Laub',
@@ -143,7 +143,7 @@
       color: '#c9874a',
       group: { kind: 'herd', min: 2, max: 16, spread: 26, start: [5, 10] },
       start: 300,                     // Tiere zu Beginn
-      scarce: 1.2,                    // Beutewechsel: als Beute halb so gefragt bei diesem Anteil des Startbestands
+      scarce: 0.6,                    // Beutewechsel: als Beute halb so gefragt bei diesem Anteil des Startbestands
       // Nahrung: Energie je verzehrter Einheit
       diet: { gras: 0.11, laub: 0.09, korn: 0.14 },   // Getreide: nahrhaft und lecker
       bite: 0.38,                     // Einheiten je Fressschritt und Tier
@@ -160,9 +160,9 @@
       maturity: Y(1), maxAge: Y(8),
       // food: weniger Kaelber, je weiter die Weiden ringsum abgefressen sind
       breed: { kind: 'each-female', season: 0, day: 4, chance: 0.85, litter: [1, 1], minEnergy: 0.4, cost: 0.15,
-        food: { key: 'gras', r: 3, low: 0.45, high: 0.8 } },
+        food: { key: 'gras', r: 3, low: 0.3, high: 0.65 } },
       newbornEnergy: 0.6,
-      meat: 3.5                       // Energie, die ein erlegtes Tier liefert
+      meat: 3                       // Energie, die ein erlegtes Tier liefert
     },
 
     laufvogel: {
@@ -209,7 +209,7 @@
       diet: { frucht: 0.06, insekten: 0.06 },
       dietSeason: [0.3, 0.3, 0.5, 1], // so viel davon je Jahreszeit: vor allem eine Notration im Winter
       bite: 0.15,
-      costPerDay: 0.042,
+      costPerDay: 0.052,
       winterCost: 0.015,
       thirstDays: 0,                  // kein Durst (siehe Zwerghirsch)
       speed: 6, chaseSpeed: 19,

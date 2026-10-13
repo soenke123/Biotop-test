@@ -50,9 +50,9 @@ Welche Haltung gezeigt wird (`js/render/agentRenderer.js`, `pose`):
 
 Eine Weidezelle fasst 4 × 4 Rasterzellen zusammen (24 × 24 Einheiten).
 
-**Kapazität** je Weidezelle (Gras: Tussock 20, Sumpf 9, Buschland 8; Laub: Farnwald 7,04,
-Buschland 6,16, Moosnebelwald 5,28). Das Gras wurde zweimal erhöht (zuerst verdoppelt, dann von 11
-auf 20), damit die Insel 300–500 Hirsche trägt (siehe „Abstimmung“, Viele Hirsche und viele Wölfe).
+**Kapazität** je Weidezelle (Gras: Tussock 13, Sumpf 6, Buschland 5,5; Laub: Farnwald 7,04,
+Buschland 6,16, Moosnebelwald 5,28). Das Gras wurde zuerst verdoppelt (auf 11), dann auf 13 erhöht,
+damit die große Insel 300–500 Hirsche trägt (siehe „Abstimmung“).
 Dazu gibt es mehr Grasland: Tussock wächst bis zu einer Feuchte von 0,50 (vorher 0,40), Farnwald
 erst ab 0,66 (vorher 0,56). Tussock bedeckt so etwa 40 % des Landes (vorher 32 %), Farnwald 20 %
 (vorher 25 %), Buschland bleibt bei 13 %.
@@ -129,11 +129,12 @@ einschalten. Ohne Durst ziehen die Tiere nicht mehr gezielt zum Wasser.
   genug Energie hat (≥ 40 %) und ein erwachsenes Männchen in der Herde ist. Erwachsen mit 1 Jahr,
   Höchstalter etwa 8 Jahre.
 - **Weniger Kälber bei knapper Weide** (`breed.food`): Die Chance sinkt mit dem Füllstand des Grases
-  im Umkreis von 3 Weidezellen (72 Einheiten), gemessen an dem, was die Weiden heute tragen. Ab 80 %
-  gilt die volle Chance, bei 45 % gibt es keine Kälber. So bremst sich der Bestand, bevor er die
+  im Umkreis von 3 Weidezellen (72 Einheiten), gemessen an dem, was die Weiden heute tragen. Ab 65 %
+  gilt die volle Chance, bei 30 % gibt es keine Kälber. So bremst sich der Bestand, bevor er die
   Weiden zerstört. Ohne diese Bremse blieben die Hirsche satt, bis das Gras plötzlich weg war: Sie
   wuchsen auch mit 100 Wölfen von 400 auf 1250 und brachen dann nach Kahlfraß auf 140 ein.
-- **Startbestand:** 300 (vorher 160). Ein Riss liefert 3,5 Energie (vorher 1,5, Kalb die Hälfte).
+- **Startbestand:** 300 auf der mittleren Insel (vorher 160). Ein Riss liefert 3 Energie (vorher
+  1,5, Kalb die Hälfte). Beutewechsel (`scarce`) schon bei 60 % des Startbestands (vorher 120 %).
 - **Verhalten:** grast, zieht weiter, wenn die Weide unter 35 % ihrer vollen Menge abgefressen ist
   (knapp über der Schwelle der Überweidung, mindestens aber bei 0,4 Energie), flieht vor
   jagenden Räubern (kurzer Sprint, dann Trab). Mehr Tiere in der Herde bemerken Gefahr früher.
@@ -186,9 +187,9 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
 - **Jagd:** erst anschleichen, dann sprinten. Der Erfolg steigt mit der Zahl der Jäger und
   sinkt mit der Deckung, der Herdengröße und der Verfassung der Beute (ausgehungerte Tiere
   entkommen schlechter). Bevorzugte Opfer sind Jungtiere, schwache und alte Tiere. Ein erlegter
-  Hirsch liefert 3,5 Energie (ein Laufvogel 0,6). Nach einem Riss ruht das Rudel nur, wenn es satt
+  Hirsch liefert 3 Energie (ein Laufvogel 0,6). Nach einem Riss ruht das Rudel nur, wenn es satt
   ist, sonst jagt es weiter. Gejagt wird unter 70 % Energie. Erfolg je Angriff und Jäger 0,32,
-  Verbrauch 0,042 Energie am Tag.
+  Verbrauch 0,052 Energie am Tag (vorher 0,042).
 - **Fortpflanzung:** nur das älteste Paar des Rudels, 2–4 Welpen im Frühling, und nur wenn das
   Rudel gut genährt ist (≥ 50 %), ein eigenes Revier hat und noch nicht voll ist (höchstens 6).
 - **Mit Welpen mehr jagen** wurde ausprobiert (Jagd schon unter 85 % bzw. 76 % Energie, solange
@@ -387,8 +388,8 @@ stirbt in der Simulation fast immer eine Art aus.
 1. **Reviere:** Räuber ohne Revier dürfen nicht in fremden Revieren jagen und bekommen keinen
    Nachwuchs, volle Rudel auch nicht. Das begrenzt die Zahl der Räuber auf die Zahl der Reviere.
 2. **Beutewechsel (Holling Typ III):** Wird eine Beuteart selten, wird sie seltener gewählt und
-   seltener verfolgt. Die Räuber hungern dann, bevor die Beute verschwindet (Bezug: beide Pflanzenfresser
-   120 % des Startbestands, `scarce` in der Artentabelle). Die vergebliche Suche nach seltener Beute kostet
+   seltener verfolgt. Die Räuber hungern dann, bevor die Beute verschwindet (Bezug: Laufvogel
+   120 % des Startbestands, Zwerghirsch 60 %; `scarce` in der Artentabelle). Die vergebliche Suche nach seltener Beute kostet
    einen Tag – sonst würde ein hungriger Räuber es einfach gleich wieder versuchen.
 3. **Rückzugsräume:** Im Wald werden Beutetiere schlechter entdeckt und erwischt.
 4. **Aas:** Verhungerte Tiere und Reste von Rissen ernähren die Räuber in schlechten Zeiten.
@@ -429,7 +430,40 @@ Adler, Laufvögel und Insekten zusammen.
 
 ## Abstimmung (Stand)
 
-**Viele Hirsche und viele Wölfe** (Ziel: 300–500 Hirsche, rund 100 Wölfe auf der mittleren Insel).
+**Große Insel, sichtbare Zyklen** (Ziel: 300–500 Hirsche und rund 100 Wölfe auf der **großen**
+Insel; Wolf und Hirsch sollen gegeneinander schwingen wie Adler und Laufvogel). Vorher (Stand
+unten) waren es auf der großen Insel 808 Hirsche und 203 Wölfe. Die Wölfe schwankten kaum
+(Schwankung 0,11, Adler 0,34), weil sie fast immer an der Zahl der Reviere anstießen. Geändert:
+
+- Gras 13 statt 20: weniger Hirsche, weniger Wölfe. Dann begrenzt die Beute die Wölfe, nicht das Revier.
+- Beutewechsel bei Hirschen schon bei 60 % des Startbestands (vorher 120 %). Seit dem Startbestand von 300 lag
+  die Schwelle sonst bei 640 Hirschen (große Insel): Die Wölfe hielten die Hirsche schon bei
+  hohen Beständen für knapp und dämpften jede Schwingung. Das war der wichtigste Schritt für die Zyklen.
+- Weniger Kälber erst ab 65 % statt 80 % Füllstand (keine Kälber bei 30 %), damit die
+  Hirsche eher von den Wölfen als vom Futter begrenzt werden.
+- Hirsch 3 Energie statt 3,5, Wolf verbraucht 0,052 statt 0,042: weniger Wölfe je Hirsch.
+
+Gemessen mit Quartalswerten ab Jahr 5. Schwankung = Standardabweichung durch Mittel. „Folgen“ =
+größte Korrelation des Räuberbestands mit dem Beutebestand einige Jahre vorher.
+
+| große Insel, 8 × 30 Jahre | Hirsche | Wölfe | Schwankung H / W | Wölfe folgen | Laufvögel | Adler |
+|---|---|---|---|---|---|---|
+| nur Hirsch und Wolf | 449 | 105 | 0,30 / 0,31 | 0,91 nach 3,5 J | – | – |
+| alle 4 Arten | 459 | 104 | 0,29 / 0,32 | 0,88 nach 3,3 J | 498 | 41 |
+| alle 4, 60 Jahre (Seed 5000) | 470 | 95 | 0,33 / 0,38 | 0,86 nach 3,8 J | 530 | 41 |
+
+Laufvogel und Adler zum Vergleich: Schwankung 0,26 / 0,34, die Adler folgen mit 0,78 nach 3,9 Jahren.
+Alle Arten überleben auf der großen Insel 8 von 8 (auch über 60 Jahre). Die Zyklen sind lang
+(Hirsche oft 15–20 Jahre von Hoch zu Tief und zurück).
+
+Mittlere Insel (`balance.js 8 30`): 7 von 8, Hirsche 248, Wölfe 42, Laufvögel 291, Adler 18. Auf
+Insel 16838 sterben die Wölfe in Jahr 20 aus: Mit stärkeren Schwingungen reicht auf kleinerer
+Fläche ein tiefes Tal. Kleine Insel: 3 von 6 (vorher 1 von 6).
+
+Ausprobiert: Rudel bis 8 statt 12 (Wölfe kaum weniger, schwächere Zyklen); Hirsch 2,5 Energie
+(nur 80 Wölfe bei 300 Hirschen).
+
+**Viele Hirsche und viele Wölfe** (vorheriger Stand; Ziel war damals irrtümlich die mittlere Insel).
 Vorher kamen auf einen Wolf nur 3–4 Hirsche (~117 Hirsche, ~27 Wölfe). Der Wolf lebte zu 42 % von
 Insekten und Früchten, seine Zahl hing kaum an den Hirschen. Geändert:
 
