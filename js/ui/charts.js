@@ -294,6 +294,7 @@
     for (var e = 0; e < events.length; e++) {
       var info = BT.CARDS && BT.CARDS[events[e].card];
       if (info && info.kind === 'info') continue;          // Meldungen nur in der Chronik
+      if (info && info.kind === 'folge' && !info.mark) continue;   // Folgen nur mit mark ins Diagramm
       var ek = events[e].day - d0;
       if (ek < 0 || ek > n - 1) continue;
       var ex = Math.round(x(ek)) + 0.5;

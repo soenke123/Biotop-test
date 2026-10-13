@@ -84,14 +84,15 @@
       more: 'Drei Hunde laufen zwischen Dorf und Weiden umher. Wölfe und Hirsche halten mehr Abstand. Nach etwa vier Jahren verwildern einige Hunde: Sie leben dann im Rudel wie Wölfe, jagen Laufvögel (die sie nicht kennen) und stecken die Wölfe mit Staupe an.',
       undo: 'Die drei Hunde dieser Karte kommen weg, und sie verwildern auch nicht mehr. Hunde, die schon verwildert sind, bleiben wild.'
     },
-    // Folgekarten der Schafe und Hunde (eco/humans.js, etwa 4 Jahre nach der Karte, je Karte einmal)
+    // Folgekarten der Schafe und Hunde (eco/humans.js, etwa 4 Jahre nach der Karte, je Karte einmal).
+    // mark: auch als Marke im Diagramm (andere Folgekarten nur in der Chronik)
     schafeAus: {
-      id: 'schafeAus', kind: 'folge', icon: '🐑',
+      id: 'schafeAus', kind: 'folge', mark: true, icon: '🐑',
       name: 'Schafe brechen aus',
       text: 'Schafe sind aus der Weide entwischt und weit weggelaufen. Sie leben jetzt wild auf der Insel.'
     },
     hundeWild: {
-      id: 'hundeWild', kind: 'folge', icon: '🐕',
+      id: 'hundeWild', kind: 'folge', mark: true, icon: '🐕',
       name: 'Hunde verwildern',
       text: 'Hunde sind verwildert: Sie laufen weit weg und gründen ein Rudel oder schließen sich einem wilden an. Sie leben wie Wölfe, aber die Laufvögel kennen sie nicht, und sie tragen eine Krankheit, an der Wölfe sterben.'
     },

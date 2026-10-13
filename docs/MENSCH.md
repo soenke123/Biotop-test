@@ -211,7 +211,7 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
   So kommen sie nachts an die Äcker.
 - **Ernte-Bilanz:** Bei jeder Ernte steht in der Chronik, wie viel eingebracht wurde und wie viel
   Tiere seit der letzten Ernte gefressen haben (🧺 Ernte). Ab einem Viertel ist es die Folgekarte
-  **🦌 Hirsche im Acker**, mit Marke im Diagramm.
+  **🦌 Hirsche im Acker** (nur Chronik, keine Marke im Diagramm).
 - Tagsüber arbeitet die Hälfte der Siedler auf den Äckern (Frühling und Sommer).
 - **Anzeige:** Acker mit Furchen. Im Frühling grün, je weiter das Getreide steht, desto
   kräftiger; im Sommer golden, abgefressene Stellen braun; nach der Ernte Stoppeln, im Winter
@@ -423,7 +423,8 @@ Jägern in `humans.hunters`, `kind: 'sammel'`).
   Wald, Fraß an der letzten Ernte; Karten, Pause, Chronik). Darf wieder eine Karte gespielt
   werden, steht am Reiter „Menschen“ das Schild **Karte bereit**.
 - **Marken in den Diagrammen:** gespielte Karte = durchgezogene orange Linie mit Symbol;
-  Folgekarte, die von selbst eintritt (z. B. 🦌 Hirsche im Acker) = gestrichelte rote Linie.
+  Folgekarte, die von selbst eintritt = gestrichelte rote Linie, aber nur für 🐑 Schafe brechen aus
+  und 🐕 Hunde verwildern (`mark: true` in `BT.CARDS`); die übrigen Folgen nur in der Chronik.
   Meldungen wie die jährliche Ernte stehen nur in der Chronik. Die gelblichen Bänder sind
   **Mastjahre** (Wetter, viele Früchte), die bläulichen harte Winter. Beides hat nichts mit den
   Menschen zu tun. Die Legende unter den Diagrammen erklärt alle vier.
