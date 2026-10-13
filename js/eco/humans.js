@@ -91,7 +91,8 @@
       // scheue Tiere (scheu >= flee) bemerken die Jaeger und fliehen: Treffer mal shy).
       // Wildjaeger tragen ein Tier heim, Wolfsjaeger jagen weiter, bis der Jagdzug um ist (stay)
       wolf: { prey: { inselwolf: 1, hund: 1 }, hit: 0.7, stay: true },
-      wild: { prey: { zwerghirsch: 1, laufvogel: 0.6, schaf: 1 }, hit: 0.5, stay: false },
+      wild: { prey: { zwerghirsch: 1, laufvogel: 1, schaf: 1 }, hit: 0.5, stay: false },
+      sight: 160,             // Beute, die ein Jaeger unterwegs naeher sieht als sein Ziel, wird das neue Ziel
       flee: 0.5,              // ab dieser scheu fliehen Tiere vor Jaegern (Laufvogel nicht)
       notice: 0.4,            // ... wenn ein Jaeger naeher ist als vision * notice (Hirsch 72)
       shy: 0.6,
@@ -844,6 +845,20 @@
     return best;
   };
 
+  /** Naechste Beutegruppe in Sichtweite, die naeher ist als das bisherige Ziel g, sonst null. */
+  Humans.prototype.preyInSight = function (h, g) {
+    var cfg = BT.HUMANS.hunt, prey = cfg[h.kind].prey;
+    var list = h.kind === 'wolf' ? this.sim.predatorGroups : this.sim.herbivoreGroups;
+    var best = null, bestD = Math.min(cfg.sight, BT.M.hypot(g.x - h.x, g.y - h.y));
+    for (var i = 0; i < list.length; i++) {
+      var o = list[i];
+      if (o === g || !prey[o.spec.id] || !o.members.length) continue;
+      var d = BT.M.hypot(o.x - h.x, o.y - h.y);
+      if (d < bestD) { bestD = d; best = o; }
+    }
+    return best;
+  };
+
   Humans.prototype.moveHunters = function () {
     var cfg = BT.HUMANS.hunt, w = this.world, sim = this.sim;
     for (var i = this.hunters.length - 1; i >= 0; i--) {
@@ -864,6 +879,9 @@
         else {
           var g = h.target;
           if (!g || !g.members.length) g = h.target = this.huntTarget(h);
+          // Was zuerst in Sicht kommt, wird gejagt (Hirsch oder Laufvogel)
+          var seen = g && this.preyInSight(h, g);
+          if (seen) g = h.target = seen;
           if (!g) { h.state = 'heim'; }
           else {
             var d = BT.M.hypot(g.x - h.x, g.y - h.y);

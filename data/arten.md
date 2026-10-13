@@ -325,12 +325,15 @@ reagieren, folgt aus `scheu`:
 | Art | gejagt von | Treffer je Schuss | Verhalten |
 |---|---|---|---|
 | Zwerghirsch | Wildjäger (Gewicht 1) | 0,5 × 0,6 | `scheu` ≥ 0,5: flieht, wenn ein Jäger näher als 0,4 × `vision` (72) ist |
-| Laufvogel | Wildjäger (0,6) | 0,5 | **flieht nicht** (`scheu` 0,2, inselzahm), deshalb die häufigste Beute |
+| Laufvogel | Wildjäger (1) | 0,5 | **flieht nicht** (`scheu` 0,2, inselzahm), deshalb die häufigste Beute |
 | Schaf (wild) | Wildjäger (1) | 0,5 | flieht nicht (`scheu` 0,4) |
 | Inselwolf | Wolfsjäger (1) | 0,7 × 0,6 | beschossen flieht das Rudel 300 weit; Wolfsjäger folgen ihm |
 | Hund (wild) | Wolfsjäger (1) | 0,7 | wie der Wolf, aber kaum scheu |
 
-Treffer jeweils mal `1 − Deckung × 0,5`. Wildjäger bringen ein Tier heim, ein Viertel bleibt als
+Wildjäger nehmen, **was sie zuerst sehen**: Kommt unterwegs eine Gruppe Hirsche oder Laufvögel
+näher als 160 und näher als ihr bisheriges Ziel, jagen sie diese. Weil die Hirsche das Dorf
+meiden und die Laufvögel nicht, sind das am Dorf meist Laufvögel. Treffer jeweils mal
+`1 − Deckung × 0,5`. Wildjäger bringen ein Tier heim, ein Viertel bleibt als
 Aas liegen (für Wölfe und Adler). Wolfsjäger jagen weiter, bis der Jagdzug um ist. Todesursache
 ist „Jagd“.
 
