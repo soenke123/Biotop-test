@@ -260,6 +260,7 @@ button:disabled { opacity: 0.5; cursor: default; }
   background: none; border: 0; border-radius: 0; font-size: 11px; line-height: 1.15; }
 .card .card-face:hover { background: rgba(255, 255, 255, 0.06); }
 .card .card-icon { font-size: 20px; line-height: 1.1; }
+.card .card-img { height: 30px; width: 44px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35)); }
 .card-ctl { display: flex; align-items: stretch; border-top: 1px solid rgba(255, 255, 255, 0.12); }
 .card-ctl button { flex: 1; padding: 2px 0; border: 0; border-radius: 0; background: rgba(0, 0, 0, 0.18); font-size: 15px; font-weight: 700; line-height: 1.2; }
 .card-ctl button:hover:not(:disabled) { background: rgba(82, 194, 192, 0.3); }

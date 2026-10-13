@@ -52,7 +52,7 @@ js/world/   config.js (alle Stellschrauben, Lebensräume), island.js (Generator)
 js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefschattierung),
             seasonRenderer (Jahreszeiten als Farbschicht), plantRenderer (Weidezustand:
             entsättigt die Textur, abgefressen blasser, überweidet grau), sprites, agentRenderer (Tiere, Hervorhebung einer Art),
-            humanRenderer (Schiff, Häuser, Siedler, Jäger; Platzhalter bis Bilder da sind),
+            humanRenderer (Schiff, Häuser, Siedler, Jäger, Sammler; Bildvarianten je Person),
             landuseRenderer (gerodete Erde, Dorfplatz, Wiese, Acker als Schicht über dem Gelände)
 js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung und
             Pflanzenzustand je Weidezelle, Überweidung), landuse (Nutzung: Erde, Dorf, Wiese, Acker
@@ -61,13 +61,15 @@ js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (
             Karten zurücknehmen), behavior (Gruppen-Entscheidungen),
             stats, simulation (Tick/Tag, sim.play für Karten)
 js/ui/      app.js (Karte, Zeitregler, Reiter Tierbestand/Menschen, Kartenleiste mit + und −, Infofenster
-            der Karten, Chronik, Bildpuffer, Großansicht der Diagramme), cardInfo.js (Bild im Infofenster),
+            der Karten, Chronik, Bildpuffer, Großansicht der Diagramme), cardInfo.js (Bild im Infofenster:
+            Kartenausschnitt assets/karte_<id>.png),
             charts.js (LineChart; ChartView: gemeinsamer Zeitraum und Fadenkreuz)
 data/       arten.md (fachliche Wahrheit für species.js)
-assets/     Tierbilder (Platzhalter aus Wild Clusters)
+assets/     Tierbilder, schaf/, hund/, doerfler/ (Menschen), Schiff, Häuser, karte_<id>.png (Infofenster)
 tools/      load.js (Skripte in Node laden), smoketest.js, balance.js (Abstimmung),
             invasion.js (fassen Schafe und Hunde Fuß? was erlegen Jäger? Vergleich mit/ohne Karten, parallel),
-            shot.js (Playwright-Screenshot, optional nach N simulierten Tagen)
+            shot.js (Playwright-Screenshot, optional nach N simulierten Tagen),
+            kartenbilder.js (Bilder der Infofenster: Ausschnitte der echten Karte)
 ```
 
 Simulation: Pro Tick zuerst gespielte Karten und Menschen, dann die Tiere. Entschieden wird je **Gruppe** (Herde, Rudel …), die Tiere folgen dem Anker der

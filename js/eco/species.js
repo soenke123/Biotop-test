@@ -280,8 +280,8 @@
   // ------------------------------------------------------------ mit den Menschen eingeschleppt
   /*
    * Startbestand 0. Sie kommen ueber die Karten "Schafweide" und "Huetehunde"
-   * auf die Insel und brechen nach einigen Jahren aus (eco/humans.js). Bis es
-   * eigene Bilder gibt, tragen sie die Bilder von Hirsch und Wolf, bunt eingefaerbt.
+   * auf die Insel und brechen nach einigen Jahren aus (eco/humans.js). Ihre Bilder
+   * liegen in eigenen Ordnern (assets/schaf, assets/hund).
    */
   BT.SPECIES.schaf = {
     id: 'schaf',
@@ -289,8 +289,8 @@
     plural: 'Schafe',
     role: 'herbivore',
     introduced: true,
-    sprites: { name: 'hirsch', facing: 'right', lighten: '#8a8070', tint: '#e05ad8', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
-    size: 21,
+    sprites: { name: 'schaf/schaf', facing: 'right', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'sitzend' } },
+    size: 17,                       // das Bild fuellt den Rahmen mehr aus als beim Hirsch
     color: '#e05ad8',
     // Grosse Herden bis 100, mit Abstand (spacing: Weltunits je Tier, der Radius waechst mit
     // der Herde). split: Ist die Herde ab `min` Tieren im Mittel hungriger als `energy`, zieht
@@ -334,7 +334,8 @@
     name: 'Hund',
     plural: 'Hunde',
     introduced: true,
-    sprites: { name: 'wolf', facing: 'left', lighten: '#5a4a30', tint: '#ff8c1a', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'liegend' } },
+    sprites: { name: 'hund/hund', facing: 'right', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'sitzend' } },
+    size: 19,                         // Wolf 22, das Bild fuellt den Rahmen mehr aus
     color: '#ff8c1a',
     start: 0,
     scheu: 0.3,                       // kennt die Menschen

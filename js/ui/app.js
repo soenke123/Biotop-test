@@ -386,7 +386,7 @@
       var c = BT.CARDS[id];
       return '<div class="card ' + c.kind + (c.soon ? ' soon' : '') + '" data-id="' + id + '">' +
         '<button type="button" class="card-face" data-act="info" title="' + c.name + ': Was macht die Karte?">' +
-        '<span class="card-icon">' + c.icon + '</span><span class="card-name">' + c.name + '</span></button>' +
+        (c.image ? '<img class="card-img" src="' + c.image + '" alt="">' : '<span class="card-icon">' + c.icon + '</span>') + '<span class="card-name">' + c.name + '</span></button>' +
         '<div class="card-ctl"><button type="button" class="card-minus" data-act="minus" aria-label="' + c.name + ' zurücknehmen">−</button>' +
         '<span class="card-count" id="cc-' + id + '">0</span>' +
         '<button type="button" class="card-plus" data-act="plus" aria-label="' + c.name + ' spielen">+</button></div></div>';
@@ -904,6 +904,7 @@
   buildPanel();
   updateSpeedLabel();
   BT.Sprites.preload(function () { dirty = true; drawTileImages(); });
+  BT.HumanRenderer.preload();
   var h = readHash();
   load(h.seed ? BT.parseSeed(h.seed) : BT.randomSeed(), h.size || BT.CONFIG.size);
   global.requestAnimationFrame(frame);

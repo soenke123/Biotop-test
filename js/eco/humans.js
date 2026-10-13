@@ -57,8 +57,11 @@
       workers: 0.5            // Anteil der Siedler, die tagsueber auf dem Acker arbeiten
     },
     settler: {
-      speed: 3,               // Weltunits je Tick
+      speed: 3,               // Weltunits je Tick (jeder Siedler 0,75- bis 1,25-mal so schnell)
       roam: 110,              // so weit gehen sie vom Haus weg
+      work: [2, 9],           // so viele Ticks bleiben sie an einem Ziel (arbeiten, schauen)
+      home: 0.2,              // Chance, dass das naechste Ziel das eigene Haus ist ...
+      inside: [3, 12],        // ... und so viele Ticks bleiben sie dann drinnen
       size: 13
     },
     pasture: {                // Karte "Schafweide"
@@ -85,8 +88,11 @@
     },
     hunt: {                   // Karten "Woelfe jagen" und "Wild jagen"
       perCard: 2,             // Jaeger je Karte
-      speed: 30,              // Weltunits je Tick auf dem Weg (nachts lagern sie draussen)
-      stalk: 14,              // ... und beim Anschleichen (naeher als 150 an der Beute)
+      speed: 25,              // Weltunits je Tick auf dem Weg (jeder Jaeger 0,85- bis 1,15-mal so schnell)
+      stalk: 12,              // ... und beim Anschleichen (naeher als 150 an der Beute)
+      pause: 0.12,            // Chance je Tick, kurz stehen zu bleiben (1-2 Ticks: umschauen, rasten), jeder fuer sich
+      sway: 0.45,             // auf langen Wegen pendeln sie so weit (Winkel) um die gerade Linie
+      reload: 3,              // Ticks bis zum naechsten Schuss
       range: 1000,            // so weit vom Dorf ziehen sie auf die Jagd (jede weitere Karte + rangePlus)
       rangePlus: 0.3,
       tripDays: 12,           // laengstens so lange dauert ein Jagdzug
@@ -112,11 +118,11 @@
     },
     gather: {                 // Karte "Sammeln" (nach dem Prinzip der Jagd, Werte, die fehlen, aus hunt)
       perCard: 2,             // Sammler je Karte
-      speed: 30,              // Weltunits je Tick auf dem Weg
+      speed: 25,              // Weltunits je Tick auf dem Weg
       out: [0, 500],          // so weit vom Dorf fangen sie an zu sammeln (je Gang neu gewuerfelt) ...
       ring: 250,              // ... das Ziel liegt out bis out + ring vom Dorf
       min: 0.5,               // gesammelt wird, wo eine Weidezelle so viele Fruechte traegt (Busch voll: 3,3)
-      bite: 3,                // Fruechte je Tick
+      bite: 2,                // Fruechte je Tick
       load: 60,               // so viel tragen sie heim (3 Koerbe), dann geht es heim
       basket: 20,             // ein Korb (fuer die Sammelbilanz)
       tripDays: 10,
@@ -137,6 +143,8 @@
     this.sim = sim;
     this.world = sim.world;
     this.rng = new BT.Rng(sim.world.seed).fork('menschen');
+    // Wege der Siedler: eigener Zufall, sie wirken nicht auf die Tiere
+    this.walkRng = new BT.Rng(sim.world.seed).fork('siedlerwege');
     this.ships = [];
     this.villageCount = 0;          // so viele Doerfer wurden gegruendet (fuer die Namen)
     this.villages = [];             // Doerfer: { id, x, y (Mitte), houses, fields, pastures, expansions, dogsKept, huntersKept }
@@ -329,8 +337,8 @@
     this.people.push({
       id: this.nextId++, house: house,
       x: x, y: y, px: x, py: y, heading: 0,
-      tx: house.x + this.rng.range(-20, 20), ty: house.y + this.rng.range(-20, 20),
-      wait: 0, inside: false
+      tx: house.x + this.walkRng.range(-20, 20), ty: house.y + this.walkRng.range(-20, 20),
+      wait: 0, inside: false, home: false, speed: BT.HUMANS.settler.speed * this.walkRng.range(0.75, 1.25)
     });
   };
 
@@ -550,41 +558,61 @@
   };
 
   /**
-   * Siedler: tagsueber unterwegs rund ums Haus (ein Ziel, dort eine Weile
-   * arbeiten, dann das naechste), nachts im Haus.
+   * Siedler: unterwegs rund ums Haus oder auf dem Acker. Jeder geht zu einem
+   * Ziel, bleibt dort eine Weile (arbeitet, schaut), dann zum naechsten; ab
+   * und zu geht er heim und bleibt eine Weile drinnen, nachts meistens. Jeder
+   * hat sein eigenes Tempo, so laufen sie nie im Gleichschritt.
    */
   Humans.prototype.movePeople = function () {
-    var cfg = BT.HUMANS.settler, w = this.world;
-    var tod = this.sim.tick % this.sim.ticksPerDay;
-    var night = tod === 0 || tod === this.sim.ticksPerDay - 1;
+    var cfg = BT.HUMANS.settler, w = this.world, rng = this.walkRng;
     for (var i = 0; i < this.people.length; i++) {
       var p = this.people[i];
       p.px = p.x; p.py = p.y;
       var h = p.house;
-      if (night) { p.tx = h.x; p.ty = h.y + 4; }
-      else if (p.inside || (p.wait <= 0 && Math.abs(p.tx - p.x) + Math.abs(p.ty - p.y) < 4)) {
+      if (p.inside) {
+        // drinnen: nachts meist bis zum Morgen, danach nach Lust
+        if (p.wait > 0) p.wait--;
+        if (p.wait > 0 || (this.night && rng.chance(0.8))) continue;
         p.inside = false;
-        var a = this.rng.range(0, Math.PI * 2), r = cfg.roam * Math.sqrt(this.rng.next());
-        var tx = h.x + BT.M.cos(a) * r, ty = h.y + BT.M.sin(a) * r;
-        // ein Teil arbeitet auf dem Acker (Fruehling bis zur Ernte)
-        var fs = h.village.fields;
-        if (fs.length && this.sim.calendar.season < 2 && this.rng.chance(BT.HUMANS.field.workers)) {
-          var fl = fs[this.rng.int(0, fs.length - 1)];
-          r = BT.HUMANS.field.radius * 0.8 * Math.sqrt(this.rng.next());
-          tx = fl.x + BT.M.cos(a) * r; ty = fl.y + BT.M.sin(a) * r;
-        }
-        if (!BT.Move.blockedAt(w, null, tx, ty)) { p.tx = tx; p.ty = ty; }
-        p.wait = this.rng.int(1, 3);
+        p.tx = p.x; p.ty = p.y;
       }
       var dx = p.tx - p.x, dy = p.ty - p.y, d = Math.sqrt(dx * dx + dy * dy);
-      if (d > 0.5) {
-        BT.Move.stepToward(w, null, p, p.tx, p.ty, cfg.speed);
-      } else {
-        if (night) p.inside = true;
-        else p.wait--;
+      p.working = false;
+      if (d > 0.5) { this.walk(p, p.tx, p.ty, Math.min(p.speed, d)); continue; }
+      if (p.wait > 0) { p.wait--; p.working = !p.home; continue; }
+      if (p.home) { p.home = false; p.inside = true; p.wait = rng.int(cfg.inside[0], cfg.inside[1]); continue; }
+      // naechstes Ziel: heim (nachts fast immer), aufs Feld oder irgendwo ums Haus
+      if (rng.chance(this.night ? 0.7 : cfg.home)) {
+        p.tx = h.x + rng.range(-4, 4); p.ty = h.y + 5; p.home = true; p.wait = 0;
+        continue;
       }
-      p.working = !night && d <= 0.5;
+      var a = rng.range(0, Math.PI * 2), r = cfg.roam * Math.sqrt(rng.next());
+      var tx = h.x + BT.M.cos(a) * r, ty = h.y + BT.M.sin(a) * r;
+      // ein Teil arbeitet auf dem Acker (Fruehling bis zur Ernte)
+      var fs = h.village.fields;
+      if (fs.length && this.sim.calendar.season < 2 && rng.chance(BT.HUMANS.field.workers)) {
+        var fl = fs[rng.int(0, fs.length - 1)];
+        r = BT.HUMANS.field.radius * 0.8 * Math.sqrt(rng.next());
+        tx = fl.x + BT.M.cos(a) * r; ty = fl.y + BT.M.sin(a) * r;
+      }
+      if (!BT.Move.blockedAt(w, null, tx, ty)) { p.tx = tx; p.ty = ty; }
+      p.wait = rng.int(cfg.work[0], cfg.work[1]);
     }
+  };
+
+  /**
+   * Ein Schritt eines Menschen zum Ziel. Auf langen Wegen nicht schnurgerade:
+   * Die Richtung pendelt langsam um die Linie zum Ziel (o.sway ist die Phase,
+   * die Nummer verschiebt sie, damit nicht alle gleich pendeln).
+   */
+  Humans.prototype.walk = function (o, tx, ty, speed) {
+    var dx = tx - o.x, dy = ty - o.y;
+    if (dx * dx + dy * dy > speed * speed * 16) {
+      o.sway = (o.sway || 0) + 0.3;
+      var a = BT.HUMANS.hunt.sway * BT.M.sin(o.sway + o.id * 2.3), c = BT.M.cos(a), sn = BT.M.sin(a);
+      tx = o.x + dx * c - dy * sn; ty = o.y + dx * sn + dy * c;
+    }
+    return BT.Move.stepToward(this.world, null, o, tx, ty, speed);
   };
 
   // ------------------------------------------------------------ Schafe und Hunde
@@ -894,7 +922,8 @@
     var x = house.x + this.rng.range(-15, 15), y = house.y + this.rng.range(-15, 15);
     this.hunters.push({
       id: this.nextId++, kind: kind, house: house, village: v, x: x, y: y, px: x, py: y, heading: 0,
-      state: 'daheim', rest: this.rng.int(0, 2), target: null, carry: null, trip: 0, reload: 0, load: 0
+      state: 'daheim', rest: this.rng.int(0, 2), target: null, carry: null, trip: 0, reload: 0, load: 0,
+      pause: 0, pace: this.rng.range(0.85, 1.15)
     });
   };
 
@@ -938,7 +967,8 @@
       var h = this.hunters[i];
       h.px = h.x; h.py = h.y;
       if (h.state === 'daheim') {
-        if (h.rest > 0 || this.night) continue;
+        // los geht es am Morgen, aber nicht alle zugleich
+        if (h.rest > 0 || this.night || !this.rng.chance(0.4)) continue;
         var gather = h.kind === 'sammel';
         var out = gather ? BT.HUMANS.gather.out : cfg.out;
         h.out = this.rng.range(out[0], out[1]);
@@ -947,12 +977,15 @@
         h.state = 'unterwegs'; h.trip = 0; h.trail = []; h.stuck = 0; h.useTrail = false;
       }
       if (this.hunterAttacked(h)) { if (!h.alive) this.hunters.splice(i, 1); continue; }
-      if (this.night) continue;                         // nachts lagern sie
-      if (h.state === 'unterwegs' && h.kind === 'sammel') { this.gatherStep(h); if (h.state === 'unterwegs') continue; }
+      if (h.state === 'unterwegs') h.trip++;
+      if (h.reload > 0) h.reload--;
+      // Jeder bleibt fuer sich ab und zu kurz stehen (nicht beim Pfluecken)
+      if (h.pause > 0) { h.pause--; continue; }
+      if (!h.gathering && this.rng.chance(cfg.pause)) { h.pause = this.rng.int(0, 1); continue; }
+      var speed = (h.kind === 'sammel' ? BT.HUMANS.gather.speed : cfg.speed) * h.pace;
+      if (h.state === 'unterwegs' && h.kind === 'sammel') { this.gatherStep(h, speed); if (h.state === 'unterwegs') continue; }
       if (h.state === 'unterwegs') {
-        h.trip++;
-        if (h.reload > 0) h.reload--;
-        if (h.trip > cfg.tripDays * (sim.ticksPerDay - 2)) { h.state = 'heim'; h.target = null; }
+        if (h.trip > cfg.tripDays * sim.ticksPerDay) { h.state = 'heim'; h.target = null; }
         else {
           var g = h.target;
           if (!g || !g.members.length) g = h.target = this.huntTarget(h);
@@ -965,7 +998,8 @@
             var d = BT.M.hypot(g.x - h.x, g.y - h.y);
             if (d > cfg.shot * 0.6) {
               var x0 = h.x, y0 = h.y;
-              BT.Move.stepToward(w, null, h, g.x, g.y, Math.min(d > 150 ? cfg.speed : cfg.stalk, d - cfg.shot * 0.5));
+              if (d > 150) this.walk(h, g.x, g.y, Math.min(speed, d - cfg.shot * 0.5));
+              else BT.Move.stepToward(w, null, h, g.x, g.y, Math.min(cfg.stalk * h.pace, d - cfg.shot * 0.5));
               // Spur fuer den Heimweg; wer nicht weiterkommt (Wasser, Fels), kehrt um
               var last = h.trail[h.trail.length - 1] || h.house;
               if (BT.M.hypot(h.x - last.x, h.y - last.y) > 30) h.trail.push({ x: h.x, y: h.y });
@@ -983,15 +1017,14 @@
       if (BT.M.hypot(hx - h.x, hy - h.y) <= 4) { this.homeFromHunt(h); continue; }
       if (!h.useTrail) {
         var x1 = h.x, y1 = h.y;
-        BT.Move.stepToward(w, null, h, hx, hy, Math.min(h.kind === 'sammel' ? BT.HUMANS.gather.speed : cfg.speed, BT.M.hypot(hx - h.x, hy - h.y)));
+        this.walk(h, hx, hy, Math.min(speed, BT.M.hypot(hx - h.x, hy - h.y)));
         if (BT.M.hypot(h.x - x1, h.y - y1) >= 1) continue;
         h.useTrail = true;
       }
       var p = tr.length ? tr[tr.length - 1] : { x: h.house.x, y: h.house.y + 6 };
       var dh = BT.M.hypot(p.x - h.x, p.y - h.y);
-      var hs = h.kind === 'sammel' ? BT.HUMANS.gather.speed : cfg.speed;
-      if (dh > 4) BT.Move.stepToward(w, null, h, p.x, p.y, Math.min(hs, dh));
-      if (dh <= hs) { if (tr.length) tr.pop(); else if (dh <= 4) this.homeFromHunt(h); }
+      if (dh > 4) BT.Move.stepToward(w, null, h, p.x, p.y, Math.min(speed, dh));
+      if (dh <= speed) { if (tr.length) tr.pop(); else if (dh <= 4) this.homeFromHunt(h); }
     }
   };
 
@@ -1034,10 +1067,9 @@
   };
 
   /** Ein Tick eines Sammlers unterwegs: hingehen, sammeln, mit vollem Korb heim. */
-  Humans.prototype.gatherStep = function (h) {
-    var G = BT.HUMANS.gather, f = this.sim.fields, w = this.world, c = h.village;
-    h.trip++;
-    if (h.trip > G.tripDays * (this.sim.ticksPerDay - 2) || h.load >= G.load) { h.state = 'heim'; h.target = null; h.gathering = false; return; }
+  Humans.prototype.gatherStep = function (h, speed) {
+    var G = BT.HUMANS.gather, f = this.sim.fields, c = h.village;
+    if (h.trip > G.tripDays * this.sim.ticksPerDay || h.load >= G.load) { h.state = 'heim'; h.target = null; h.gathering = false; return; }
     var i = f.index(h.x, h.y);
     var here = i >= 0 ? f.value.frucht[i] : 0;
     // Was sie zuerst finden: unterwegs, sobald sie weit genug draussen sind
@@ -1064,7 +1096,7 @@
     var t = h.target, d = BT.M.hypot(t.x - h.x, t.y - h.y);
     if (d < 6) { h.target = null; return; }
     var x0 = h.x, y0 = h.y;
-    BT.Move.stepToward(w, null, h, t.x, t.y, Math.min(G.speed, d));
+    this.walk(h, t.x, t.y, Math.min(speed, d));
     var last = h.trail[h.trail.length - 1] || h.house;
     if (BT.M.hypot(h.x - last.x, h.y - last.y) > 30) h.trail.push({ x: h.x, y: h.y });
     h.stuck = BT.M.hypot(h.x - x0, h.y - y0) < 1 ? h.stuck + 1 : 0;
@@ -1076,7 +1108,7 @@
     var cfg = BT.HUMANS.hunt, sim = this.sim, spec = g.spec;
     var p = cfg[h.kind].hit * (1 - BT.Behavior.COVER[sim.biomeAt(g.x, g.y)] * 0.5);
     if (spec.scheu >= cfg.flee) p *= cfg.shy;
-    h.reload = 2;
+    h.reload = cfg.reload;
     if (this.rng.chance(p)) {
       var victim = g.members[this.rng.int(0, g.members.length - 1)];
       var meat = spec.meat * (victim.age < spec.maturity ? 0.5 : 1);

@@ -15,8 +15,9 @@
  *   undo     was beim Zuruecknehmen (−) passiert; die Folgen bleiben
  *   needs    Karte, die vorher gespielt sein muss
  *   soon     noch nicht umgesetzt (wird in der Leiste nur angezeigt)
- *   icon     Symbol in der Leiste; das Bild im Infofenster ist assets/karte_<id>.png
- *            (bis es das gibt, ein gezeichneter Platzhalter, js/ui/cardInfo.js)
+ *   icon     Symbol (Chronik, Titel des Infofensters; in der Leiste, wenn es kein image gibt)
+ *   image    Bild auf der Karte in der Leiste. Das Bild im Infofenster ist ein Ausschnitt
+ *            der Inselkarte, assets/karte_<id>.png (erzeugt mit tools/kartenbilder.js)
  *
  * Jede aktive Karte laesst sich zuruecknehmen (sim.unplay): Dann verschwindet,
  * was sie gebracht hat (Haeuser, Acker, Weide, Hunde, Jaeger), aber was schon
@@ -35,7 +36,7 @@
 
   BT.CARDS = {
     landung: {
-      id: 'landung', kind: 'start', icon: '⛵',
+      id: 'landung', kind: 'start', icon: '⛵', image: 'assets/schiff.png',
       name: 'Landung',
       text: 'Ein Schiff mit Siedlern landet an der Küste. Das erste Haus entsteht.',
       target: 'kueste', hint: 'Klicke an die Küste, wo das Schiff landen soll.',
@@ -44,7 +45,7 @@
       undo: 'Die Siedler verlassen das Dorf mit allem, was dazugehört: Häuser, Äcker, Weiden, Hunde, Jäger und Sammler. Der Dorfplatz wird zu Erde und wächst langsam wieder zu. Gerodeter Wald bleibt Wiese, wilde Schafe und Hunde bleiben auf der Insel.'
     },
     dorf: {
-      id: 'dorf', kind: 'aktiv', icon: '🏘️', needs: 'landung', repeat: true,
+      id: 'dorf', kind: 'aktiv', icon: '🏘️', image: 'assets/haus_fachwerk.png', needs: 'landung', repeat: true,
       name: 'Dorf vergrößern',
       text: 'Wald am Dorfrand wird gerodet, neue Häuser entstehen. Auf der gerodeten Erde wächst erst nach Jahren wieder etwas.',
       more: 'Die Siedler roden ein Stück Wald neben dem Dorf und bauen zwei neue Häuser mit vier Siedlern. Auf der Rodung bleibt erst nackte Erde, nach drei bis fünf Jahren wächst dort Wiese, aber kein Wald. Weniger Wald heißt weniger Laub, Früchte und Verstecke. Das größere Dorf stört die Tiere in einem größeren Umkreis.',
@@ -70,14 +71,14 @@
       text: 'Mindestens ein Viertel des Getreides haben Tiere gefressen, bevor geerntet wurde.'
     },
     schafe: {
-      id: 'schafe', kind: 'aktiv', icon: '🐑', needs: 'landung', repeat: true,
+      id: 'schafe', kind: 'aktiv', icon: '🐑', image: 'assets/schaf/schaf_m_stehend.png', needs: 'landung', repeat: true,
       name: 'Schafweide',
       text: 'Eine eingezäunte Weide mit Schafen nahe am Dorf. Die Schafe fressen das Gras kurz. Nach einigen Jahren büchsen Schafe aus.',
       more: 'Eine eingezäunte Weide mit zwölf Schafen entsteht auf dem Grasland nahe am Dorf. Die Schafe fressen das Gras sehr kurz. Nach etwa vier Jahren brechen einige aus und leben dann wild auf der Insel: Sie fressen den Hirschen das Gras weg und sind Beute für Wölfe und Adler.',
       undo: 'Die Weide wird aufgegeben, die Siedler nehmen ihre Schafe mit, der Zaun kommt weg. Schafe, die schon ausgebüchst sind, bleiben wild.'
     },
     hunde: {
-      id: 'hunde', kind: 'aktiv', icon: '🐕', needs: 'landung', repeat: true,
+      id: 'hunde', kind: 'aktiv', icon: '🐕', image: 'assets/hund/hund_f_stehend.png', needs: 'landung', repeat: true,
       name: 'Hütehunde',
       text: 'Hunde bewachen Dorf und Weiden: Wölfe und Hirsche halten mehr Abstand. Nach einigen Jahren verwildern Hunde und bringen eine Krankheit zu den Wölfen.',
       more: 'Drei Hunde laufen zwischen Dorf und Weiden umher. Wölfe und Hirsche halten mehr Abstand. Nach etwa vier Jahren verwildern einige Hunde: Sie leben dann im Rudel wie Wölfe, jagen Laufvögel (die sie nicht kennen) und stecken die Wölfe mit Staupe an.',
@@ -101,14 +102,14 @@
       text: 'Die verwilderten Hunde tragen Staupe. Wölfe in ihrer Nähe stecken sich an, werden schwach und sterben oft daran.'
     },
     woelfeJagen: {
-      id: 'woelfeJagen', kind: 'aktiv', icon: '🏹', needs: 'landung', repeat: true,
+      id: 'woelfeJagen', kind: 'aktiv', icon: '🏹', image: 'assets/doerfler/jagdwolf_2.png', needs: 'landung', repeat: true,
       name: 'Wölfe jagen',
       text: 'Zwei Wolfsjäger ziehen in die Wolfsreviere, zum Schutz von Dorf und Herden. Greifen Wölfe sie an, gewinnen meist die Jäger.',
       more: 'Zwei Wolfsjäger ziehen immer wieder für einige Tage los, suchen Wolfsrudel und schießen. Beschossene Rudel fliehen weit weg. Werden die Wölfe weniger, nehmen die Hirsche zu und fressen mehr Gras.',
       undo: 'Zwei Wolfsjäger hören auf zu jagen. Erlegte Wölfe bleiben tot, aber die Wölfe können sich wieder erholen.'
     },
     wildJagen: {
-      id: 'wildJagen', kind: 'aktiv', icon: '🍖', needs: 'landung', repeat: true,
+      id: 'wildJagen', kind: 'aktiv', icon: '🍖', image: 'assets/doerfler/jagdwild_2.png', needs: 'landung', repeat: true,
       name: 'Wild jagen',
       text: 'Zwei Jäger erlegen Hirsche und Laufvögel als Nahrung. Die Laufvögel fliehen nicht. Hungrige Wölfe greifen die Jäger manchmal an.',
       more: 'Zwei Jäger erlegen, was sie zuerst sehen: Hirsche, Laufvögel oder wilde Schafe. Die Hirsche fliehen vor ihnen, die Laufvögel nicht, deshalb treffen sie meist Laufvögel. Den Adlern fehlt dann Beute. Hungrige Wölfe greifen Jäger manchmal an.',
@@ -131,14 +132,14 @@
       text: 'Was die Sammler im letzten Jahr heimgebracht haben.'
     },
     sammeln: {
-      id: 'sammeln', kind: 'aktiv', icon: '🫐', needs: 'landung', repeat: true,
+      id: 'sammeln', kind: 'aktiv', icon: '🫐', image: 'assets/doerfler/sammeln_2.png', needs: 'landung', repeat: true,
       name: 'Sammeln',
       text: 'Zwei Sammler holen Früchte und Samen, mal nah am Dorf, mal weit draußen. Die fehlen dann den Laufvögeln. Hungrige Wölfe greifen auch Sammler an.',
       more: 'Zwei Sammler gehen los und pflücken Früchte und Samen, bis ihre Körbe voll sind, mal nah am Dorf, mal weit draußen. Diese Früchte fehlen den Laufvögeln, vor allem im Herbst und Winter. Die Sammler haben keine Waffen, hungrige Wölfe greifen sie an.',
       undo: 'Zwei Sammler hören auf. Die Früchte wachsen im nächsten Jahr wieder.'
     },
     ratten: {
-      id: 'ratten', kind: 'aktiv', icon: '🐀', soon: true, needs: 'landung', repeat: true,
+      id: 'ratten', kind: 'aktiv', icon: '🐀', image: 'assets/ratten.png', soon: true, needs: 'landung', repeat: true,
       name: 'Ratten an Bord',
       text: 'Mit einem Vorratsschiff kommen Ratten an Land. Sie fressen Eier, Samen und Küken.'
     }

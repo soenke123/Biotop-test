@@ -104,9 +104,8 @@ Acker, Weide und gerodetes Land werden gezeichnet (Konturen und Texturen wie die
 | Zaun | Stück, kachelbar (oder gezeichnet) | Weiden, Schutzgebiet |
 | Kartenbilder | je Karte ein Bild | Kartenleiste in der Oberfläche |
 
-Dateinamen wie bei den Tieren: `assets/<name>_<f|m|j>_<haltung>.png`, für Dinge ohne
-Geschlecht `assets/<name>_<haltung>.png` (z. B. `schiff_faehrt.png`, `haus_1.png`,
-`siedler_gehend.png`). Bis die Bilder da sind, zeichnet das Programm einfache Platzhalter.
+**Stand:** Schiff, zwei Häuser, Siedler, Jäger, Wolfsjäger, Sammler, Schaf, Hund und Ratten sind
+da (siehe „Bilder der Menschen“ in Abschnitt 8). Es fehlen noch Katze und Zaun (der Zaun ist gezeichnet).
 
 ## 6. Plan, Schritt für Schritt
 
@@ -167,8 +166,7 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
   (Zustand „meidet die Menschen“) und wählen dort keine Weideplätze, Räuber streifen und jagen
   dort nicht. Durst geht vor, denn das Wasser kann im Dorf liegen. Für den Hirsch heißt das:
   im Umkreis von etwa 180 um das Haus. Der Laufvogel meidet das Dorf nie.
-- Platzhalter-Grafiken in `js/render/humanRenderer.js`. Sobald Bilder da sind, werden sie dort
-  in `FILES` eingetragen.
+- Grafiken in `js/render/humanRenderer.js` (`FILES`, siehe „Bilder der Menschen“).
 - `tools/shot.js … --landung=fx,fy` landet vor dem Simulieren an dieser Stelle (Anteil der Welt).
 
 ### Schritt 2: Dorf vergrößern
@@ -258,8 +256,8 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
 - **Hunde** sind wie Wölfe (gleiche Werte), etwas stärker, und tragen **Staupe**: Wölfe in ihrer
   Nähe erkranken mit der Zeit, werden schwach und sterben oft daran (Folgekarte 🦠 „Wölfe
   erkranken“, Todesursache „Krankheit“, kranke Tiere mit grünem Punkt).
-- **Platzhalter-Bilder:** Schafe sind eingefärbte Hirsche (pink-lila), Hunde eingefärbte Wölfe
-  (orange). Auch die Haustiere auf der Weide und im Dorf werden so gezeichnet.
+- **Bilder:** eigene Bilder in `assets/schaf` und `assets/hund` (vorher eingefärbte Hirsche und
+  Wölfe). Auch die Haustiere auf der Weide und im Dorf werden so gezeichnet.
 - **Oberfläche:** Kacheln für Schafe und Hunde erscheinen, sobald die Art auf der Insel ist; in
   den Diagrammen stehen sie bei Pflanzenfressern bzw. Räubern. Keine Startregler für sie. Im
   Reiter Menschen: Schafe auf den Weiden, Hütehunde.
@@ -329,6 +327,16 @@ je Art in `data/arten.md` („Jagd“).
   🐺 **Wölfe töten einen Jäger**; im Frühling kommt ein neuer.
 - **Chronik:** jedes Jahr 🎯 **Jagdbilanz** (erlegt je Art, Angriffe). Reiter Menschen: Jäger,
   Wild erlegt, Wölfe erlegt, Angriffe. Todesursache „Jagd“.
+- **Gehen** (seit den neuen Bildern): Früher blieben nachts (2 von 6 Ticks) alle Jäger und Sammler
+  zugleich stehen, das sah aus wie ein Takt. Jetzt laufen sie auch nachts, jeder bleibt für sich
+  ab und zu kurz stehen (`pause` 12 % je Tick, 1–2 Ticks), jeder hat sein Tempo (0,85–1,15 ×
+  `speed` 25, vorher 30 nur tagsüber), auf langen Wegen pendeln sie um die gerade Linie (`sway`),
+  und morgens brechen sie nicht alle im selben Tick auf. Der Jagdzug zählt jetzt alle Ticks (12
+  Tage wie vorher), Nachladen 3 Ticks (vorher 2 Tagticks), Sammeln 2 je Tick (vorher 3 je Tagtick).
+  So bleibt die Strecke je Tag etwa gleich. Messung `--karten=wildJagen@1,woelfeJagen@1,sammeln@1`
+  (8 × 30 Jahre): gesammelt 4700–7000 (vorher 5900–7500), Laufvögel 343–383 (352–393), Wölfe 25–78
+  (30–86), Hirsche 29–66 (31–65), Median gegenüber nur Landung Hirsch 135 % (168 %), Laufvogel 87 %
+  (88 %), Wolf 29 % (6 %), Adler 67 % (39 %). Im Rahmen der Streuung zwischen den Läufen.
 - **Ohne Jagdkarte läuft alles exakt wie vorher** (gleiche Prüfsummen der Bestände).
 - **Messung** (`node tools/invasion.js 8 30 --karten=…`, Median gegenüber nur Landung):
 
@@ -361,13 +369,13 @@ Jägern in `humans.hunters`, `kind: 'sammel'`).
 
 - **Karte „Sammeln“:** 2 Sammler je Karte. Je Gang wird gewürfelt, wie weit sie hinausgehen
   (0–500 vom Dorf). Ab dort pflücken sie Früchte und Samen, wo sie zuerst welche finden
-  (mindestens 0,5 je Weidezelle), 3 je Tick aus der Zelle und ihren Nachbarn, dann weiter zur
+  (mindestens 0,5 je Weidezelle), 2 je Tick aus der Zelle und ihren Nachbarn, dann weiter zur
   nächsten vollen Zelle in der Nähe. Heim gehen sie mit 60 (3 Körben) oder nach 10 Tagen, danach
   1–2 Tage im Dorf. Wo keine Früchte sind (Winterende, Frühling), bleiben sie daheim.
 - **Wölfe:** Hungrige Wölfe greifen auch Sammler an. Die haben keine Waffen: der Sammler stirbt zu
   40 %, der Wolf zu 5 %. Folgekarte 🐺 „Wölfe töten einen Menschen“ (vorher „… einen Jäger“).
 - **Chronik:** jedes Jahr 🫐 **Sammelbilanz** (Körbe, Angriffe). Reiter Menschen: Sammler,
-  Körbe gesammelt. Auf der Karte: Sammler mit Korb, der sich mit Früchten füllt.
+  Körbe gesammelt. Auf der Karte: Sammler mit Korb (Bild).
 - **Messung** (`invasion.js 8 30 --karten=…`, Median gegenüber nur Landung; die Laufvögel fressen
   auf der mittleren Insel etwa 3600 Früchte im Jahr):
 
@@ -403,8 +411,8 @@ Jägern in `humans.hunters`, `kind: 'sammel'`).
   zu Wiese, sonst wieder zu dem, was dort von Natur aus war (`Landuse.abandon`).
 - **Anzeige:** Die Karten in der Leiste haben − Zahl +; die Zahl sagt, wie oft die Karte gerade
   wirkt. Karte antippen öffnet das **Infofenster** mit Bild, Erklärung (`more`) und was − bewirkt
-  (`undo`, beides in `BT.CARDS`). Das Bild ist eine gezeichnete Szene (`js/ui/cardInfo.js`), bis es
-  Kartenbilder gibt (`assets/karte_<id>.png`, dann in `BT.CardInfo.FILES` eintragen). Zurückgenommene
+  (`undo`, beides in `BT.CARDS`). Das Bild ist ein Ausschnitt der echten Inselkarte
+  (`assets/karte_<id>.png`, erzeugt mit `tools/kartenbilder.js`, siehe unten). Zurückgenommene
   Karten stehen in der Chronik mit ↩ und als lang gestrichelte blaue Marke im Diagramm.
 - **Mit einem Dorf läuft alles exakt wie vorher** (gleiche Prüfsummen mit allen Karten).
 
@@ -419,3 +427,26 @@ Jägern in `humans.hunters`, `kind: 'sammel'`).
   Meldungen wie die jährliche Ernte stehen nur in der Chronik. Die gelblichen Bänder sind
   **Mastjahre** (Wetter, viele Früchte), die bläulichen harte Winter. Beides hat nichts mit den
   Menschen zu tun. Die Legende unter den Diagrammen erklärt alle vier.
+
+### Bilder der Menschen
+
+- **Dateien** (`js/render/humanRenderer.js`, `FILES`): `assets/schiff.png` (Bug links),
+  `assets/haus_fachwerk.png`, `assets/haus_holz.png`, in `assets/doerfler/` die Menschen von vorn:
+  `villager_1…11` (Siedler), `jagdwild_1…7` (Jäger mit Bogen), `jagdwolf_1…7` (Wolfsjäger mit
+  Speer), `sammeln_1…5` (Sammler mit Korb). Jedes Haus und jeder Mensch bekommt zufällig eines
+  der Bilder seiner Sorte, fest nach seiner Nummer (er sieht immer gleich aus). Die Bilder sind
+  auf ihren Umriss zugeschnitten. Der Ordner heißt `doerfler` (ohne Umlaut), weil Umlaute in
+  Pfaden beim Kopieren und Entpacken leicht kaputtgehen. Neue Varianten: Datei ablegen und die
+  Zahl in `numbered(…)` erhöhen.
+- **Darstellung:** Menschen sind 1,7 × `settler.size` hoch und wippen im Schritt (nur Zeichnung).
+  Ein Jäger mit Beute trägt das Bild des Tiers über der Schulter.
+- **Kartenleiste:** Die Karten zeigen statt des Symbols ein Bild (`image` in `BT.CARDS`; der Acker
+  hat noch keines und behält 🌾).
+- **Infofenster:** `node tools/kartenbilder.js [karte …]` lädt die Insel (Seed 482917, Landung bei
+  0,17/0,5), spielt die Karte, simuliert, bis die Szene zu sehen ist (z. B. ein Jäger nahe bei
+  Wölfen, Frühling oder Sommer), und schneidet 960 × 480 Pixel um diese Stelle aus. Die Ratten gibt
+  es in der Simulation noch nicht, dort stehen die Rattenbilder am Strand neben dem Schiff. Nach
+  Änderungen an Grafiken die Bilder neu erzeugen.
+- **Siedler gehen** jeder für sich: eigenes Tempo (0,75–1,25 × 3), an jedem Ziel 2–9 Ticks, ab
+  und zu (20 %, nachts meist) heim und dann 3–12 Ticks im Haus. Vorher gingen nachts alle zugleich
+  Richtung Haus. Ihre Wege haben einen eigenen Zufall (`walkRng`) und wirken nicht auf die Tiere.

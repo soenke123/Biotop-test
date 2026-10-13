@@ -22,13 +22,13 @@ Bilder (Männchen, stehend).
 | Laufvogel | `laufvogel` | rechts | gehend | – (gehend) | essend | sitzend |
 | Inselwolf | `wolf` | links | gehend | stehend | essend | liegend |
 | Inseladler | `adler` | rechts | fliegend | stehend | essend | sitzend |
-| Schaf | `hirsch` (Platzhalter) | rechts | gehend | stehend | essend | liegend |
-| Hund | `wolf` (Platzhalter) | links | gehend | stehend | essend | liegend |
+| Schaf | `schaf/schaf` | rechts | gehend | stehend | essend | sitzend |
+| Hund | `hund/hund` | rechts | gehend | stehend | essend | sitzend |
 
-Schaf und Hund haben noch keine eigenen Bilder. Sie tragen die Bilder von Hirsch und Wolf,
-bunt eingefärbt (`tint` in `species.js`, Füllmodus „color“: Farbton aus der Farbe, Helligkeit
-aus dem Bild): Schafe pink-lila `#e05ad8`, Hunde orange `#ff8c1a`. Sobald es Bilder gibt,
-`name` umstellen und `tint` entfernen.
+Schaf und Hund haben eigene Ordner (`assets/schaf`, `assets/hund`). Ihre Bilder füllen den Rahmen
+mehr aus als die von Hirsch und Wolf, deshalb sind sie mit kleinerem `size` gezeichnet (Schaf 17,
+Hund 19; nur Darstellung). `tint` (Einfärben) wird nicht mehr gebraucht, bleibt aber als
+Möglichkeit für Platzhalter in `sprites.js`.
 
 Welche Haltung gezeigt wird (`js/render/agentRenderer.js`, `pose`):
 

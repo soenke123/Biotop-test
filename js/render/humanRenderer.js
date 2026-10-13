@@ -2,32 +2,60 @@
  * Zeichnet die Menschen: Schiffe, Haeuser, Siedler, Jaeger und Sammler, Weiden mit Zaun,
  * Schafe auf der Weide und Huetehunde (mit den Bildern der Arten schaf, hund).
  *
- * Bis es Bilder gibt, zeichnet das Programm einfache Platzhalter. Sobald eine
- * Grafik da ist, wird sie in FILES eingetragen (Pfad relativ zu index.html)
- * und statt des Platzhalters benutzt. Blickrichtung der Bilder: rechts.
- * Haeuser: haus_1, haus_2, haus_3 (Varianten), Siedler: siedler_gehend,
- * siedler_stehend, siedler_arbeitend, Jaeger: jaeger, wolfsjaeger, Sammler: sammler.
+ * Bilder in assets/ (zugeschnitten auf den Umriss): schiff.png (Bug links),
+ * haus_fachwerk.png, haus_holz.png und in assets/doerfler/ die Menschen von vorn:
+ * villager_<n> (Siedler), jagdwild_<n> (Jaeger), jagdwolf_<n> (Wolfsjaeger),
+ * sammeln_<n> (Sammler). Jedes Haus und jeder Mensch bekommt eines der Bilder
+ * seiner Sorte, fest nach seiner Nummer (variant), aber ohne Muster.
+ * Solange ein Bild noch laedt, steht dort ein farbiger Punkt.
  */
 (function (global) {
   'use strict';
 
   var BT = global.BT || (global.BT = {});
 
-  // z. B. schiff: 'assets/schiff.png', haus_1: 'assets/haus_1.png'
-  var FILES = {};
+  function numbered(prefix, n) {
+    var list = [];
+    for (var k = 1; k <= n; k++) list.push('assets/doerfler/' + prefix + '_' + k + '.png');
+    return list;
+  }
+
+  // Je Sorte eine Liste von Bildern (Varianten)
+  var FILES = {
+    schiff: ['assets/schiff.png'],
+    haus: ['assets/haus_fachwerk.png', 'assets/haus_holz.png'],
+    siedler: numbered('villager', 11),
+    wild: numbered('jagdwild', 7),
+    wolf: numbered('jagdwolf', 7),
+    sammel: numbered('sammeln', 5)
+  };
   var images = {};
 
-  function image(name) {
-    if (images[name] !== undefined) return images[name];
-    images[name] = null;
-    if (!FILES[name] || typeof global.Image === 'undefined') return null;
+  function image(name, k) {
+    var key = name + k;
+    if (images[key] !== undefined) return images[key];
+    images[key] = null;
+    var file = FILES[name] && FILES[name][k];
+    if (!file || typeof global.Image === 'undefined') return null;
     var img = new global.Image();
-    img.onload = function () { images[name] = img; if (BT.app) BT.app.redraw(); };
-    img.src = FILES[name];
+    img.onload = function () { images[key] = img; if (BT.app) BT.app.redraw(); };
+    img.src = file;
     return null;
   }
 
-  var SHIP_SIZE = 64, HOUSE_SIZE = 30;
+  /** Bild Nummer (id gestreut) aus der Sorte name. */
+  function variant(name, id) {
+    var h = Math.imul(id + 1, 0x9e3779b1) >>> 0;
+    h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0;
+    return image(name, ((h ^ (h >>> 13)) >>> 0) % FILES[name].length);
+  }
+
+  /** Alle Bilder vorab laden (sonst erst, wenn sie zum ersten Mal gebraucht werden). */
+  function preload() {
+    for (var name in FILES) for (var k = 0; k < FILES[name].length; k++) image(name, k);
+  }
+
+  var SHIP_SIZE = 58, HOUSE_SIZE = 30, PERSON = 1.7;   // Menschen: so hoch (mal HUMANS.settler.size)
 
   function lerp(o, alpha) {
     return { x: o.px + (o.x - o.px) * alpha, y: o.py + (o.y - o.py) * alpha };
@@ -51,7 +79,7 @@
       var h = H.houses[i];
       if (inView(h, view, hs * 2)) drawHouse(ctx, h, hs);
     }
-    var ps = Math.max(BT.HUMANS.settler.size, 10 / scale);
+    var ps = Math.max(BT.HUMANS.settler.size, 10 / scale) * PERSON;
     for (i = 0; i < H.people.length; i++) {
       var p = H.people[i];
       if (p.inside) continue;
@@ -62,7 +90,7 @@
       var hu = H.hunters[i];
       if (hu.state === 'daheim' && H.night) continue;
       var hq = lerp(hu, alpha);
-      if (inView(hq, view, ps * 2)) drawHunter(ctx, hu, hq, ps * 1.1);
+      if (inView(hq, view, ps * 2)) drawHunter(ctx, hu, hq, ps * 1.05);
     }
     var hund = BT.SPECIES.hund, ds = Math.max(hund.size, 12 / scale);
     for (i = 0; i < H.dogs.length; i++) {
@@ -135,184 +163,73 @@
   }
 
   function drawHouse(ctx, h, size) {
-    var img = image('haus_' + (h.kind + 1));
+    var img = variant('haus', h.id);
     ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-    ctx.beginPath(); ctx.ellipse(h.x + size * 0.08, h.y + size * 0.42, size * 0.62, size * 0.18, 0, 0, Math.PI * 2); ctx.fill();
-    if (img) {
-      var ih = size * 1.3 * img.height / img.width;
-      ctx.drawImage(img, h.x - size * 0.65, h.y + size * 0.45 - ih, size * 1.3, ih);
-      return;
-    }
-    var w = size, wallH = size * 0.5, x0 = h.x - w / 2, base = h.y + size * 0.4;
-    ctx.lineWidth = Math.max(0.6, size * 0.04);
-    ctx.strokeStyle = '#4a3220';
-    ctx.fillStyle = ['#d8b27a', '#c99e6a', '#e0c08c'][h.kind % 3];
-    ctx.fillRect(x0, base - wallH, w, wallH);
-    ctx.strokeRect(x0, base - wallH, w, wallH);
-    ctx.fillStyle = ['#9a4a32', '#7d5a36', '#8b3f2c'][h.kind % 3];
-    ctx.beginPath();
-    ctx.moveTo(x0 - w * 0.12, base - wallH);
-    ctx.lineTo(h.x, base - wallH - size * 0.42);
-    ctx.lineTo(x0 + w * 1.12, base - wallH);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#4a3220';
-    ctx.fillRect(h.x - w * 0.09, base - wallH * 0.62, w * 0.18, wallH * 0.62);
-    ctx.fillStyle = '#f2d98a';
-    ctx.fillRect(x0 + w * 0.12, base - wallH * 0.75, w * 0.17, wallH * 0.3);
-  }
-
-  function drawSettler(ctx, p, q, size) {
-    var moving = Math.abs(p.x - p.px) + Math.abs(p.y - p.py) > 0.3;
-    var img = image(moving ? 'siedler_gehend' : p.working ? 'siedler_arbeitend' : 'siedler_stehend') || image('siedler_gehend');
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
-    ctx.beginPath(); ctx.ellipse(q.x, q.y + size * 0.42, size * 0.3, size * 0.11, 0, 0, Math.PI * 2); ctx.fill();
-    if (img) {
-      var ih = size * img.height / img.width;
-      ctx.save();
-      ctx.translate(q.x, q.y);
-      if (Math.cos(p.heading) < 0) ctx.scale(-1, 1);
-      ctx.drawImage(img, -size / 2, size * 0.45 - ih, size, ih);
-      ctx.restore();
-      return;
-    }
-    // Platzhalter: Koerper, Kopf, Hut
-    var tone = ['#3d6fb0', '#a8452f', '#4f7d3a', '#7a5aa6', '#b07a2a'][p.id % 5];
-    ctx.lineWidth = Math.max(0.5, size * 0.07);
-    ctx.strokeStyle = '#2a1d14';
-    ctx.fillStyle = tone;
-    ctx.beginPath();
-    ctx.moveTo(q.x - size * 0.22, q.y + size * 0.42);
-    ctx.lineTo(q.x - size * 0.15, q.y - size * 0.08);
-    ctx.lineTo(q.x + size * 0.15, q.y - size * 0.08);
-    ctx.lineTo(q.x + size * 0.22, q.y + size * 0.42);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#f0c8a0';
-    ctx.beginPath(); ctx.arc(q.x, q.y - size * 0.24, size * 0.16, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#6b4a2a';
-    ctx.fillRect(q.x - size * 0.2, q.y - size * 0.42, size * 0.4, size * 0.07);
+    ctx.beginPath(); ctx.ellipse(h.x + size * 0.08, h.y + size * 0.4, size * 0.66, size * 0.16, 0, 0, Math.PI * 2); ctx.fill();
+    if (!img) return;
+    var w = size * 1.2, ih = w * img.height / img.width;
+    ctx.drawImage(img, h.x - w / 2, h.y + size * 0.48 - ih, w, ih);
   }
 
   /**
-   * Jaeger: wie ein Siedler, mit Speer (Wolfsjaeger dunkel mit Fellmuetze,
-   * Wildjaeger gruen). Wer Beute traegt, hat sie ueber der Schulter.
-   * Sammler: ohne Speer, mit Korb, der sich mit Fruechten fuellt.
+   * Ein Mensch (Bild von vorn, Fuesse bei y + height * 0.3). Wer geht, wippt
+   * im Schritt: Das haengt am Weg, nicht an der Uhr, und steht still, wenn er steht.
    */
-  function drawHunter(ctx, h, q, size) {
-    var img = image(h.kind === 'wolf' ? 'wolfsjaeger' : h.kind === 'sammel' ? 'sammler' : 'jaeger');
-    var gatherer = h.kind === 'sammel';
-    var right = Math.cos(h.heading) >= 0;
+  function drawPerson(ctx, img, q, height, moving, dot) {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
-    ctx.beginPath(); ctx.ellipse(q.x, q.y + size * 0.42, size * 0.3, size * 0.11, 0, 0, Math.PI * 2); ctx.fill();
-    if (img) {
-      var ih = size * img.height / img.width;
-      ctx.save();
-      ctx.translate(q.x, q.y);
-      if (!right) ctx.scale(-1, 1);
-      ctx.drawImage(img, -size / 2, size * 0.45 - ih, size, ih);
-      ctx.restore();
-    } else {
-      ctx.lineWidth = Math.max(0.5, size * 0.07);
-      ctx.strokeStyle = '#2a1d14';
-      // Speer (Jaeger)
-      var sx = right ? size * 0.3 : -size * 0.3;
-      if (!gatherer) {
-        ctx.beginPath(); ctx.moveTo(q.x + sx, q.y + size * 0.45); ctx.lineTo(q.x + sx * 1.15, q.y - size * 0.6); ctx.stroke();
-        ctx.fillStyle = '#c8c8c8';
-        ctx.beginPath(); ctx.moveTo(q.x + sx * 1.15 - size * 0.06, q.y - size * 0.55); ctx.lineTo(q.x + sx * 1.17, q.y - size * 0.78); ctx.lineTo(q.x + sx * 1.15 + size * 0.06, q.y - size * 0.55); ctx.closePath(); ctx.fill();
-      }
-      ctx.fillStyle = h.kind === 'wolf' ? '#4a4f45' : gatherer ? '#b0643a' : '#5f7a2e';
-      ctx.beginPath();
-      ctx.moveTo(q.x - size * 0.22, q.y + size * 0.42);
-      ctx.lineTo(q.x - size * 0.15, q.y - size * 0.08);
-      ctx.lineTo(q.x + size * 0.15, q.y - size * 0.08);
-      ctx.lineTo(q.x + size * 0.22, q.y + size * 0.42);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#f0c8a0';
-      ctx.beginPath(); ctx.arc(q.x, q.y - size * 0.24, size * 0.16, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = h.kind === 'wolf' ? '#8a7a66' : gatherer ? '#e8d6a0' : '#3f5520';
-      ctx.beginPath(); ctx.arc(q.x, q.y - size * 0.32, size * 0.15, Math.PI, 0); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(q.x, q.y + height * 0.3, height * 0.2, height * 0.07, 0, 0, Math.PI * 2); ctx.fill();
+    if (!img) {
+      ctx.fillStyle = dot;
+      ctx.beginPath(); ctx.arc(q.x, q.y, height * 0.2, 0, Math.PI * 2); ctx.fill();
+      return;
     }
-    if (gatherer) {
-      // Korb, mit Fruechten, je voller er ist
-      var bx = q.x + (right ? size * 0.3 : -size * 0.3), by = q.y + size * 0.12, bw = size * 0.26;
-      ctx.fillStyle = '#c99a52';
-      ctx.strokeStyle = '#5a3a1a';
-      ctx.lineWidth = Math.max(0.5, size * 0.05);
-      ctx.fillRect(bx - bw / 2, by, bw, size * 0.2);
-      ctx.strokeRect(bx - bw / 2, by, bw, size * 0.2);
-      var full = Math.min(1, (h.load || 0) / BT.HUMANS.gather.load);
-      ctx.fillStyle = '#c0392b';
-      for (var k = 0; k < Math.round(full * 4); k++) {
-        ctx.beginPath(); ctx.arc(bx - bw * 0.3 + k * bw * 0.2, by - size * 0.02, size * 0.06, 0, Math.PI * 2); ctx.fill();
-      }
-    }
-    if (h.carry) {
-      ctx.fillStyle = BT.SPECIES[h.carry.id].color;
-      ctx.strokeStyle = '#2a1d14';
-      ctx.lineWidth = Math.max(0.5, size * 0.05);
-      ctx.beginPath(); ctx.ellipse(q.x - (right ? size * 0.2 : -size * 0.2), q.y - size * 0.12, size * 0.24, size * 0.11, right ? -0.4 : 0.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    }
+    var bob = moving ? Math.abs(Math.sin((q.x + q.y) / (height * 0.22))) * height * 0.05 : 0;
+    var w = height * img.width / img.height;
+    ctx.drawImage(img, q.x - w / 2, q.y + height * 0.3 - height - bob, w, height);
   }
 
+  function drawSettler(ctx, p, q, height) {
+    var moving = Math.abs(p.x - p.px) + Math.abs(p.y - p.py) > 0.3;
+    drawPerson(ctx, variant('siedler', p.id), q, height, moving, '#3d6fb0');
+  }
+
+  /** Jaeger, Wolfsjaeger, Sammler. Ein Jaeger mit Beute traegt sie ueber der Schulter. */
+  function drawHunter(ctx, h, q, height) {
+    var moving = Math.abs(h.x - h.px) + Math.abs(h.y - h.py) > 0.3;
+    drawPerson(ctx, variant(h.kind, h.id), q, height, moving, h.kind === 'wolf' ? '#4a4f45' : h.kind === 'sammel' ? '#b0643a' : '#5f7a2e');
+    if (!h.carry) return;
+    var spec = BT.SPECIES[h.carry.id];
+    var img = BT.Sprites && BT.Sprites.get(spec.id, 'm', 'rest');
+    var w = height * 0.7, x = q.x + height * 0.18, y = q.y - height * 0.32;
+    if (!img) {
+      ctx.fillStyle = spec.color;
+      ctx.beginPath(); ctx.ellipse(x, y, w * 0.35, w * 0.16, 0, 0, Math.PI * 2); ctx.fill();
+      return;
+    }
+    var ih = w * img.height / img.width;
+    ctx.drawImage(img, x - w / 2, y - ih / 2, w, ih);
+  }
+
+  /** Schiff (das Bild zeigt den Bug links) mit Kielwasser, solange es faehrt. */
   function drawShip(ctx, s, q, size, scale) {
-    var right = Math.cos(s.heading) >= 0;
-    var moving = s.phase !== 'liegt';
-    // Kielwasser
-    if (moving) {
+    if (s.phase !== 'liegt') {
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
       ctx.lineWidth = Math.max(1, 1.5 / scale);
       var bx = -Math.cos(s.heading), by = -Math.sin(s.heading);
       for (var k = -1; k <= 1; k += 2) {
         ctx.beginPath();
-        ctx.moveTo(q.x + bx * size * 0.35, q.y + by * size * 0.35 + size * 0.12);
-        ctx.lineTo(q.x + bx * size * 1.1 - by * k * size * 0.25, q.y + by * size * 1.1 + bx * k * size * 0.25 + size * 0.12);
+        ctx.moveTo(q.x + bx * size * 0.35, q.y + by * size * 0.35 + size * 0.3);
+        ctx.lineTo(q.x + bx * size * 1.1 - by * k * size * 0.25, q.y + by * size * 1.1 + bx * k * size * 0.25 + size * 0.3);
         ctx.stroke();
       }
     }
-    var img = image('schiff');
+    var img = variant('schiff', 0);
+    if (!img) return;
+    var ih = size * img.height / img.width;
     ctx.save();
     ctx.translate(q.x, q.y);
-    if (!right) ctx.scale(-1, 1);
-    if (img) {
-      var ih = size * img.height / img.width;
-      ctx.drawImage(img, -size / 2, size * 0.2 - ih, size, ih);
-      ctx.restore();
-      return;
-    }
-    // Platzhalter: Rumpf, Mast, zwei Segel (Bug nach rechts)
-    ctx.lineWidth = Math.max(0.8, size * 0.025);
-    ctx.strokeStyle = '#3a2414';
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
-    ctx.beginPath(); ctx.ellipse(0, size * 0.2, size * 0.5, size * 0.08, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#7a4a26';
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.48, -size * 0.04);
-    ctx.lineTo(size * 0.5, -size * 0.06);
-    ctx.lineTo(size * 0.34, size * 0.17);
-    ctx.lineTo(-size * 0.4, size * 0.17);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#c9934f';
-    ctx.fillRect(-size * 0.44, -size * 0.04, size * 0.88, size * 0.05);
-    ctx.beginPath(); ctx.moveTo(-size * 0.02, -size * 0.04); ctx.lineTo(-size * 0.02, -size * 0.62); ctx.stroke();
-    ctx.fillStyle = '#f4ecd6';
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.04, -size * 0.58);
-    ctx.quadraticCurveTo(-size * 0.34, -size * 0.32, -size * 0.36, -size * 0.1);
-    ctx.lineTo(-size * 0.04, -size * 0.1);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, -size * 0.55);
-    ctx.quadraticCurveTo(size * 0.22, -size * 0.3, size * 0.3, -size * 0.1);
-    ctx.lineTo(0, -size * 0.1);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#c0392b';
-    ctx.beginPath(); ctx.moveTo(-size * 0.02, -size * 0.62); ctx.lineTo(size * 0.12, -size * 0.58); ctx.lineTo(-size * 0.02, -size * 0.54); ctx.fill();
+    if (Math.cos(s.heading) > 0) ctx.scale(-1, 1);
+    ctx.drawImage(img, -size / 2, size * 0.4 - ih, size, ih);
     ctx.restore();
   }
 
@@ -357,5 +274,5 @@
     return best;
   }
 
-  BT.HumanRenderer = { drawGround: drawGround, drawSea: drawSea, pick: pick, FILES: FILES };
+  BT.HumanRenderer = { drawGround: drawGround, drawSea: drawSea, pick: pick, preload: preload, FILES: FILES };
 })(typeof window !== 'undefined' ? window : globalThis);
