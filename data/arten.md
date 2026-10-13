@@ -331,7 +331,8 @@ reagieren, folgt aus `scheu`:
 | Hund (wild) | Wolfsjäger (1) | 0,7 | wie der Wolf, aber kaum scheu |
 
 Wildjäger nehmen, **was sie zuerst sehen**: Kommt unterwegs eine Gruppe Hirsche oder Laufvögel
-näher als 160 und näher als ihr bisheriges Ziel, jagen sie diese. Weil die Hirsche das Dorf
+näher als 160 und näher als ihr bisheriges Ziel, jagen sie diese – aber erst ab einem Abstand
+vom Dorf, der je Jagdzug neu gewürfelt wird (0–500): mal jagen sie am Dorf, mal weit draußen. Weil die Hirsche das Dorf
 meiden und die Laufvögel nicht, sind das am Dorf meist Laufvögel. Treffer jeweils mal
 `1 − Deckung × 0,5`. Wildjäger bringen ein Tier heim, ein Viertel bleibt als
 Aas liegen (für Wölfe und Adler). Wolfsjäger jagen weiter, bis der Jagdzug um ist. Todesursache

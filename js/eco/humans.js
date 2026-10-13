@@ -92,7 +92,8 @@
       // Wildjaeger tragen ein Tier heim, Wolfsjaeger jagen weiter, bis der Jagdzug um ist (stay)
       wolf: { prey: { inselwolf: 1, hund: 1 }, hit: 0.7, stay: true },
       wild: { prey: { zwerghirsch: 1, laufvogel: 1, schaf: 1 }, hit: 0.5, stay: false },
-      sight: 160,             // Beute, die ein Jaeger unterwegs naeher sieht als sein Ziel, wird das neue Ziel
+      sight: 160,             // Beute, die ein Jaeger unterwegs naeher sieht als sein Ziel, wird das neue Ziel ...
+      out: [0, 500],          // ... aber erst so weit vom Dorf (je Jagdzug neu gewuerfelt: mal nah, mal weit draussen)
       flee: 0.5,              // ab dieser scheu fliehen Tiere vor Jaegern (Laufvogel nicht)
       notice: 0.4,            // ... wenn ein Jaeger naeher ist als vision * notice (Hirsch 72)
       shy: 0.6,
@@ -837,10 +838,13 @@
     for (var i = 0; i < list.length; i++) {
       var g = list[i], w = prey[g.spec.id];
       if (!w || !g.members.length) continue;
-      if (BT.M.hypot(g.x - c.x, g.y - c.y) > range) continue;
+      var dc = BT.M.hypot(g.x - c.x, g.y - c.y);
+      if (dc > range) continue;
+      var near = dc < (h.out || 0);                  // naeher am Dorf, als der Jaeger heute will
       var d = BT.M.hypot(g.x - h.x, g.y - h.y);
       var score = w * (1 - d / (range * 1.5)) * (0.8 + 0.4 * this.rng.next());
-      if (score > bestScore) { bestScore = score; best = g; }
+      if (near) score -= 10;                         // nur, wenn draussen nichts ist
+      if (!best || score > bestScore) { bestScore = score; best = g; }
     }
     return best;
   };
@@ -866,6 +870,7 @@
       h.px = h.x; h.py = h.y;
       if (h.state === 'daheim') {
         if (h.rest > 0 || this.night) continue;
+        h.out = this.rng.range(cfg.out[0], cfg.out[1]);
         h.target = this.huntTarget(h);
         if (!h.target) { h.rest = 1; continue; }
         h.state = 'unterwegs'; h.trip = 0; h.trail = []; h.stuck = 0;
@@ -880,7 +885,8 @@
           var g = h.target;
           if (!g || !g.members.length) g = h.target = this.huntTarget(h);
           // Was zuerst in Sicht kommt, wird gejagt (Hirsch oder Laufvogel)
-          var seen = g && this.preyInSight(h, g);
+          var c = this.center();
+          var seen = g && BT.M.hypot(h.x - c.x, h.y - c.y) >= h.out && this.preyInSight(h, g);
           if (seen) g = h.target = seen;
           if (!g) { h.state = 'heim'; }
           else {

@@ -315,7 +315,9 @@ je Art in `data/arten.md` („Jagd“).
   schleichen sich an und schießen aus 90. Heim gehen sie auf ihrer eigenen Spur (sonst blieben sie
   an Seen hängen). Danach 2–4 Tage im Dorf.
 - **Karte „Wild jagen“:** Die Jäger nehmen, was sie zuerst sehen (Hirsch, Laufvogel, wildes
-  Schaf), und bringen ein Tier heim; ein Viertel bleibt als Aas liegen. Hirsche fliehen vor
+  Schaf), und bringen ein Tier heim. Wie weit sie hinausgehen, wird je Jagdzug neu gewürfelt
+  (0–500 vom Dorf): erst ab dort wählen sie Beute und wechseln auf das, was sie sehen. So jagen sie
+  mal am Dorf, mal weit draußen, wo die Wölfe sind (gilt auch für Wolfsjäger); ein Viertel bleibt als Aas liegen. Hirsche fliehen vor
   Jägern (`scheu` ≥ 0,5), Laufvögel nicht.
 - **Karte „Wölfe jagen“:** Wolfsjäger verfolgen Rudel (auch wilde Hunde). Ein beschossenes Rudel
   flieht 300 weit, die Jäger folgen ihm und jagen weiter, bis der Jagdzug um ist.
@@ -330,11 +332,14 @@ je Art in `data/arten.md` („Jagd“).
 
   | Karten | erlegt in 30 Jahren (je Insel) | Hirsch | Laufvogel | Wolf | Adler |
   |---|---|---|---|---|---|
-  | Wild jagen | 550–720 Laufvögel, 2–17 Hirsche; 0–2 Angriffe | 83 % | 115 % | 85 % | **21 %** (5 von 8 ausgestorben) |
+  | Wild jagen | 333–382 Laufvögel, 1–27 Hirsche; 4–13 Angriffe, 0–6 Jäger tot | 74 % | 105 % | 89 % | 74 % (3 von 8 ausgestorben) |
+  | Wild jagen, immer am Dorf (`out` 0) | 550–720 Laufvögel, 2–17 Hirsche; 0–2 Angriffe | 83 % | 115 % | 85 % | **21 %** (5 von 8) |
   | Wölfe jagen | 36–89 Wölfe | 122 % | 91 % | **20 %** (3 von 8 ausgestorben) | 67 % |
   | beide | Laufvögel wie oben, 36–56 Wölfe, 5–96 Hirsche | 128 % | 79 % | **6 %** (5 von 8) | 65 % |
 
-  Die Wildjäger treffen am Dorf fast nur Laufvögel (die Hirsche meiden das Dorf). Sie nehmen den
+  Laufvögel gibt es viel mehr als Hirschherden, und sie fliehen nicht; deshalb erlegen die Jäger
+  auch weit draußen meist Laufvögel. Die Hirsche gehen trotzdem zurück (sie fliehen oft vor den
+  Jägern und fressen dann nicht). Bleiben die Jäger immer am Dorf, treffen sie fast nur Laufvögel (die Hirsche meiden das Dorf). Sie nehmen den
   Adlern die Beute weg, die Adler sterben aus, und die Laufvögel werden dadurch sogar etwas mehr.
   Weil die Jäger nah am Dorf bleiben, begegnen sie kaum Wölfen. Mit der vorigen Regel (Ziel nach
   Gewicht wählen, Laufvogel 0,6, kein Wechsel unterwegs; 8 Inseln × 30 Jahre) erlegten sie 70–130
