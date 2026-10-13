@@ -305,6 +305,42 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
 - **Mit Schafen und Hunden darf das Ökosystem kippen.** Die Werte sind noch nicht abgestimmt
   (das Testen übernimmt die Projektleitung). **Ohne Karte läuft alles exakt wie vorher.**
 
+### Schritt 7: Jagd
+
+Vorgezogen vor die Ratten. Werte in `BT.HUMANS.hunt` (`js/eco/humans.js`), Begründung und Tabelle
+je Art in `data/arten.md` („Jagd“).
+
+- **Jäger** (`humans.hunters`): Jede Karte bringt 2 Jäger. Sie ziehen auf Jagdzüge (bis 12 Tage,
+  nachts lagern sie draußen) bis 1000 vom Dorf (jede weitere Karte derselben Sorte 30 % weiter),
+  schleichen sich an und schießen aus 90. Heim gehen sie auf ihrer eigenen Spur (sonst blieben sie
+  an Seen hängen). Danach 2–4 Tage im Dorf.
+- **Karte „Wild jagen“:** Die Jäger nehmen, was sie zuerst sehen (Hirsch, Laufvogel, wildes
+  Schaf), und bringen ein Tier heim; ein Viertel bleibt als Aas liegen. Hirsche fliehen vor
+  Jägern (`scheu` ≥ 0,5), Laufvögel nicht.
+- **Karte „Wölfe jagen“:** Wolfsjäger verfolgen Rudel (auch wilde Hunde). Ein beschossenes Rudel
+  flieht 300 weit, die Jäger folgen ihm und jagen weiter, bis der Jagdzug um ist.
+- **Wölfe gegen Jäger:** Hungrige Rudel greifen Jäger an, die näher als 50 kommen (8 % je Tick, mit
+  Beute 16 %). Wildjäger sterben zu 30 %, der Wolf zu 40 %, sonst nehmen die Wölfe die Beute.
+  Wolfsjäger sterben zu 5 %, der Wolf zu 85 %. Ein toter Jäger ist die Folgekarte
+  🐺 **Wölfe töten einen Jäger**; im Frühling kommt ein neuer.
+- **Chronik:** jedes Jahr 🎯 **Jagdbilanz** (erlegt je Art, Angriffe). Reiter Menschen: Jäger,
+  Wild erlegt, Wölfe erlegt, Angriffe. Todesursache „Jagd“.
+- **Ohne Jagdkarte läuft alles exakt wie vorher** (gleiche Prüfsummen der Bestände).
+- **Messung** (`node tools/invasion.js 8 30 --karten=…`, Median gegenüber nur Landung):
+
+  | Karten | erlegt in 30 Jahren (je Insel) | Hirsch | Laufvogel | Wolf | Adler |
+  |---|---|---|---|---|---|
+  | Wild jagen | 550–720 Laufvögel, 2–17 Hirsche; 0–2 Angriffe | 83 % | 115 % | 85 % | **21 %** (5 von 8 ausgestorben) |
+  | Wölfe jagen | 36–89 Wölfe | 122 % | 91 % | **20 %** (3 von 8 ausgestorben) | 67 % |
+  | beide | Laufvögel wie oben, 36–56 Wölfe, 5–96 Hirsche | 128 % | 79 % | **6 %** (5 von 8) | 65 % |
+
+  Die Wildjäger treffen am Dorf fast nur Laufvögel (die Hirsche meiden das Dorf). Sie nehmen den
+  Adlern die Beute weg, die Adler sterben aus, und die Laufvögel werden dadurch sogar etwas mehr.
+  Weil die Jäger nah am Dorf bleiben, begegnen sie kaum Wölfen. Mit der vorigen Regel (Ziel nach
+  Gewicht wählen, Laufvogel 0,6, kein Wechsel unterwegs; 8 Inseln × 30 Jahre) erlegten sie 70–130
+  Hirsche und 180–330 Laufvögel, wurden 3–15-mal angegriffen (2–5 Jäger tot), Adler 83 %.
+  Die Wolfsjäger lassen nur Rudel weit vom Dorf übrig; die Hirsche nehmen zu.
+
 ### Oberfläche: Reiter und Marken
 
 - Unter der Zeitsteuerung gibt es zwei Reiter: **🦌 Tierbestand** (Startbestand, Bestand,
