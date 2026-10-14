@@ -182,9 +182,13 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
 - **Gruppe:** Rudel mit bis zu 12 Tieren (vorher 6) und festem Revier (Radius 380). Startbestand 40.
 - **Beute:** vor allem Zwerghirsch, Laufvögel nur selten (Gewicht 0,13: nur wo er sehr viele sieht;
   mit 0,15 nahm er sie den Adlern weg, seit das Suchbild an der Umgebung hängt). Frisst auch Aas. Wie sein Vorbild frisst er
-  nebenher Insekten und Früchte, wenn er hungrig umherstreift, vor allem im Winter (`dietSeason`:
-  Frühling und Sommer 30 %, Herbst 50 %, Winter voll). Das trägt ihn durch magere Winter. Vorher
-  kamen 42 % seiner Energie aus dieser Nebenkost; seine Zahl hing dann kaum an den Hirschen.
+  nebenher Insekten und Früchte, wenn er hungrig umherstreift (`dietSeason`: Frühling und Sommer
+  60 %, Herbst 80 %, Winter voll; vorher 30 / 30 / 50 %). Das trägt ihn durch magere Winter und
+  durch Jahre mit wenigen Hirschen, ohne dass er die Hirsche stärker jagt. Mit 30 % hingen die
+  Wölfe bei 250–350 Hirschen jahrzehntelang bei 3–20 Tieren fest, bis Pech sie auslöschte (große
+  Insel, nur Hirsch und Wolf, 16 × 100 Jahre: ausgestorben 2-mal, mit 60 % 1-mal; Wölfe im Mittel
+  61 → 83). Früher kamen einmal 42 % seiner Energie aus dieser Nebenkost; seine Zahl hing dann
+  kaum an den Hirschen.
 - **Bewacht seinen Riss:** Liegt ein Rudel näher als 80 an einem Aas, kommt kein Adler heran.
   Sonst lebten die Adler von den großen Hirschrissen (58 % ihrer Energie aus Aas, vorher 14 %),
   vermehrten sich und fraßen die Laufvögel leer.
@@ -239,7 +243,11 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
      erst fressen sich die Eltern bis 40 % satt, dann bekommen die Küken in der Reihenfolge des
      Schlüpfens, der Rest wird geteilt. In guten Jahren kommen alle Küken durch, in mageren nur das
      älteste. Hungern beide Eltern (unter 25 %), geben sie die Brut auf.
-  3. **Flügge:** Danach fliegt jedes Junge allein los und sucht sich ein eigenes Revier.
+  3. **Flügge:** Die Jungen fliegen noch 60 Tage mit den Eltern und fressen von deren Beute mit
+     (Führungszeit, `horst.dependence`). Danach fliegt jedes allein los und sucht sich ein eigenes
+     Revier. Ohne Führungszeit verließen die Jungen den Horst mit etwa 23 % Energie und verhungerten
+     fast alle; die alten Paare starben an Altersschwäche, ohne ersetzt zu werden. Mit Führungszeit
+     (große Insel, 100 Jahre): nur Laufvogel und Adler 8 von 8 (vorher über 60 Jahre 7 von 8).
 
   Am Horst jagen die Adler fast ununterbrochen (unter 95 % Energie) und erfolgreicher (× 1,3,
   sie kennen die Umgebung genau), aber nur im Umkreis von 300 um den Horst. Die Brutzeit fällt
@@ -477,6 +485,15 @@ stirbt in der Simulation fast immer eine Art aus.
    große Insel 16 × 60 Jahre alle Arten 15 von 16 (Wölfe einmal in Jahr 49), Hirsche 419,
    Laufvögel 511, Wölfe 86, Adler 28; nur Hirsch und Wolf 8 von 8; mittlere Insel 8 × 30 Jahre
    7 von 8 (Adler einmal), Hirsche 241, Laufvögel 303, Wölfe 55, Adler 14.
+   **Partnersuche:** Ein wandernder Wolf sucht Rudel, denen ein *erwachsenes* Tier seines
+   Geschlechts fehlt (vorher zählten auch Junge: Ein Rudel ohne erwachsenes Weibchen, aber mit
+   junger Tochter, wurde nie gefunden). Ausprobiert und verworfen: Wanderer besetzen allein ein
+   freies Revier und warten dort auf einen Partner (Wölfe öfter ausgestorben, die Einzelnen
+   blockieren Reviere für Paare).
+   Stand mit Nebenkost, Führungszeit der Adler und Welpen ab 45 % (große Insel, 16 × 100 Jahre):
+   alle Arten 14 von 16 (Wölfe einmal in Jahr 82, Adler einmal in Jahr 84), Hirsche 370, Laufvögel
+   532, Wölfe 85, Adler 24. `balance.js 8 30`: 7 von 8 (Wölfe einmal in Jahr 29), Hirsche 242,
+   Laufvögel 339, Wölfe 58, Adler 12.
    Über 100 Jahre (große Insel) nachgeprüft, ohne Verbesserung: Suchbild-Schwelle Hirsch 1,0/1,1,
    Laufvogel 0,45, milderer Erfolgsabzug (50 %, 75 %; auch nur für Adler), kürzeres Gedächtnis
    (10 Tage), später verzweifelt (0,35/0,15), steilere Kurve (s⁴). Stärkere Räuber fressen die

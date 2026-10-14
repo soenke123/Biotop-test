@@ -211,7 +211,8 @@
       // Wie sein Vorbild frisst er nebenher Insekten und Fruechte - das traegt
       // ihn durch Zeiten mit wenig Beute, reicht aber nicht fuer Nachwuchs
       diet: { frucht: 0.06, insekten: 0.06 },
-      dietSeason: [0.3, 0.3, 0.5, 1], // so viel davon je Jahreszeit: vor allem eine Notration im Winter
+      dietSeason: [0.6, 0.6, 0.8, 1], // so viel davon je Jahreszeit (vorher 0,3 / 0,3 / 0,5 / 1): haelt die Woelfe
+                                      // durch Jahre mit wenigen Hirschen, ohne die Hirsche staerker zu jagen
       bite: 0.15,
       costPerDay: 0.052,
       winterCost: 0.015,
@@ -274,6 +275,7 @@
       horst: {
         incubation: 10,               // Tage Brut
         nestling: 15,                 // Tage, bis die Kueken fluegge sind
+        dependence: 60,               // Tage, die die Jungen danach noch mit den Eltern fliegen und mitfressen
         radius: 300,                  // gejagt wird in diesem Umkreis um den Horst
         hungry: 0.95,                 // jagt fast ununterbrochen
         huntBonus: 1.3,               // kennt die Umgebung des Horsts genau

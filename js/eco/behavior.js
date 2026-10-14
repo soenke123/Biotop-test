@@ -538,6 +538,14 @@
   function isF(a) { return a.sex === 'f'; }
   function isM(a) { return a.sex === 'm'; }
 
+  // Fehlt der Gruppe ein (bei Rudeln: erwachsenes) Tier dieses Geschlechts? Wie beim Anschliessen
+  // (Simulation.joinPack): Ein Rudel mit junger Tochter, aber ohne erwachsenes Weibchen, sucht eins
+  function lacksSex(o, test) {
+    var mature = o.spec.group.kind === 'pair' ? 0 : o.spec.maturity;
+    for (var i = 0; i < o.members.length; i++) if (test(o.members[i]) && o.members[i].age >= mature) return false;
+    return true;
+  }
+
   function mateSearchPoint(sim, g) {
     var best = null, bestD = Infinity;
     var hasF = g.members.some(isF), hasM = g.members.some(isM);
@@ -545,7 +553,7 @@
     for (var i = 0; i < sim.predatorGroups.length; i++) {
       var o = sim.predatorGroups[i];
       if (o === g || o.spec !== g.spec || !o.members.length || o.horst) continue;
-      var lacks = (hasF && !o.members.some(isF)) || (hasM && !o.members.some(isM));
+      var lacks = (hasF && lacksSex(o, isF)) || (hasM && lacksSex(o, isM));
       if (!lacks) continue;
       var d = BT.M.hypot(o.x - g.x, o.y - g.y);
       if (d < bestD) { bestD = d; best = o; }

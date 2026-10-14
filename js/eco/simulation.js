@@ -457,6 +457,7 @@
       this.breed(g, cal);
       this.hatch(g);
       this.tendHorst(g);
+      this.leaveParents(g);
       this.disperse(g, cal);
     }
     this.reorganize();
@@ -661,15 +662,28 @@
     var weak = parents.length && parents.every(function (a) { return a.energy < hs.abandon; });
     if (!chicks.length || !parents.length || weak) { this.endHorst(g); return; }
     if (this.day - h.day < hs.nestling) return;
-    // Fluegge: jedes Junge fliegt los und sucht sich seinen eigenen Platz
+    // Fluegge: Die Jungen fliegen mit den Eltern und bekommen von deren Beute ab
+    // (Fuehrungszeit, hs.dependence Tage), dann sucht sich jedes seinen eigenen Platz
     for (k = 0; k < chicks.length; k++) {
-      var ng = this.makeGroup(spec, h.x, h.y);
       chicks[k].chick = false;
-      this.removeFromGroup(chicks[k]);
-      this.addToGroup(ng, chicks[k]);
-      ng.state = 'wandern';
+      chicks[k].fledged = this.day;
     }
     this.endHorst(g);
+  };
+
+  /** Nach der Fuehrungszeit verlassen die Jungen die Eltern. */
+  Simulation.prototype.leaveParents = function (g) {
+    var hs = g.spec.horst;
+    if (!hs) return;
+    var day = this.day;
+    var leaving = g.members.filter(function (a) { return a.fledged != null && day - a.fledged >= (hs.dependence || 0); });
+    for (var k = 0; k < leaving.length; k++) {
+      leaving[k].fledged = null;
+      var ng = this.makeGroup(g.spec, g.x, g.y);
+      this.removeFromGroup(leaving[k]);
+      this.addToGroup(ng, leaving[k]);
+      ng.state = 'wandern';
+    }
   };
 
   /** Horst verlassen: verbliebene Kueken (verwaist) werden zu Wanderern. */
