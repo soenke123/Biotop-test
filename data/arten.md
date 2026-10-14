@@ -136,8 +136,7 @@ einschalten. Ohne Durst ziehen die Tiere nicht mehr gezielt zum Wasser.
   Weiden zerstört. Ohne diese Bremse blieben die Hirsche satt, bis das Gras plötzlich weg war: Sie
   wuchsen auch mit 100 Wölfen von 400 auf 1250 und brachen dann nach Kahlfraß auf 140 ein.
 - **Startbestand:** 300 auf der mittleren Insel (vorher 160). Ein Riss liefert 3 Energie (vorher
-  1,5, Kalb die Hälfte). Suchbild (`scarce`): 1,3 Hirsche je 100 × 100 im Blick (siehe Was das
-  Ökosystem stabil hält).
+  1,5, Kalb die Hälfte). Beutewechsel (`scarce`) schon bei 60 % des Startbestands (vorher 120 %).
 - **Verhalten:** grast, zieht weiter, wenn die Weide unter 35 % ihrer vollen Menge abgefressen ist
   (knapp über der Schwelle der Überweidung, mindestens aber bei 0,4 Energie), flieht vor
   jagenden Räubern (kurzer Sprint, dann Trab). Mehr Tiere in der Herde bemerken Gefahr früher.
@@ -180,8 +179,7 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
 - **Vorbild:** Falklandfuchs (Warrah), der einzige heimische Landräuber der Falklandinseln, von
   Siedlern ausgerottet.
 - **Gruppe:** Rudel mit bis zu 12 Tieren (vorher 6) und festem Revier (Radius 380). Startbestand 40.
-- **Beute:** vor allem Zwerghirsch, Laufvögel nur selten (Gewicht 0,13: nur wo er sehr viele sieht;
-  mit 0,15 nahm er sie den Adlern weg, seit das Suchbild an der Umgebung hängt). Frisst auch Aas. Wie sein Vorbild frisst er
+- **Beute:** vor allem Zwerghirsch, Laufvögel nur selten. Frisst auch Aas. Wie sein Vorbild frisst er
   nebenher Insekten und Früchte, wenn er hungrig umherstreift, vor allem im Winter (`dietSeason`:
   Frühling und Sommer 30 %, Herbst 50 %, Winter voll). Das trägt ihn durch magere Winter. Vorher
   kamen 42 % seiner Energie aus dieser Nebenkost; seine Zahl hing dann kaum an den Hirschen.
@@ -304,11 +302,11 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
 - **Flucht:** 11,5. `scheu` 0,4 (kennt Menschen).
 - **Feinde** (`preyOf`): **Wolf 1,3**, Hund 1,3 (lieber als Hirsch, 1,0), Adler 0,25 (nur Lämmer
   bis ½ Jahr). **Leichte Beute** (`easyPrey` 1,2; mit 1,4 hielten die Wölfe die Schafe bei etwa 70): Ein Angriff auf Schafe gelingt 1,2-mal so oft
-  (langsam, wenig wachsam). Wenige Schafe schützt das Suchbild (`scarce`), deshalb werden
+  (langsam, wenig wachsam). Wenige Schafe schützt der Beutewechsel (`scarceMin`), deshalb werden
   frisch ausgebrochene Schafe kaum gejagt. Erst wenn es viele gibt, fressen die Räuber sie bevorzugt –
   und vermehren sich dabei, was auch die Hirsche trifft (scheinbare Konkurrenz).
-- **Suchbild:** `scarce` 0,3 je 100 × 100 im Blick (entspricht dem früheren `scarceMin` 40: bei
-  etwa 40 Schafen auf der mittleren Insel halb so gefragt).
+- **Beutewechsel ohne Startbestand:** `scarceMin` 40 – bei 40 Schafen sind sie für die Räuber
+  halb so gefragt.
 - **Ein Riss liefert 2,6 Energie** (Hirsch 3; vorher 1,3 zu Hirsch 1,5).
 - **Nachgezogen nach der Abstimmung von Hirsch und Wolf** (Hirsch 3 Energie statt 1,5, Lämmerbremse
   beim Hirsch, Wolf verbraucht mehr): Die Schafe waren unverändert geblieben. Spielte man die Schafweide
@@ -453,18 +451,10 @@ stirbt in der Simulation fast immer eine Art aus.
 
 1. **Reviere:** Räuber ohne Revier dürfen nicht in fremden Revieren jagen und bekommen keinen
    Nachwuchs, volle Rudel auch nicht. Das begrenzt die Zahl der Räuber auf die Zahl der Reviere.
-2. **Suchbild (Holling Typ III):** Wird eine Beuteart selten, wird sie seltener gewählt und
-   seltener verfolgt. Die Räuber hungern dann, bevor die Beute verschwindet. Jedes Rudel und
-   jedes Adlerpaar zählt dazu einmal am Tag, wie viele Tiere jeder Beuteart es im Blick hat
-   (Deckung verbirgt sie), und mittelt über etwa 20 Tage. Sieht es weniger als `scarce` Tiere je
-   100 × 100 Sichtfläche (Zwerghirsch 1,3, Laufvogel 0,5, Schaf 0,3), sucht es nur noch halb so
-   gezielt nach dieser Art, bei sehr wenigen kaum noch. Die Räuber kennen also nur ihre Umgebung,
-   nicht den Bestand der Insel: Ein Rudel in einer beutereichen Gegend jagt weiter, eines in einer
-   leergefressenen nicht. Die vergebliche Suche nach seltener Beute kostet
+2. **Beutewechsel (Holling Typ III):** Wird eine Beuteart selten, wird sie seltener gewählt und
+   seltener verfolgt. Die Räuber hungern dann, bevor die Beute verschwindet (Bezug: Laufvogel
+   120 % des Startbestands, Zwerghirsch 60 %; `scarce` in der Artentabelle). Die vergebliche Suche nach seltener Beute kostet
    einen Tag – sonst würde ein hungriger Räuber es einfach gleich wieder versuchen.
-   Früher hing die Schwelle am Bestand der ganzen Insel, gemessen am Startbestand (Hirsch 60 %,
-   Laufvogel 120 %); das konnte kein Tier wissen. Ganz ohne diese Bremse fressen die Wölfe die
-   Hirsche in 15–20 Jahren leer und die Adler die Laufvögel in 8 Jahren (große Insel).
 3. **Rückzugsräume:** Im Wald werden Beutetiere schlechter entdeckt und erwischt.
 4. **Aas:** Verhungerte Tiere und Reste von Rissen ernähren die Räuber in schlechten Zeiten.
 5. **Fortpflanzung je nach Futterlage:** Hungrige Räuber bekommen keinen Nachwuchs.
@@ -503,37 +493,6 @@ Hirsche, das Grasland leidet. Erholen sich die Wölfe, sinken die Hirsche, und d
 Adler, Laufvögel und Insekten zusammen.
 
 ## Abstimmung (Stand)
-
-**Suchbild statt Inselbestand.** Der Beutewechsel hing am Bestand der ganzen Insel (gemessen am
-Startbestand). Das kann kein Tier wissen. Jetzt zählt jeder Räuber selbst, wie viel Beute er im Blick
-hat (siehe Was das Ökosystem stabil hält, Punkt 2). Die Schwellen sind so gewählt, dass ein Rudel
-bei den alten Schwellen im Mittel gleich viel sieht (gemessen auf der großen Insel: bei 300 Hirschen
-hat ein Wolfsrudel etwa 22 im Blick). Dazu: Wölfe nehmen Laufvögel mit Gewicht 0,13 statt 0,15. Mit
-dem alten Faktor lagen sie fast immer unter der Mindestschwelle 0,12; mit dem Suchbild jagten sie in
-vogelreichen Gegenden mit und nahmen den Adlern die Beute (Adler auf der mittleren Insel 9 statt 20).
-Das Suchbild zählt die ganze Herde, auch wenn der Räuber nur Jungtiere nimmt (Adler und Kälber).
-
-| große Insel, 60 Jahre | alle Arten überleben | Hirsche | Laufvögel | Wölfe | Adler |
-|---|---|---|---|---|---|
-| vorher (16 Inseln) | 15 von 16 (Wölfe 1-mal aus) | 379 | 446 | 81 | 34 |
-| **Suchbild (16 Inseln)** | **16 von 16** | 412 | 474 | 81 | 32 |
-| ganz ohne Beutewechsel (2 Inseln) | 0 von 2 (Laufvögel nach 8 Jahren) | | | | |
-| nur Hirsch und Wolf, Suchbild (8) | 8 von 8 | 406 | – | 85 | – |
-| nur Hirsch und Wolf, ohne Beutewechsel (2) | 0 von 2 (Hirsche bzw. Wölfe nach 15–20 Jahren) | | | | |
-| nur Laufvogel und Adler, vorher (8) | 7 von 8 | – | 491 | – | 29 |
-| nur Laufvogel und Adler, Suchbild (8) | 7 von 8 | – | 530 | – | 31 |
-
-(Mittel ab Jahr 10, Seeds 1000–1015.) `balance.js 8 30`: 8 von 8, Hirsche 274, Laufvögel 306,
-Wölfe 64, Adler 19 (vorher 8 von 8; 244, 279, 53, 20). Laufvogel-Schwelle 0,45–0,6 ausprobiert:
-höher verhungern die Adler langsam neben vielen Laufvögeln, niedriger schießen sie hoch und brechen ein.
-
-**Mit Schafen noch offen** (Stand vor dem Suchbild): Über lange Zeit sterben die Wölfe mit Schafen
-deutlich öfter aus, auch auf der großen Insel (8 Inseln × 60 Jahre: 4-mal, ohne Schafe 1-mal;
-mittlere Insel 16 × 80 Jahre: 9-mal, ohne Schafe 4-mal). Ablauf: Die Schafe wachsen in wenigen Jahren
-auf 400–500, fressen das Gras kahl (Zustand 97 % → 16 %) und brechen ein; die Wölfe hatten sich an
-ihnen vermehrt und verhungern im Tal danach. Das Gras erholt sich jahrzehntelang nicht, die Hirsche
-bleiben bei 100–150. Eine strengere Lämmerbremse (40/10 bis 50/20 %), `scarceMin` 20, 1 Lamm oder
-leichter zu jagende Schafe halfen nicht.
 
 **Große Insel, sichtbare Zyklen** (Ziel: 300–500 Hirsche und rund 100 Wölfe auf der **großen**
 Insel; Wolf und Hirsch sollen gegeneinander schwingen wie Adler und Laufvogel). Vorher (Stand
