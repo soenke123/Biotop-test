@@ -225,7 +225,9 @@
       hungry: 0.7,                    // jagt, wenn Energie darunter
       habitat: pref({ TUSSOCK: 1, SCRUB: 1, FERN: 1, MOSS: 1, SWAMP: 0.7, BEACH: 0.6, THERMAL: 0.6, ROCK: 0.6, PEAK: 0.1, MEADOW: 1, SOIL: 0.6, FIELD: 0.8 }),
       maturity: Y(1.5), maxAge: Y(9),
-      breed: { kind: 'group-pair', season: 0, day: 6, chance: 0.85, litter: [2, 4], minEnergy: 0.5, cost: 0.15 },
+      // minEnergy 0,45 (vorher 0,5): Bei Hirschen an der Grenze des Futters lagen die Woelfe im
+      // Fruehling um 0,5, viele Wuerfe fielen aus, und wenige Rudel erholten sich nicht mehr
+      breed: { kind: 'group-pair', season: 0, day: 6, chance: 0.85, litter: [2, 4], minEnergy: 0.45, cost: 0.15 },
       newbornEnergy: 0.6,
       // Mehr Jagd mit Welpen (rearing: { age: Y(0.5), hungry: 0.76 }) wurde
       // getestet: die Woelfe ueberjagen dann die Hirsche und sterben haeufiger aus

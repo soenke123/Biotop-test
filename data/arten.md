@@ -201,7 +201,10 @@ Pflanzenfresser konkurrieren also wenig und werden von verschiedenen Dingen begr
   ist, sonst jagt es weiter. Gejagt wird unter 70 % Energie. Erfolg je Angriff und Jäger 0,32,
   Verbrauch 0,052 Energie am Tag (vorher 0,042).
 - **Fortpflanzung:** nur das älteste Paar des Rudels, 2–4 Welpen im Frühling, und nur wenn das
-  Rudel gut genährt ist (≥ 50 %), ein eigenes Revier hat und noch nicht voll ist (höchstens 6).
+  Rudel gut genährt ist (≥ 45 %, vorher 50 %), ein eigenes Revier hat und noch nicht voll ist
+  (höchstens 6). Mit 50 % lagen die Wölfe bei Hirschen an der Grenze des Futters im Frühling um
+  diesen Wert; viele Würfe fielen aus, und wenige Rudel erholten sich jahrzehntelang nicht (große
+  Insel, nur Hirsch und Wolf, 16 × 100 Jahre: Wölfe 4-mal ausgestorben, mit 45 % 2-mal).
 - **Mit Welpen mehr jagen** wurde ausprobiert (Jagd schon unter 85 % bzw. 76 % Energie, solange
   Welpen unter ½ Jahr im Rudel sind) und wieder abgeschaltet: Die Wölfe reißen dann mehr Hirsche,
   als sie brauchen, und sterben danach häufiger aus (in 48 Testläufen 4–6-mal statt 1–2-mal). Der
@@ -474,6 +477,10 @@ stirbt in der Simulation fast immer eine Art aus.
    große Insel 16 × 60 Jahre alle Arten 15 von 16 (Wölfe einmal in Jahr 49), Hirsche 419,
    Laufvögel 511, Wölfe 86, Adler 28; nur Hirsch und Wolf 8 von 8; mittlere Insel 8 × 30 Jahre
    7 von 8 (Adler einmal), Hirsche 241, Laufvögel 303, Wölfe 55, Adler 14.
+   Über 100 Jahre (große Insel) nachgeprüft, ohne Verbesserung: Suchbild-Schwelle Hirsch 1,0/1,1,
+   Laufvogel 0,45, milderer Erfolgsabzug (50 %, 75 %; auch nur für Adler), kürzeres Gedächtnis
+   (10 Tage), später verzweifelt (0,35/0,15), steilere Kurve (s⁴). Stärkere Räuber fressen die
+   Beute im Hoch weiter herunter und verhungern im Tal; schwächere erholen sich aus Tälern nicht.
 3. **Rückzugsräume:** Im Wald werden Beutetiere schlechter entdeckt und erwischt.
 4. **Aas:** Verhungerte Tiere und Reste von Rissen ernähren die Räuber in schlechten Zeiten.
 5. **Fortpflanzung je nach Futterlage:** Hungrige Räuber bekommen keinen Nachwuchs.

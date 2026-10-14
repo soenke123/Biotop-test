@@ -33,12 +33,13 @@
   // So viele Tage kostet es, eine seltene Beute vergeblich zu suchen
   var SEARCH_DAYS = 1;
 
-  // Suchbild: Ueber so viele Tage mittelt ein Raeuber, wie viel Beute er zu sehen bekommt
-  var MEMORY_DAYS = 20;
-
-  // Hunger macht unwaehlerisch: Unter dieser Energie (Mittel der Gruppe) zaehlt das Suchbild
-  // immer weniger, bei der zweiten gar nicht mehr - dann wird jede Beute in Sicht gejagt
-  var DESPERATE = [0.5, 0.25];
+  // Suchbild (look, interest):
+  //   memoryDays: ueber so viele Tage mittelt ein Raeuber, wie viel Beute er zu sehen bekommt
+  //   desperate:  unter dieser Energie (Mittel der Gruppe) zaehlt das Suchbild bei der Wahl der
+  //               Beute immer weniger, bei der zweiten gar nicht mehr - dann wird jede Beute in
+  //               Sicht gejagt
+  //   skill:      so stark sinkt der Jagderfolg ohne Suchbild (1: mal Suchbild, 0: gar nicht)
+  var SEARCH = BT.SEARCH = { memoryDays: 20, desperate: [0.5, 0.25], skill: 1 };
 
   // Pflanzenfresser ziehen weiter, wenn die Weide unter diesen Anteil ihrer
   // vollen Menge abgefressen ist (knapp ueber der Schwelle der Ueberweidung)
@@ -389,21 +390,22 @@
     var area = spec.vision * spec.vision * 3.14159 / 10000;
     for (id in count) {
       var d = count[id] / area;
-      seen[id] = seen[id] == null ? d : seen[id] + (d - seen[id]) / MEMORY_DAYS;
+      seen[id] = seen[id] == null ? d : seen[id] + (d - seen[id]) / SEARCH.memoryDays;
     }
   }
 
   /**
    * Wie gefragt ist diese Beute (0..1)? Sieht der Raeuber weniger als prey.scarce Tiere je
    * 100 x 100, halb so sehr, bei sehr wenigen kaum noch: Er hat kein Suchbild mehr fuer sie.
-   * Je hungriger er ist, desto weniger zaehlt das (DESPERATE): Ausgehungert jagt er alles,
+   * Je hungriger er ist, desto weniger zaehlt das (SEARCH.desperate): Ausgehungert jagt er alles,
    * was er sieht.
    */
   function interest(g, id, energy) {
     var s = g.seen && g.seen[id], h = BT.SPECIES[id].scarce;
     if (s == null || !h) return 1;
     var i = s * s / (s * s + h * h);
-    var need = Math.max(0, Math.min(1, (DESPERATE[0] - energy) / (DESPERATE[0] - DESPERATE[1])));
+    var D = SEARCH.desperate;
+    var need = Math.max(0, Math.min(1, (D[0] - energy) / (D[0] - D[1])));
     return i + (1 - i) * need;
   }
 
@@ -478,7 +480,7 @@
     p *= prey.spec.easyPrey || 1;                       // leichte Beute (Haustiere)
     // Ohne Suchbild (lange kaum gesehen) misslingt die Jagd oefter: Uebrig sind die
     // vorsichtigsten Tiere, und dem Raeuber fehlt die Uebung
-    p *= interest(g, prey.spec.id, 1);
+    p *= 1 - SEARCH.skill * (1 - interest(g, prey.spec.id, 1));
     if (!sim.rng.chance(p)) return false;
 
     // Opfer: bevorzugt Jungtiere und geschwaechte Tiere
