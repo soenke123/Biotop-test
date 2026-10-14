@@ -33,6 +33,9 @@
   // So viele Tage kostet es, eine seltene Beute vergeblich zu suchen
   var SEARCH_DAYS = 1;
 
+  // Suchbild: Ueber so viele Tage mittelt ein Raeuber, wie viel Beute er zu sehen bekommt
+  var MEMORY_DAYS = 20;
+
   // Pflanzenfresser ziehen weiter, wenn die Weide unter diesen Anteil ihrer
   // vollen Menge abgefressen ist (knapp ueber der Schwelle der Ueberweidung)
   var MOVE_ON = 0.35;
@@ -362,6 +365,40 @@
     return false;
   }
 
+  /**
+   * Suchbild (Holling Typ III): Einmal am Tag zaehlt der Raeuber, wie viele Tiere jeder
+   * Beuteart er im Blick hat (Deckung verbirgt sie), und mittelt ueber die letzten Wochen
+   * (g.seen: Tiere je 100 x 100 Sichtflaeche). Er kennt nur, was er selbst sieht, nicht den
+   * Bestand der Insel. Gezaehlt wird die ganze Gruppe, auch wenn er nur Jungtiere nimmt (Adler):
+   * Wo Herden sind, gibt es auch Kaelber.
+   */
+  function look(sim, g) {
+    var spec = g.spec, count = {}, id;
+    var seen = g.seen || (g.seen = {});
+    for (id in spec.prey) count[id] = 0;
+    for (var i = 0; i < sim.herbivoreGroups.length; i++) {
+      var p = sim.herbivoreGroups[i];
+      if (!(p.spec.id in count) || !p.members.length) continue;
+      var vision = spec.vision * (1 - COVER[sim.biomeAt(p.x, p.y)] * (spec.flies ? 1.3 : 0.6));
+      if (vision > 0 && dist(g, p) <= vision) count[p.spec.id] += p.members.length;
+    }
+    var area = spec.vision * spec.vision * 3.14159 / 10000;
+    for (id in count) {
+      var d = count[id] / area;
+      seen[id] = seen[id] == null ? d : seen[id] + (d - seen[id]) / MEMORY_DAYS;
+    }
+  }
+
+  /**
+   * Wie gefragt ist diese Beute (0..1)? Sieht der Raeuber weniger als prey.scarce Tiere je
+   * 100 x 100, halb so sehr, bei sehr wenigen kaum noch: Er hat kein Suchbild mehr fuer sie.
+   */
+  function interest(g, id) {
+    var s = g.seen && g.seen[id], h = BT.SPECIES[id].scarce;
+    if (s == null || !h) return 1;
+    return s * s / (s * s + h * h);
+  }
+
   function findPrey(sim, g) {
     var spec = g.spec, w = sim.world;
     var best = null, bestScore = 0, bestWeight = 0;
@@ -370,7 +407,7 @@
       var p = groups[i];
       var weight = spec.prey[p.spec.id];
       if (!weight || !p.members.length) continue;
-      weight *= sim.preyAvailability(p.spec.id);
+      weight *= interest(g, p.spec.id);
       if (weight < 0.12) continue;      // sehr seltene Beute lohnt die Suche nicht
       var cover = COVER[sim.biomeAt(p.x, p.y)];
       var vision = spec.vision * (1 - cover * (spec.flies ? 1.3 : 0.6));
@@ -651,6 +688,7 @@
     var energy = avg(g.members, 'energy');
     var hungry = hungerThreshold(g);
     g.grazing = false;
+    if (sim.tick % sim.ticksPerDay === g.id % sim.ticksPerDay) look(sim, g);
 
     if (g.state === 'heimflug' && flyHome(sim, g)) return;
 

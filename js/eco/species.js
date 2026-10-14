@@ -118,6 +118,10 @@
    *          lighten: hellt die Bilder auf (Farbe, mit der die dunklen Toene aufgehellt werden).
    *          tint: faerbt die Bilder ein (Platzhalter: eine Art mit den Bildern einer anderen).
    * scheu:   wie stark die Art Menschen meidet (0..1, mal Stoerung, eco/humans.js)
+   * scarce:  Suchbild (eco/behavior.js): Sieht ein Raeuber im Mittel der letzten Wochen weniger
+   *          als so viele Tiere dieser Art je 100 x 100 Sichtflaeche, sucht er nur noch halb so
+   *          gezielt nach ihr, bei sehr wenigen kaum noch. Er kennt nur seine Umgebung, nicht den
+   *          Bestand der Insel; die Schwelle gilt deshalb fuer jede Inselgroesse.
    * introduced: kommt erst mit den Menschen auf die Insel (Startbestand 0, eco/humans.js).
    *          Die heimischen Arten bleiben unveraendert; eine eingeschleppte Art bringt
    *          ihre Beziehungen zu ihnen selbst mit:
@@ -143,7 +147,7 @@
       color: '#c9874a',
       group: { kind: 'herd', min: 2, max: 16, spread: 26, start: [5, 10] },
       start: 300,                     // Tiere zu Beginn
-      scarce: 0.6,                    // Beutewechsel: als Beute halb so gefragt bei diesem Anteil des Startbestands
+      scarce: 1.3,                    // Suchbild: als Beute halb so gefragt, wenn der Raeuber weniger als 1,3 je 100 x 100 sieht
       // Nahrung: Energie je verzehrter Einheit
       diet: { gras: 0.11, laub: 0.09, korn: 0.14 },   // Getreide: nahrhaft und lecker
       bite: 0.38,                     // Einheiten je Fressschritt und Tier
@@ -175,7 +179,7 @@
       color: '#5d8fc9',
       group: { kind: 'flock', min: 2, max: 6, spread: 16, start: [2, 4] },
       start: 160,                     // Tiere zu Beginn
-      scarce: 1.2,
+      scarce: 0.5,
       diet: { frucht: 0.1, insekten: 0.11 },   // kein Gras: das Gras haengt allein an den Hirschen
       bite: 0.32,
       costPerDay: 0.055,
@@ -203,7 +207,7 @@
       color: '#7c7c86',
       group: { kind: 'pack', min: 1, max: 12, spread: 18, start: [3, 5] },
       start: 40,                      // Tiere, verteilt auf Rudel
-      prey: { zwerghirsch: 1.0, laufvogel: 0.15 },
+      prey: { zwerghirsch: 1.0, laufvogel: 0.13 },   // Laufvoegel nur, wo sehr viele sind (unter 0,12 nie)
       // Wie sein Vorbild frisst er nebenher Insekten und Fruechte - das traegt
       // ihn durch Zeiten mit wenig Beute, reicht aber nicht fuer Nachwuchs
       diet: { frucht: 0.06, insekten: 0.06 },
@@ -303,10 +307,9 @@
     group: { kind: 'herd', min: 3, max: 100, spread: 30, spacing: 10, start: [8, 8],
       split: { min: 24, energy: 0.5, rest: 90, dist: [250, 500] } },
     start: 0,
-    scarce: 1.2,
-    scarceMin: 40,                    // Beutewechsel ohne Startbestand: bei 40 Schafen halb so gefragt
+    scarce: 0.3,                      // Suchbild (wie bisher etwa 40 Schafe auf der mittleren Insel)
     // Leichte Beute: Woelfe (und Hunde) nehmen Schafe lieber als Hirsche, Adler nur Laemmer.
-    // Wenige Schafe schuetzt der Beutewechsel (scarceMin): Ausreisser werden kaum gejagt.
+    // Wenige Schafe schuetzt das Suchbild (scarce): Ausreisser werden kaum gejagt.
     preyOf: { inselwolf: 1.3, inseladler: 0.25 },
     preyMaxAgeOf: { inseladler: Y(0.5) },
     easyPrey: 1.2,                    // langsam, wenig wachsam, auf Zahmheit gezuechtet
