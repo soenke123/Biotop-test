@@ -92,7 +92,7 @@
       var hq = lerp(hu, alpha);
       if (inView(hq, view, ps * 2)) drawHunter(ctx, hu, hq, ps * 1.05);
     }
-    var hund = BT.SPECIES.hund, ds = Math.max(hund.size, 12 / scale);
+    var hund = BT.SPECIES.hund, ds = BT.AgentRenderer.size(hund, scale);
     for (i = 0; i < H.dogs.length; i++) {
       var d = H.dogs[i], dq = lerp(d, alpha);
       if (!inView(dq, view, ds * 2)) continue;
@@ -121,7 +121,7 @@
     ctx.fillStyle = '#4a3220';
     var pw = Math.max(1.6, 2 / scale);
     for (k = 0; k < N; k++) ctx.fillRect(pts[k].x - pw / 2, pts[k].y - 6, pw, 7);
-    var schaf = BT.SPECIES.schaf, ss = Math.max(schaf.size, 12 / scale);
+    var schaf = BT.SPECIES.schaf, ss = BT.AgentRenderer.size(schaf, scale);
     for (k = 0; k < pa.sheep.length; k++) {
       var s = pa.sheep[k], q = lerp(s, alpha);
       if (!inView(q, view, ss * 2)) continue;

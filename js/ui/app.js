@@ -24,6 +24,8 @@
   var seasonBadge = $('season'), hlBadge = $('highlight');
   var SEASON_ICON = ['🌸', '☀️', '🍂', '❄️'];
   var highlight = null;   // Art-ID, deren Tiere auf der Karte markiert sind
+  var follow = null;      // Tier, dem die Kamera folgt
+  var followBadge = $('follow'), followText = '';
   var aiming = null;      // Karte, fuer die gerade ein Ziel auf der Karte gewaehlt wird
   var aimUndo = false;    // ... um sie zurueckzunehmen (−)
   var infoCard = null;    // Karte im Infofenster
@@ -48,6 +50,7 @@
   // Bildpuffer: ganze Insel einmal vorgezeichnet; beim Hineinzoomen zusaetzlich
   // ein scharfer Puffer fuer genau den sichtbaren Ausschnitt.
   var CACHE_MAX_PX = 4096;
+  var VIEW_MARGIN = 0.3;    // Rand des scharfen Gelaendeausschnitts (Anteil der kurzen Bildseite)
   var cache = null, viewCache = null;
   var lastInteraction = 0, sharpTimer = null;
 
@@ -95,6 +98,7 @@
     sim = new BT.Simulation(world, { start: startValues, cardPause: BT.Time.years(+$('cardPause').value) });
     if (chartView) chartView.events = sim.events;
     setAim(null);
+    setFollow(null);
     tickAcc = 0;
     $('restart').classList.remove('primary');
     updatePanel(true);
@@ -213,25 +217,37 @@
     c.setTransform(dpr * camera.scale, 0, 0, dpr * camera.scale, -camera.x * camera.scale * dpr, -camera.y * camera.scale * dpr);
   }
 
+  /**
+   * Gelaende: in der Gesamtansicht aus dem Bildpuffer der ganzen Welt, beim
+   * Hineinzoomen scharf neu gezeichnet. Der scharfe Ausschnitt hat einen Rand,
+   * damit eine mitlaufende Kamera (Tier folgen) ihn eine Weile weiterverwenden kann.
+   */
   function drawTerrain() {
     var needSharp = camera.scale * dpr > cache.scale * 1.1;
     var idle = global.performance.now() - lastInteraction > 150;
     if (needSharp && idle) {
-      var key = camera.x + ',' + camera.y + ',' + camera.scale + ',' + canvas.width + ',' + canvas.height;
-      if (!viewCache || viewCache.key !== key) {
-        var c = viewCache && viewCache.canvas.width === canvas.width && viewCache.canvas.height === canvas.height
-          ? viewCache.canvas : doc.createElement('canvas');
-        c.width = canvas.width; c.height = canvas.height;
+      var view = camera.visibleRect(0);
+      var v = viewCache;
+      var fits = v && v.scale === camera.scale && v.cw === canvas.width && v.ch === canvas.height &&
+        view.x >= v.rect.x && view.y >= v.rect.y &&
+        view.x + view.width <= v.rect.x + v.rect.width && view.y + view.height <= v.rect.y + v.rect.height;
+      if (!fits) {
+        var rect = camera.visibleRect(Math.min(view.width, view.height) * VIEW_MARGIN);
+        var c = v ? v.canvas : doc.createElement('canvas');
+        c.width = Math.ceil(rect.width * camera.scale * dpr);
+        c.height = Math.ceil(rect.height * camera.scale * dpr);
         var vc = c.getContext('2d');
         vc.setTransform(1, 0, 0, 1, 0, 0);
         vc.fillStyle = BT.PALETTE.background;
         vc.fillRect(0, 0, c.width, c.height);
-        setWorldTransform(vc);
-        BT.TerrainRenderer.draw(vc, world, camera.visibleRect(0), camera.scale);
-        viewCache = { key: key, canvas: c };
+        var k = camera.scale * dpr;
+        vc.setTransform(k, 0, 0, k, -rect.x * k, -rect.y * k);
+        BT.TerrainRenderer.draw(vc, world, rect, camera.scale);
+        viewCache = v = { canvas: c, rect: rect, scale: camera.scale, cw: canvas.width, ch: canvas.height };
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.drawImage(viewCache.canvas, 0, 0);
+      ctx.drawImage(v.canvas, Math.round((v.rect.x - camera.x) * camera.scale * dpr),
+        Math.round((v.rect.y - camera.y) * camera.scale * dpr));
       setWorldTransform(ctx);
     } else {
       setWorldTransform(ctx);
@@ -245,6 +261,12 @@
     var T = BT.Time;
     var days = sim.day % T.DAYS_PER_YEAR + ((sim.tick % T.TICKS_PER_DAY) + (alpha < 1 ? alpha : 0)) / T.TICKS_PER_DAY;
     return days / T.DAYS_PER_SEASON;
+  }
+
+  /** Haerte des Winters, der gerade liegt (im Fruehling: der vom Vorjahr). */
+  function winterHardness(pos) {
+    var y = Math.floor(sim.day / BT.Time.DAYS_PER_YEAR) - (pos < 1 ? 1 : 0);
+    return y < 0 ? BT.WEATHER.winter[0] : sim.weather.year(y).winter;
   }
 
   function updateSeasonBadge() {
@@ -273,6 +295,42 @@
     dirty = true;
   }
 
+  // ---------------------------------------------------------------- Einem Tier folgen
+  var FOLLOW_ZOOM = 5;   // so weit (mal Gesamtansicht) wird beim Folgen mindestens hineingezoomt
+
+  /** Kamera folgt einem Tier (null: nicht mehr folgen). */
+  function setFollow(a) {
+    follow = a || null;
+    followText = '';
+    if (follow && camera && camera.scale < camera.minScale * FOLLOW_ZOOM) {
+      camera.scale = Math.min(camera.maxScale, camera.minScale * FOLLOW_ZOOM);
+      interacted();
+    }
+    followBadge.hidden = !follow;
+    dirty = true;
+  }
+
+  /** Kamera auf das verfolgte Tier setzen; stirbt es, bleibt die Kamera stehen. */
+  function trackFollow(alpha) {
+    if (!follow || !camera) return;
+    if (!follow.alive) {
+      followBadge.innerHTML = '<span>' + follow.spec.name + ' ist gestorben</span> <button type="button" aria-label="Schließen">✕</button>';
+      follow = null;
+      return;
+    }
+    var a = follow;
+    var x = a.px + (a.x - a.px) * alpha, y = a.py + (a.y - a.py) * alpha;
+    camera.x = x - camera.viewWidth / camera.scale / 2;
+    camera.y = y - camera.viewHeight / camera.scale / 2;
+    camera.clampPosition();
+    var text = animalText(a);
+    if (text !== followText) {
+      followText = text;
+      followBadge.innerHTML = '<i style="background:' + SERIES_COLOR[a.spec.id] + '"></i><span>Kamera folgt: ' + text +
+        '</span> <button type="button" aria-label="Nicht mehr folgen">✕</button>';
+    }
+  }
+
   function updateHighlightCount() {
     var el = $('hlCount');
     if (!el || !sim || !highlight) return;
@@ -296,19 +354,23 @@
     }
     if (dirty && world && camera && cache) {
       dirty = false;
+      var alpha = running && tickRate() <= 90 ? Math.min(1, tickAcc) : 1;
+      trackFollow(alpha);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = BT.PALETTE.background;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       drawTerrain();
       if (sim) BT.LanduseRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale);
-      var alpha = running && tickRate() <= 90 ? Math.min(1, tickAcc) : 1;
-      if (sim) BT.SeasonRenderer.draw(ctx, world, seasonPos(alpha));
+      if (sim) {
+        var spos = seasonPos(alpha);
+        BT.SeasonRenderer.draw(ctx, world, spos, winterHardness(spos), camera.scale);
+      }
       // nach den Jahreszeiten, sonst faerbt der Fruehling den kahlen Boden gruen
       if (sim && showPlants()) BT.PlantRenderer.draw(ctx, world, sim);
       else if (sim) BT.FoodOverlay.draw(ctx, sim, mapMode.value);
       BT.HumanRenderer.drawGround(ctx, sim, camera.visibleRect(0), camera.scale, alpha);
       BT.AgentRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale, alpha,
-        { highlight: highlight, highlightColor: highlight && SERIES_COLOR[highlight] });
+        { highlight: highlight, highlightColor: highlight && SERIES_COLOR[highlight], follow: follow });
       BT.HumanRenderer.drawSea(ctx, sim, camera.visibleRect(0), camera.scale, alpha);
     }
     global.requestAnimationFrame(frame);
@@ -691,6 +753,8 @@
       var prev = pointers.get(e.pointerId);
       pointers.set(e.pointerId, pos);
       if (pointers.size === 1) {
+        if (follow && clickStart && Math.abs(pos.x - clickStart.x) + Math.abs(pos.y - clickStart.y) < 5) return;
+        if (follow) setFollow(null);
         camera.panByScreen(pos.x - prev.x, pos.y - prev.y);
       } else if (pointers.size === 2) {
         var p = Array.from(pointers.values());
@@ -706,7 +770,7 @@
   });
 
   function endPointer(e) {
-    // Klick auf ein Tier hebt seine Art hervor
+    // Klick auf ein Tier: die Kamera folgt ihm
     if (e.type === 'pointerup' && clickStart && pointers.size === 1 && sim && camera) {
       var pos = localPos(e);
       if (Math.abs(pos.x - clickStart.x) + Math.abs(pos.y - clickStart.y) < 5) {
@@ -714,7 +778,7 @@
         if (aiming) playCard(aiming, { x: w.x, y: w.y }, aimUndo);
         else {
           var a = BT.AgentRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale));
-          if (a) setHighlight(a.spec.id);
+          if (a) setFollow(a);
         }
       }
     }
@@ -755,6 +819,15 @@
     return STATE_TEXT[g.state] || g.state;
   }
 
+  function animalText(a) {
+    var years = a.age / BT.Time.DAYS_PER_YEAR;
+    var g = a.group;
+    return a.spec.name + (a.sex === 'f' ? ' ♀' : ' ♂') + ' · ' +
+      (a.age < a.spec.maturity ? 'Jungtier' : years.toFixed(1).replace('.', ',') + ' Jahre') +
+      ' · Energie ' + Math.round(a.energy * 100) + ' %' + (a.sick ? ' · krank' : a.immune ? ' · immun' : '') +
+      (g ? ' · ' + GROUP_TEXT[a.spec.group.kind] + ' mit ' + g.members.length + ' · ' + stateText(g, a) : '');
+  }
+
   function showTooltip(pos) {
     if (!world || !camera) return;
     var w = camera.screenToWorld(pos.x, pos.y);
@@ -771,12 +844,7 @@
         : hp.kind === 'schiff' ? 'Schiff · ' + ({ anfahrt: 'fährt zur Küste', liegt: 'liegt vor Anker', abfahrt: 'fährt zurück' })[hp.obj.phase]
         : 'Siedler · ' + (hp.obj.working ? 'arbeitet' : 'unterwegs');
     } else if (a) {
-      var years = a.age / BT.Time.DAYS_PER_YEAR;
-      var g = a.group;
-      text = a.spec.name + (a.sex === 'f' ? ' ♀' : ' ♂') + ' · ' +
-        (a.age < a.spec.maturity ? 'Jungtier' : years.toFixed(1).replace('.', ',') + ' Jahre') +
-        ' · Energie ' + Math.round(a.energy * 100) + ' %' + (a.sick ? ' · krank' : a.immune ? ' · immun' : '') +
-        (g ? ' · ' + GROUP_TEXT[a.spec.group.kind] + ' mit ' + g.members.length + ' · ' + stateText(g, a) : '');
+      text = animalText(a);
     } else {
       var b = sim ? sim.biomeAt(w.x, w.y) : world.query.biomeAt(w.x, w.y);
       text = BT.BIOME_INFO[b].name;
@@ -818,7 +886,8 @@
   $('newWorld').addEventListener('click', function () { load(BT.randomSeed(), sizeSelect.value); });
   seedInput.addEventListener('change', function () { load(BT.parseSeed(seedInput.value), sizeSelect.value); });
   sizeSelect.addEventListener('change', function () { load(world ? world.seed : BT.randomSeed(), sizeSelect.value); });
-  $('resetView').addEventListener('click', function () { if (camera) { camera.reset(); interacted(); } });
+  $('resetView').addEventListener('click', function () { if (camera) { setFollow(null); camera.reset(); interacted(); } });
+  followBadge.addEventListener('click', function (e) { if (e.target.tagName === 'BUTTON') setFollow(null); });
   legendBtn.addEventListener('click', function () {
     legend.hidden = !legend.hidden;
     legendBtn.setAttribute('aria-pressed', String(!legend.hidden));
@@ -889,7 +958,7 @@
   });
   global.addEventListener('keydown', function (e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-    if (e.key === 'r' || e.key === 'R') { if (camera) { camera.reset(); interacted(); } }
+    if (e.key === 'r' || e.key === 'R') { if (camera) { setFollow(null); camera.reset(); interacted(); } }
     if (e.key === ' ') { e.preventDefault(); setRunning(!running); }
     if (e.key === 'Escape') { if (infoCard) closeInfo(); else if (bigOpen()) setBig(false); else if (aiming) setAim(null); else setHighlight(null); }
   });

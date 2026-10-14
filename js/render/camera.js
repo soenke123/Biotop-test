@@ -10,6 +10,7 @@
   'use strict';
 
   var BT = global.BT || (global.BT = {});
+  var MAX_ZOOM = 16;  // so weit (mal Gesamtansicht) laesst sich hineinzoomen
   var clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
 
   function Camera(world) {
@@ -34,7 +35,7 @@
     this.viewWidth = Math.max(1, width);
     this.viewHeight = Math.max(1, height);
     this.minScale = Math.min(this.viewWidth / this.world.width, this.viewHeight / this.world.height);
-    this.maxScale = Math.max(this.minScale * 8, this.minScale + 3);
+    this.maxScale = Math.max(this.minScale * MAX_ZOOM, this.minScale + 3);
     if (wasFitted) this.reset();
     else {
       this.scale = clamp(this.scale, this.minScale, this.maxScale);
@@ -45,7 +46,7 @@
   /** Gesamtansicht wiederherstellen. */
   Camera.prototype.reset = function () {
     this.minScale = Math.min(this.viewWidth / this.world.width, this.viewHeight / this.world.height);
-    this.maxScale = Math.max(this.minScale * 8, this.minScale + 3);
+    this.maxScale = Math.max(this.minScale * MAX_ZOOM, this.minScale + 3);
     this.scale = this.minScale;
     this.clampPosition();
   };

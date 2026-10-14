@@ -21,6 +21,7 @@ Dazu kommen Pflanzen und Insekten als Nahrungsschichten. Die Arten stehen in
 | Zoomen | Mausrad, Doppelklick | zwei Finger |
 | Gesamtansicht | Taste `R` oder „Ansicht zurücksetzen“ | Button |
 | Lebensraum, Nahrung oder Tier ablesen | Zeiger über die Karte | – |
+| Einem Tier folgen | Tier anklicken (Ziehen oder ✕ beendet es) | Tier antippen |
 | Start/Pause | Leertaste oder „Start“ | Button |
 | Nahrung auf der Karte zeigen | „Karte“ oben: Nahrung (alles) oder eine Schicht | dito |
 

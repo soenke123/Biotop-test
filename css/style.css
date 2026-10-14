@@ -247,6 +247,9 @@ button:disabled { opacity: 0.5; cursor: default; }
 .highlight-badge[hidden] { display: none; }
 .highlight-badge i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
 .highlight-badge button { padding: 1px 7px; border-radius: 999px; font-size: 12px; }
+/* Kamera folgt einem Tier: unter dem Hinweis der Hervorhebung */
+.follow-badge { top: 46px; max-width: calc(100% - 24px); }
+.follow-badge span { overflow: hidden; text-overflow: ellipsis; }
 
 /* Menschen: Kartenleiste, Chronik, Zielhinweis auf der Karte */
 .card-rule { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 12px; }

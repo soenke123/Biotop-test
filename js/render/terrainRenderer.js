@@ -335,5 +335,5 @@
     drawRivers(ctx, world, P, scale);
   }
 
-  BT.TerrainRenderer = { draw: draw, inView: inView };
+  BT.TerrainRenderer = { draw: draw, inView: inView, hillshade: hillshade };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -13,13 +13,17 @@
  * Hervorhebung (opts.highlight = Art-ID): alle Tiere dieser Art bekommen einen
  * farbigen Ring und liegen obenauf, die uebrigen bleiben unveraendert. So
  * sieht man auch in der Gesamtansicht, wo sich z. B. alle Woelfe aufhalten.
+ * Das Tier, dem die Kamera folgt (opts.follow), bekommt einen weissen Ring.
  */
 (function (global) {
   'use strict';
 
   var BT = global.BT || (global.BT = {});
 
-  var MIN_PX = 12;  // Mindestgroesse eines Tiers auf dem Bildschirm
+  // Tiere werden kleiner gezeichnet als spec.size, damit die Insel bei 1000 bis
+  // 1500 Tieren nicht ueberfuellt wirkt. Reine Darstellung, die Simulation bleibt gleich.
+  var SCALE = 0.6;
+  var MIN_PX = 7;   // Mindestgroesse eines Tiers auf dem Bildschirm
   var EAT_TICKS = 3; // so viele Ticks (je 4 Stunden) fressen Raeuber nach einem Riss
 
   function draw(ctx, sim, view, scale, alpha, opts) {
@@ -48,7 +52,7 @@
     for (var i = 0; i < sim.groups.length; i++) {
       var g = sim.groups[i];
       if (!g.nest || !inView(g.nest, view, pad)) continue;
-      var nr = Math.max(g.spec.size, MIN_PX / scale) * 0.4;
+      var nr = drawSize(g.spec, scale) * 0.4;
       ctx.fillStyle = '#8a6a3c';
       ctx.beginPath(); ctx.arc(g.nest.x, g.nest.y, nr, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#f6f0dc';
@@ -64,7 +68,7 @@
     for (i = 0; i < sim.predatorGroups.length; i++) {
       var h = sim.predatorGroups[i].horst;
       if (!h || !inView(h, view, pad)) continue;
-      var hr = Math.max(sim.predatorGroups[i].spec.size, MIN_PX / scale) * 0.5;
+      var hr = drawSize(sim.predatorGroups[i].spec, scale) * 0.5;
       ctx.fillStyle = '#5e4526';
       ctx.beginPath(); ctx.arc(h.x, h.y, hr, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#7d5f37';
@@ -85,6 +89,21 @@
       drawRings(ctx, sim.groups, view, scale, alpha, pad, hl, hlColor);
       drawList(ctx, sim, sim.groups, view, scale, alpha, pad, hl, true);
     }
+    if (opts && opts.follow) drawFollow(ctx, opts.follow, scale, alpha);
+  }
+
+  /** Das Tier, dem die Kamera folgt: weisser Ring mit dunklem Rand. */
+  function drawFollow(ctx, a, scale, alpha) {
+    var p = memberPos(a, alpha);
+    var r = drawSize(a.spec, scale) * 0.75;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.lineWidth = 4 / scale;
+    ctx.stroke();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2 / scale;
+    ctx.stroke();
   }
 
   function memberPos(a, alpha) {
@@ -93,7 +112,7 @@
 
   /** Leuchtende Ringe unter den Tieren der hervorgehobenen Art. */
   function drawRings(ctx, groups, view, scale, alpha, pad, hl, color) {
-    var r = Math.max(9 / scale, 6);
+    var r = Math.max(7 / scale, 4);
     ctx.beginPath();
     for (var i = 0; i < groups.length; i++) {
       var g = groups[i];
@@ -171,7 +190,7 @@
       var g = groups[i];
       var spec = g.spec;
       if (hl && (spec.id === hl) !== only) continue;
-      var base = Math.max(spec.size, MIN_PX / scale);
+      var base = drawSize(spec, scale);
       var facesRight = !spec.sprites || spec.sprites.facing !== 'left';
       for (var m = 0; m < g.members.length; m++) {
         var a = g.members[m];
@@ -210,6 +229,11 @@
     }
   }
 
+  /** Gezeichnete Groesse einer Art in Weltunits bei diesem Zoom. */
+  function drawSize(spec, scale) {
+    return Math.max(spec.size * SCALE, MIN_PX / scale);
+  }
+
   function inView(p, view, pad) {
     return p.x >= view.x - pad && p.x <= view.x + view.width + pad &&
       p.y >= view.y - pad && p.y <= view.y + view.height + pad;
@@ -229,5 +253,5 @@
     return best;
   }
 
-  BT.AgentRenderer = { draw: draw, pick: pick };
+  BT.AgentRenderer = { draw: draw, pick: pick, size: drawSize, SCALE: SCALE, MIN_PX: MIN_PX };
 })(typeof window !== 'undefined' ? window : globalThis);

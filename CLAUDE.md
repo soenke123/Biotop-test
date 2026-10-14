@@ -50,8 +50,8 @@ js/core/    rng, noise, grid, geometry, contour     (aus Wild Clusters, WL -> BT
 js/world/   config.js (alle Stellschrauben, Lebensräume), island.js (Generator),
             decor.js (Streudetails), world.js (world-Objekt, query)
 js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefschattierung),
-            seasonRenderer (Jahreszeiten als Farbschicht), plantRenderer (Weidezustand:
-            entsättigt die Textur, abgefressen blasser, überweidet grau), sprites, agentRenderer (Tiere, Hervorhebung einer Art),
+            seasonRenderer (Jahreszeiten als Farbschicht; Schnee waechst je nach Winterhaerte von den Gipfeln bergab), plantRenderer (Weidezustand:
+            entsättigt die Textur, abgefressen blasser, überweidet grau), sprites, agentRenderer (Tiere kleiner als spec.size gezeichnet, Hervorhebung einer Art, Ring ums verfolgte Tier),
             humanRenderer (Schiff, Häuser, Siedler, Jäger, Sammler; Bildvarianten je Person),
             landuseRenderer (gerodete Erde, Dorfplatz, Wiese, Acker als Schicht über dem Gelände)
 js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung und
@@ -60,7 +60,7 @@ js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (
             humans (Schiffe, Dörfer, Häuser, Siedler, Äcker und Ernte, Weiden, Jäger, Störungsfeld,
             Karten zurücknehmen), behavior (Gruppen-Entscheidungen),
             stats, simulation (Tick/Tag, sim.play für Karten)
-js/ui/      app.js (Karte, Zeitregler, Reiter Tierbestand/Menschen, Kartenleiste mit + und −, Infofenster
+js/ui/      app.js (Karte, Kamera folgt einem angeklickten Tier, Zeitregler, Reiter Tierbestand/Menschen, Kartenleiste mit + und −, Infofenster
             der Karten, Chronik, Bildpuffer, Großansicht der Diagramme), cardInfo.js (Bild im Infofenster:
             Kartenausschnitt assets/karte_<id>.png),
             charts.js (LineChart; ChartView: gemeinsamer Zeitraum und Fadenkreuz)
