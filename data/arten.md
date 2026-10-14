@@ -465,6 +465,15 @@ stirbt in der Simulation fast immer eine Art aus.
    Früher hing die Schwelle am Bestand der ganzen Insel, gemessen am Startbestand (Hirsch 60 %,
    Laufvogel 120 %); das konnte kein Tier wissen. Ganz ohne diese Bremse fressen die Wölfe die
    Hirsche in 15–20 Jahren leer und die Adler die Laufvögel in 8 Jahren (große Insel).
+   **Hunger macht unwählerisch:** Unter Energie 0,5 zählt das Suchbild bei der Wahl der Beute
+   immer weniger, unter 0,25 gar nicht mehr – ein ausgehungerter Wolf greift jeden Hirsch an, den
+   er sieht (und nimmt auch Laufvögel). Dafür **gelingt die Jagd ohne Suchbild seltener**
+   (Jagderfolg mal Suchbild): Übrig sind die vorsichtigsten Tiere, und dem Räuber fehlt die Übung.
+   Nur „Hunger macht unwählerisch“ allein kippte die Insel (mittlere Insel: auf allen 8 Inseln
+   starb eine Art aus), weil die Räuber gerade bei wenig Beute immer hungrig sind. Mit beidem:
+   große Insel 16 × 60 Jahre alle Arten 15 von 16 (Wölfe einmal in Jahr 49), Hirsche 419,
+   Laufvögel 511, Wölfe 86, Adler 28; nur Hirsch und Wolf 8 von 8; mittlere Insel 8 × 30 Jahre
+   7 von 8 (Adler einmal), Hirsche 241, Laufvögel 303, Wölfe 55, Adler 14.
 3. **Rückzugsräume:** Im Wald werden Beutetiere schlechter entdeckt und erwischt.
 4. **Aas:** Verhungerte Tiere und Reste von Rissen ernähren die Räuber in schlechten Zeiten.
 5. **Fortpflanzung je nach Futterlage:** Hungrige Räuber bekommen keinen Nachwuchs.

@@ -36,6 +36,10 @@
   // Suchbild: Ueber so viele Tage mittelt ein Raeuber, wie viel Beute er zu sehen bekommt
   var MEMORY_DAYS = 20;
 
+  // Hunger macht unwaehlerisch: Unter dieser Energie (Mittel der Gruppe) zaehlt das Suchbild
+  // immer weniger, bei der zweiten gar nicht mehr - dann wird jede Beute in Sicht gejagt
+  var DESPERATE = [0.5, 0.25];
+
   // Pflanzenfresser ziehen weiter, wenn die Weide unter diesen Anteil ihrer
   // vollen Menge abgefressen ist (knapp ueber der Schwelle der Ueberweidung)
   var MOVE_ON = 0.35;
@@ -392,14 +396,18 @@
   /**
    * Wie gefragt ist diese Beute (0..1)? Sieht der Raeuber weniger als prey.scarce Tiere je
    * 100 x 100, halb so sehr, bei sehr wenigen kaum noch: Er hat kein Suchbild mehr fuer sie.
+   * Je hungriger er ist, desto weniger zaehlt das (DESPERATE): Ausgehungert jagt er alles,
+   * was er sieht.
    */
-  function interest(g, id) {
+  function interest(g, id, energy) {
     var s = g.seen && g.seen[id], h = BT.SPECIES[id].scarce;
     if (s == null || !h) return 1;
-    return s * s / (s * s + h * h);
+    var i = s * s / (s * s + h * h);
+    var need = Math.max(0, Math.min(1, (DESPERATE[0] - energy) / (DESPERATE[0] - DESPERATE[1])));
+    return i + (1 - i) * need;
   }
 
-  function findPrey(sim, g) {
+  function findPrey(sim, g, energy) {
     var spec = g.spec, w = sim.world;
     var best = null, bestScore = 0, bestWeight = 0;
     var groups = sim.herbivoreGroups;
@@ -407,7 +415,7 @@
       var p = groups[i];
       var weight = spec.prey[p.spec.id];
       if (!weight || !p.members.length) continue;
-      weight *= interest(g, p.spec.id);
+      weight *= interest(g, p.spec.id, energy);
       if (weight < 0.12) continue;      // sehr seltene Beute lohnt die Suche nicht
       var cover = COVER[sim.biomeAt(p.x, p.y)];
       var vision = spec.vision * (1 - cover * (spec.flies ? 1.3 : 0.6));
@@ -468,6 +476,9 @@
     // haben es leicht, wenn die Pflanzenfresser ihre Weiden kahl gefressen haben
     p *= 1.1 - 0.3 * avg(victims, 'energy');
     p *= prey.spec.easyPrey || 1;                       // leichte Beute (Haustiere)
+    // Ohne Suchbild (lange kaum gesehen) misslingt die Jagd oefter: Uebrig sind die
+    // vorsichtigsten Tiere, und dem Raeuber fehlt die Uebung
+    p *= interest(g, prey.spec.id, 1);
     if (!sim.rng.chance(p)) return false;
 
     // Opfer: bevorzugt Jungtiere und geschwaechte Tiere
@@ -743,7 +754,7 @@
     // Hungrig? Beute suchen
     if (g.cooldown > 0) g.cooldown--;
     if (energy < hungry && !g.cooldown) {
-      var target = findPrey(sim, g);
+      var target = findPrey(sim, g, energy);
       if (target) {
         g.state = 'jagen'; g.prey = target; g.stateTicks = spec.maxChaseTicks; g.stalkTicks = 0;
         return;
