@@ -294,8 +294,11 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   Wasser führt um die Zäune herum (`humans.waterDist`, nur wenn es Weiden gibt).
 - **Lebensraum:** Grasland und Wiese, Busch (0,8), Fels (0,6), Farnwald (0,5), Moos (0,3).
 - **Fortpflanzung:** jedes Weibchen, **1–2 Lämmer**, Chance 0,95 (Hirsch: 1 Kalb, 0,85). **Reif mit
-  ½ Jahr** (Hirsch 1 Jahr), Höchstalter 9. **Weniger Lämmer bei knapper Weide** (`breed.food`, wie
-  beim Hirsch: Gras im Umkreis von 3 Weidezellen, volle Chance ab 65 %, keine Lämmer bei 30 %).
+  ½ Jahr** (Hirsch 1 Jahr), Höchstalter 9. **Weniger Lämmer bei knapper Weide** (`breed.food`: Gras im
+  Umkreis von 3 Weidezellen, volle Chance ab 30 %, keine Lämmer erst bei 5 %; Hirsch 65 % / 30 %).
+  Schafe beißen kürzer und bekommen deshalb noch Lämmer, wo der Hirsch keine Kälber mehr hat. So
+  drücken sie das Gras unter das, wovon der Hirsch leben kann (Konkurrenz um dieselbe Nahrung: Wer mit
+  weniger auskommt, gewinnt).
 - **Flucht:** 11,5. `scheu` 0,4 (kennt Menschen).
 - **Feinde** (`preyOf`): **Wolf 1,3**, Hund 1,3 (lieber als Hirsch, 1,0), Adler 0,25 (nur Lämmer
   bis ½ Jahr). **Leichte Beute** (`easyPrey` 1,2; mit 1,4 hielten die Wölfe die Schafe bei etwa 70): Ein Angriff auf Schafe gelingt 1,2-mal so oft
@@ -327,7 +330,26 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   (`easyPrey` 1,6 oder weniger Wachsamkeit der Herde, `vigilance` 0,01 statt 0,03) half nicht: Die
   Schafe wuchsen trotzdem bis zum Kahlfraß.
 
-  Mit den offiziellen Werkzeugen: `invasion.js 8 30 --karten=schafe@1` Wölfe 132 % des Laufs ohne
+  **Zweiter Schritt: Wirkung auf die Hirsche.** Mit derselben Bremse wie der Hirsch (65 % / 30 %)
+  blieben die Schafe bei etwa 100, und die Hirsche merkten kaum etwas. Beide Arten hörten bei
+  derselben Grasmenge auf, Junge zu bekommen; die Schafe hatten keinen Vorteil, und die Wölfe nahmen
+  sie bevorzugt. Gemessen (16 Inseln × 30 Jahre, Schafweide im ersten Jahr):
+
+  | Bremse Schaf (volle Chance / keine) | Wölfe ausgestorben | Hirsche J16–30 | Schafe J16–30 | Wölfe | Zustand Gras ab J9 |
+  |---|---|---|---|---|---|
+  | ohne Schafe | 0 | 277 | – | 50 | 79 % |
+  | 65 % / 30 % (wie Hirsch) | 0 | 255 | 114 | 73 | 70 % |
+  | 45 % / 15 % | 0 | 209 | 173 | 72 | 61 % |
+  | **30 % / 5 %** | **0** | **190** | **197** | **66** | **55 %** |
+  | 20 % / 0 % | 4 | 165 | 207 | 56 | 51 % |
+  | 30 % / 5 %, `scarceMin` 80 | 4 | 158 | 223 | 59 | 50 % |
+
+  Gewählt: 30 % / 5 %. Die Hirsche sinken um etwa ein Drittel, das Gras leidet sichtbar, die Wölfe
+  überleben. Noch stärker kippt die Insel (Wölfe sterben auf 4 von 16 Inseln aus). Die Wirkung
+  kommt langsam: Wenige Schafe brechen aus (2–6, nach etwa 4 Jahren), bis sie zahlreich sind,
+  vergehen rund 10 Jahre.
+
+  Mit den offiziellen Werkzeugen (erster Schritt, Bremse noch 65 % / 30 %): `invasion.js 8 30 --karten=schafe@1` Wölfe 132 % des Laufs ohne
   Schafe (vorher 118 %), Hirsche 100 % (vorher 96 %). `balance.js 8 30 --karten=schafe@1,hunde@1`:
   Wölfe sterben auf 3 von 8 Inseln aus (vorher 7 von 8; der Rest geht auf die Staupe der Hunde),
   Mittel Wölfe 23 statt 15, Gras im Zustand 58 % statt 52 %. Ohne Karten unverändert (`balance.js 8 30`:
