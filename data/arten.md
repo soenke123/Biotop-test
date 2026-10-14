@@ -349,6 +349,11 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   kommt langsam: Wenige Schafe brechen aus (2–6, nach etwa 4 Jahren), bis sie zahlreich sind,
   vergehen rund 10 Jahre.
 
+  Offizielle Werkzeuge mit 30 % / 5 %: `invasion.js 8 30 --karten=schafe@1` Hirsche 74 %, Wölfe 127 %,
+  Laufvögel 116 %, Adler 92 % des Laufs ohne Schafe; Schafe etabliert 8 von 8. Mit Schafen und Hunden
+  (`balance.js 8 30 --karten=schafe@1,hunde@1`) sterben die Wölfe auf 5 von 8 Inseln aus (mit der
+  Bremse wie beim Hirsch 3, vor dem Nachziehen 7): Staupe und Konkurrenz zusammen lassen die Insel kippen.
+
   Mit den offiziellen Werkzeugen (erster Schritt, Bremse noch 65 % / 30 %): `invasion.js 8 30 --karten=schafe@1` Wölfe 132 % des Laufs ohne
   Schafe (vorher 118 %), Hirsche 100 % (vorher 96 %). `balance.js 8 30 --karten=schafe@1,hunde@1`:
   Wölfe sterben auf 3 von 8 Inseln aus (vorher 7 von 8; der Rest geht auf die Staupe der Hunde),
