@@ -103,10 +103,11 @@
       // Wildjaeger tragen ein Tier heim, Wolfsjaeger jagen weiter, bis der Jagdzug um ist (stay)
       wolf: { prey: { inselwolf: 1, hund: 1 }, hit: 0.55, stay: true },   // vorher 0,7
       wild: { prey: { zwerghirsch: 1, laufvogel: 1, schaf: 1 }, hit: 0.4, stay: false },   // vorher 0,5
-      // Verwilderte Hunde kennen die Menschen und ihre Waffen: Treffer mal diesem Faktor, und
-      // nach dem ersten Schuss verliert der Jaeger ihre Spur fuer den Rest des Jagdzugs; sie
-      // fliehen nicht aus ihrem Revier. Ohne das hetzten die Wolfsjaeger die Rudel tagelang
-      // (jeder Schuss trieb sie 300 weit weg), bis die Hunde verhungerten
+      // Verwilderte Hunde kennen die Menschen und ihre Waffen: Ein Jaeger findet ein Rudel je
+      // Jagdzug nur mit dieser Chance, trifft nur mit diesem Faktor, und nach dem ersten Schuss
+      // verliert er ihre Spur; sie fliehen nicht aus ihrem Revier. Vorher hetzten die
+      // Wolfsjaeger die Rudel tagelang (jeder Schuss trieb sie 300 weit weg), bis die Hunde
+      // verhungerten, oder fanden das eine kleine Rudel bei jedem Jagdzug
       wary: { hund: 0.5 },
       // Ausgebuechste Schafe und Hunde sind fuer die Doerfler erst noch ihre Haustiere: so
       // lange (Jahre) jagen die Jaeger sie nicht, und die Hunde greifen die Jaeger nicht an
@@ -946,6 +947,17 @@
     return g.spareUntil != null && this.sim.day < g.spareUntil;
   };
 
+  /** Rudel, die ein Jaeger auf diesem Jagdzug nicht findet (hunt.wary), oder null. */
+  Humans.prototype.hiddenFrom = function (h) {
+    var wary = BT.HUMANS.hunt.wary, prey = BT.HUMANS.hunt[h.kind], list = this.sim.predatorGroups, lost = null;
+    if (!prey || !prey.prey) return null;
+    for (var i = 0; i < list.length; i++) {
+      var g = list[i], f = wary[g.spec.id];
+      if (f && prey.prey[g.spec.id] && g.members.length && !this.rng.chance(f)) (lost = lost || []).push(g);
+    }
+    return lost;
+  };
+
   /** Laesst der Jaeger h diese Gruppe aus? (Schonfrist, oder ihre Spur verloren: hunt.wary) */
   Humans.prototype.ignores = function (h, g) {
     return this.spared(g) || (!!h.lost && h.lost.indexOf(g) >= 0);
@@ -996,7 +1008,7 @@
         var gather = h.kind === 'sammel';
         var out = gather ? BT.HUMANS.gather.out : cfg.out;
         h.out = this.rng.range(out[0], out[1]);
-        h.lost = null;
+        h.lost = this.hiddenFrom(h);
         h.target = gather ? this.fruitTarget(h, false) : this.huntTarget(h);
         if (!h.target) { h.rest = 1; continue; }
         h.state = 'unterwegs'; h.trip = 0; h.trail = []; h.stuck = 0; h.useTrail = false;
