@@ -103,8 +103,9 @@
       // Wildjaeger tragen ein Tier heim, Wolfsjaeger jagen weiter, bis der Jagdzug um ist (stay)
       wolf: { prey: { inselwolf: 1, hund: 1 }, hit: 0.55, stay: true },   // vorher 0,7
       wild: { prey: { zwerghirsch: 1, laufvogel: 1, schaf: 1 }, hit: 0.4, stay: false },   // vorher 0,5
-      // Treffer mal diesem Faktor: Verwilderte Hunde kennen die Menschen und ihre Waffen
-      // und halten Abstand (mit 1 erschossen die Wolfsjaeger alle Hunde gleich nach der Schonfrist)
+      // Verwilderte Hunde kennen die Menschen und ihre Waffen: Treffer mal diesem Faktor, und
+      // nach dem ersten Schuss verliert der Jaeger ihre Spur fuer den Rest des Jagdzugs. Ohne
+      // das hetzten die Wolfsjaeger die Rudel tagelang, bis die Hunde verhungerten
       wary: { hund: 0.5 },
       // Ausgebuechste Schafe und Hunde sind fuer die Doerfler erst noch ihre Haustiere: so
       // lange (Jahre) jagen die Jaeger sie nicht, und die Hunde greifen die Jaeger nicht an
@@ -944,6 +945,11 @@
     return g.spareUntil != null && this.sim.day < g.spareUntil;
   };
 
+  /** Laesst der Jaeger h diese Gruppe aus? (Schonfrist, oder ihre Spur verloren: hunt.wary) */
+  Humans.prototype.ignores = function (h, g) {
+    return this.spared(g) || (!!h.lost && h.lost.indexOf(g) >= 0);
+  };
+
   /** Beutegruppe fuer einen Jaeger: nah beim Jaeger, hoechstens range vom Dorf, nach Gewicht. */
   Humans.prototype.huntTarget = function (h) {
     var cfg = BT.HUMANS.hunt, prey = cfg[h.kind].prey, c = h.village, sim = this.sim;
@@ -952,7 +958,7 @@
     var best = null, bestScore = 0;
     for (var i = 0; i < list.length; i++) {
       var g = list[i], w = prey[g.spec.id];
-      if (!w || !g.members.length || this.spared(g)) continue;
+      if (!w || !g.members.length || this.ignores(h, g)) continue;
       var dc = BT.M.hypot(g.x - c.x, g.y - c.y);
       if (dc > range) continue;
       var near = dc < (h.out || 0);                  // naeher am Dorf, als der Jaeger heute will
@@ -971,7 +977,7 @@
     var best = null, bestD = Math.min(cfg.sight, BT.M.hypot(g.x - h.x, g.y - h.y));
     for (var i = 0; i < list.length; i++) {
       var o = list[i];
-      if (o === g || !prey[o.spec.id] || !o.members.length || this.spared(o)) continue;
+      if (o === g || !prey[o.spec.id] || !o.members.length || this.ignores(h, o)) continue;
       var d = BT.M.hypot(o.x - h.x, o.y - h.y);
       if (d < bestD) { bestD = d; best = o; }
     }
@@ -989,6 +995,7 @@
         var gather = h.kind === 'sammel';
         var out = gather ? BT.HUMANS.gather.out : cfg.out;
         h.out = this.rng.range(out[0], out[1]);
+        h.lost = null;
         h.target = gather ? this.fruitTarget(h, false) : this.huntTarget(h);
         if (!h.target) { h.rest = 1; continue; }
         h.state = 'unterwegs'; h.trip = 0; h.trail = []; h.stuck = 0; h.useTrail = false;
@@ -1138,6 +1145,11 @@
     }
     // Beschossene Raeuber fliehen weit weg (scheue Pflanzenfresser fliehen von selbst)
     if (spec.role === 'predator' && g.members.length) this.scare(g, h);
+    // Hunde verschwinden: Der Jaeger verliert ihre Spur und sucht sich anderes
+    if (cfg.wary[spec.id] && g.members.length) {
+      (h.lost = h.lost || []).push(g);
+      if (h.target === g) h.target = null;
+    }
   };
 
   /** Raeubergruppe flieht vor dem Menschen bei `from` (ein, zwei Tage weit weg). */
