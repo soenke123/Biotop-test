@@ -344,11 +344,12 @@ je Art in `data/arten.md` („Jagd“).
   | dazu | Schafe etabliert | Hunde etabliert | vorher (Schafe / Hunde) |
   |---|---|---|---|
   | – | 8 von 8 | 8 von 8 | 8 / 8 |
-  | Wild jagen | 7 von 8 | 8 von 8 | 6 / 5 |
-  | Wölfe jagen | 7 von 8 | **0 von 8** | 7 / 0 |
+  | Wild jagen | 8 von 8 | 7 von 8 | 6 / 5 |
+  | Wölfe jagen | 6 von 8 | **0 von 8** | 7 / 0 |
 
-  Gegen die Wolfsjäger hilft die Schonfrist den Hunden nicht: Sie leben ein Jahr länger, danach
-  erschießen die Wolfsjäger das kleine Rudel (3–7 Hunde) im Jahr darauf, so wie die Wölfe.
+  (Ohne Jäger mit 1 Jahr Schonfrist gemessen, sie wirkt dort nicht.) Gegen die Wolfsjäger hilft
+  die Schonfrist den Hunden nur auf Zeit: Nach den 3 Jahren erschießen die Wolfsjäger die Hunde
+  in Jahr 9–11, so wie die Wölfe. Das ist gewollt: Wolfsjäger jagen Hunde.
 - **Karte „Wölfe jagen“:** Wolfsjäger verfolgen Rudel (auch wilde Hunde). Ein beschossenes Rudel
   flieht 300 weit, die Jäger folgen ihm und jagen weiter, bis der Jagdzug um ist.
 - **Wölfe gegen Jäger:** Hungrige Rudel greifen Jäger an, die näher als 50 kommen (8 % je Tick, mit
