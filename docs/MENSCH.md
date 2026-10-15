@@ -238,7 +238,7 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
 - **Folgekarten** (eco/humans.js `checkEscape`):
   🐑 **Schafe brechen aus:** an jeder Weide einmal, 3,7 bis 4,3 Jahre nach ihrer Karte, 2 bis 6 Schafe
   (über den Zaun auf der dem Dorf abgewandten Seite). 🐕 **Hunde verwildern:** einmal je Karte
-  „Hütehunde“, 4 Jahre danach, 2 bis 3 Hunde. (Bis zur dritten Abstimmung brachen sie immer wieder
+  „Hütehunde“, 4 Jahre danach, 3 bis 4 Hunde (vorher 2 bis 3: sie starben oft gleich wieder aus). (Bis zur dritten Abstimmung brachen sie immer wieder
   aus; das gab ihnen einen unfairen Vorteil, die Messung unten stammt noch von dort.) Im nächsten Frühjahr füllen die Siedler Weide und Hunde wieder auf.
 - **Weglaufen:** Die Ausreißer sind satt und ohne Durst (Energie 1) und laufen erst weit weg
   (Zustand „ist ausgebüchst“, `g.runaway`): Schafe 350 bis 600 vom Dorf zu einem Ort mit gutem
@@ -253,9 +253,11 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
 - **Schafe** bilden Herden bis 100 mit Abstand zwischen den Tieren (der Radius der Herde wächst
   mit der Zahl). Ist eine große Herde hungrig, zieht die Hälfte weit weg zu einer neuen Weide. Sie
   sind früher erwachsen und haben mehr Lämmer als der Hirsch.
-- **Hunde** sind wie Wölfe (gleiche Werte), etwas stärker, und tragen **Staupe**: Wölfe in ihrer
+- **Hunde** sind wie Wölfe (gleiche Werte) und tragen **Staupe**: Wölfe in ihrer
   Nähe erkranken mit der Zeit, werden schwach und sterben oft daran (Folgekarte 🦠 „Wölfe
-  erkranken“, Todesursache „Krankheit“, kranke Tiere mit grünem Punkt).
+  erkranken“, Todesursache „Krankheit“, kranke Tiere mit grünem Punkt). Sie finden Abfälle in der
+  Nähe der Dörfer (`scraps`) und **verdrängen die Wölfe** (`dominates`): In einem Hunderevier
+  gründen Wölfe kein Revier. So rotten die Hunde die Wölfe in 15–20 Jahren aus (`data/arten.md`).
 - **Bilder:** eigene Bilder in `assets/schaf` und `assets/hund` (vorher eingefärbte Hirsche und
   Wölfe). Auch die Haustiere auf der Weide und im Dorf werden so gezeichnet.
 - **Oberfläche:** Kacheln für Schafe und Hunde erscheinen, sobald die Art auf der Insel ist; in
@@ -301,6 +303,18 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
   Wolf 135 %. **Die Wölfe deckeln die Schafe:** Mehr Futter für die Schafe wird zu mehr Wölfen.
   Großen Einfluss aufs ganze Ökosystem haben die Schafe erst, wenn die Wölfe fehlen (wie in
   Neuseeland, das keine Raubtiere hatte).
+- **Sechste Abstimmung** (nach dem Suchbild im Blick; Ziel: Schafe drücken die Hirsche sichtbar,
+  Hunde rotten die Wölfe über mehrere Jahre aus). Schafe `scarce` 0,9 statt 0,3 (sonst galten
+  schon die frisch ausgebrochenen als Suchbild); Hunde mit Dorfabfällen, Verdrängung der Wölfe,
+  3–4 Ausreißern, Laufvogel 0,15 und Jagderfolg wie der Wolf. `invasion.js 8 30`, Median
+  gegenüber nur Landung (Einzelheiten in `data/arten.md`):
+
+  | Karten | Schafe etabliert | Hunde etabliert | Wölfe ausgestorben | Hirsch | Laufvogel | Wolf | Adler |
+  |---|---|---|---|---|---|---|---|
+  | nur Schafe | 7 von 8 (vorher 1) | – | 0 | 56 % | 87 % | 111 % | 107 % |
+  | nur Hunde | – | 8 von 8 (vorher 5) | 8 von 8 (vorher 2) | 68 % | 73 % | 4 % | 42 % |
+  | Schafe und Hunde | 8 von 8 | 8 von 8 | 8 von 8 | 35 % | 74 % | 2 % | 23 % |
+
 - **Noch nicht:** Wölfe reißen Schafe auf der Weide.
 - **Mit Schafen und Hunden darf das Ökosystem kippen.** Die Werte sind noch nicht abgestimmt
   (das Testen übernimmt die Projektleitung). **Ohne Karte läuft alles exakt wie vorher.**

@@ -318,8 +318,20 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   (langsam, wenig wachsam). Wenige Schafe schützt das Suchbild (`scarce`), deshalb werden
   frisch ausgebrochene Schafe kaum gejagt. Erst wenn es viele gibt, fressen die Räuber sie bevorzugt –
   und vermehren sich dabei, was auch die Hirsche trifft (scheinbare Konkurrenz).
-- **Suchbild:** `scarce` 0,3 je 100 × 100 im Blick (entspricht dem früheren `scarceMin` 40: bei
-  etwa 40 Schafen auf der mittleren Insel halb so gefragt).
+- **Suchbild:** `scarce` **0,9** je 100 × 100 im Blick: Ein Rudel (Sicht 230) sucht erst
+  gezielt nach Schafen, wenn es etwa 15 im Blick hat. Mit 0,3 (gesetzt, als das Suchbild noch am
+  Bestand der Insel hing, `scarceMin` 40) galten nach dem Umbau auf das Suchbild im Blick schon
+  die 2–6 frisch ausgebrochenen Schafe als Suchbild: Die Wölfe fraßen sie, Schafe setzten sich
+  nur noch auf 1 von 8 Inseln fest. Gemessen (`invasion.js 8 30 --karten=schafe@1`):
+
+  | `scarce` | Schafe etabliert | Hirsch | Laufvogel | Wolf | Adler |
+  |---|---|---|---|---|---|
+  | 0,3 | 1 von 8 | 103 % | 98 % | 93 % | 97 % |
+  | 0,6 | 4 von 8 | 73 % | 90 % | 103 % | 139 % |
+  | **0,9** | **7 von 8** | **56 %** | **87 %** | **111 %** | **107 %** |
+  | 1,2 | 7 von 8 | 34 % | 84 % | 89 % | 132 % |
+
+  (Median gegenüber dem Lauf nur mit Landung. Die eine Insel ohne Schafe: Es brachen nur 3 aus.)
 - **Ein Riss liefert 2,6 Energie** (Hirsch 3; vorher 1,3 zu Hirsch 1,5).
 - **Nachgezogen nach der Abstimmung von Hirsch und Wolf** (Hirsch 3 Energie statt 1,5, Lämmerbremse
   beim Hirsch, Wolf verbraucht mehr): Die Schafe waren unverändert geblieben. Spielte man die Schafweide
@@ -379,14 +391,23 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
 - **Kommt mit den Menschen:** Startbestand 0. Mit der Karte „Hütehunde“ laufen 3 Hunde zwischen
   Dorf und Weiden umher (jede weitere Karte 3 mehr). Sie stören stärker als die Menschen allein:
   Die Störung ums Dorf reicht 20 % weiter, und um jede Weide liegt Störung im Umkreis von 200.
-  **4 Jahre nach jeder Karte „Hütehunde“** verwildern **einmal** 2–3 Hunde (Weibchen, Männchen, …;
+  **4 Jahre nach jeder Karte „Hütehunde“** verwildern **einmal** 3–4 Hunde (Weibchen, Männchen, …;
   Folgekarte 🐕 „Hunde verwildern“). Sie sind satt, laufen erst 400–700
   vom Dorf weg und suchen dann ein Revier. Lebt ein wildes Hunderudel mit Platz höchstens 700 vom
   Dorf, laufen sie zu ihm und schließen sich an. Die Siedler ersetzen die Hunde im nächsten Frühjahr.
-- **Wie der Wolf:** Alle Werte kommen vom Inselwolf (`Object.assign`), nur etwas stärker:
-  Jagderfolg 0,36 (Wolf 0,32), `scheu` 0,3 (Wolf 0,9), Beute Hirsch 1,0, Laufvogel 0,6 (leichte Beute), Schaf 1,3
-  (siehe Schaf).
-  **Die Laufvögel kennen keine Hunde** (`unknownTo`) und fliehen nicht vor ihnen.
+- **Wie der Wolf:** Alle Werte kommen vom Inselwolf (`Object.assign`), dazu:
+  `scheu` 0,3 (Wolf 0,9), Beute Hirsch 1,0, Laufvogel 0,15 (Wolf 0,13), Schaf 1,3 (siehe Schaf).
+  Jagderfolg wie der Wolf (0,32; vorher 0,36).
+  **Die Laufvögel kennen keine Hunde** (`unknownTo`) und fliehen nicht vor ihnen. Mit Laufvogel 0,6
+  (bzw. 0,35) fraßen die Hunde die Laufvögel auf die Hälfte herunter, und die Adler verhungerten.
+- **Abfälle** (`scraps`): Bis 800 von einem Dorf findet jedes Tier jeden Tag etwas (Energie 0,015;
+  Verbrauch 0,052). Vorbild: Verwilderte Hunde leben weltweit vor allem von den Menschen. Ohne das
+  verhungerte das kleine erste Rudel oft im ersten Winter (Hunde etabliert 4–5 von 8), mit mehr
+  Nebenkost überall (Früchte, Insekten 0,09) wurden es zu viele (Hirsche 43 %, Laufvögel 23 %).
+- **Verdrängung** (`dominates: ['inselwolf']`, Vorbild Dingo und Beutelwolf in Australien): In einem
+  Hunderevier gründen Wölfe kein Revier, und wandernde Wölfe werden daraus vertrieben (wie aus
+  fremden Wolfsrevieren). Die Hunde achten nur auf andere Hunde. Stirbt ein Wolfsrudel an der
+  Staupe, übernehmen die Hunde den Platz, und die Wölfe finden keinen mehr.
 - **Krankheit (Staupe):** Die Hunde tragen sie, erkranken aber nicht. Jeden Tag steckt sich jeder
   gesunde Wolf mit 3 % an, wenn ein Hunderudel näher als 300 ist, und mit 3 % je krankem Tier im
   eigenen Rudel. Kranke Wölfe verbrauchen 0,02 Energie am Tag mehr, bekommen keine Jungen und
@@ -394,6 +415,23 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   danach immun. Im Mittel ist ein Wolf etwa 50 Tage krank, gut zwei Drittel sterben daran. Beim
   ersten kranken Wolf erscheint die Folgekarte 🦠 „Wölfe erkranken“. Kranke Tiere tragen auf der
   Karte einen grünen Punkt.
+- **Ziel:** Die Hunde rotten die Wölfe über mehrere Jahre aus. Ablauf (Insel 1000): Hunde verwildern
+  in Jahr 5, die Staupe drückt die Wölfe in 5 Jahren von 100 auf 40, danach verdrängen die wachsenden
+  Hunderudel sie Revier für Revier (Jahr 20: 14 Wölfe, Jahr 25: ausgestorben).
+  Vorher starben die 2–3 Ausreißer auf 3 von 8 Inseln wieder aus, und wo sie lebten, blieben
+  meist 5–15 immune Wölfe übrig. Jetzt verwildern 3–4 Hunde (`BT.HUMANS.dogs.escape`). Gemessen
+  (`invasion.js 8 30`, Median gegenüber nur Landung):
+
+  | Karten | Hunde etabliert | Wölfe ausgestorben | Hirsch | Laufvogel | Wolf | Adler |
+  |---|---|---|---|---|---|---|
+  | `hunde@1` vorher | 5 von 8 | 2 von 8 | 88 % | 53 % | 13 % | 7 % |
+  | `hunde@1` | **8 von 8** | **8 von 8** (Jahr 24–29) | 68 % | 73 % | 4 % | 42 % |
+  | `schafe@1,hunde@1` vorher | 6 von 8 (Schafe 2) | 3 von 8 | 85 % | 69 % | 21 % | 1 % |
+  | `schafe@1,hunde@1` | **8 von 8** (Schafe 8) | **8 von 8** (Jahr 20–27) | 35 % | 74 % | 2 % | 23 % |
+
+  Die Adler leiden mit: Solange Wölfe und Hunde zugleich jagen, fallen die Hirsche (und damit die
+  Kälber) tief, und die wenigen Adler erholen sich davon oft nicht (mit Hunden auf 3–4 von 8
+  Inseln ausgestorben). Ohne Karten unverändert (`balance.js 8 30`: 7 von 8, Hirsche 242, Wölfe 58).
 
 ## Scheu vor Menschen
 
@@ -468,7 +506,7 @@ stirbt in der Simulation fast immer eine Art aus.
    seltener verfolgt. Die Räuber hungern dann, bevor die Beute verschwindet. Jedes Rudel und
    jedes Adlerpaar zählt dazu einmal am Tag, wie viele Tiere jeder Beuteart es im Blick hat
    (Deckung verbirgt sie), und mittelt über etwa 20 Tage. Sieht es weniger als `scarce` Tiere je
-   100 × 100 Sichtfläche (Zwerghirsch 1,3, Laufvogel 0,5, Schaf 0,3), sucht es nur noch halb so
+   100 × 100 Sichtfläche (Zwerghirsch 1,3, Laufvogel 0,5, Schaf 0,9), sucht es nur noch halb so
    gezielt nach dieser Art, bei sehr wenigen kaum noch. Die Räuber kennen also nur ihre Umgebung,
    nicht den Bestand der Insel: Ein Rudel in einer beutereichen Gegend jagt weiter, eines in einer
    leergefressenen nicht. Die vergebliche Suche nach seltener Beute kostet

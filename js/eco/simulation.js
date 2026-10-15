@@ -189,7 +189,7 @@
   Simulation.prototype.homeIsFree = function (spec, x, y) {
     for (var i = 0; i < this.predatorGroups.length; i++) {
       var o = this.predatorGroups[i];
-      if (o.spec !== spec || !o.home || !o.members.length) continue;
+      if (!BT.claims(o.spec, spec) || !o.home || !o.members.length) continue;
       if (BT.M.hypot(o.home.x - x, o.home.y - y) < spec.territory * (spec.spacing || 1.1)) return false;
     }
     return true;
@@ -447,6 +447,7 @@
     // dieselben Gruppen den ersten Zugriff aufs Futter
     shuffle(this.groups, this.rng);
     this.disease();
+    this.scraps();
 
     var groups = this.groups.slice();
     for (var i = 0; i < groups.length; i++) {
@@ -504,6 +505,24 @@
           else if (this.rng.chance(dis.recover)) { a.sick = false; a.immune = true; }
         }
       }
+    }
+  };
+
+  /**
+   * Abfaelle der Doerfer (spec.scraps, verwilderte Hunde), einmal am Tag: Ist eine
+   * Gruppe naeher als `radius` an einem Dorf, bekommt jedes Tier `energy` dazu. Ohne
+   * Doerfer oder ohne solche Arten aendert sich nichts.
+   */
+  Simulation.prototype.scraps = function () {
+    var villages = this.humans.villages;
+    if (!villages.length) return;
+    for (var i = 0; i < this.groups.length; i++) {
+      var g = this.groups[i], sc = g.spec.scraps;
+      if (!sc || !g.members.length) continue;
+      var near = false;
+      for (var k = 0; k < villages.length && !near; k++) near = BT.M.hypot(villages[k].x - g.x, villages[k].y - g.y) < sc.radius;
+      if (!near) continue;
+      for (var m = 0; m < g.members.length; m++) g.members[m].energy = Math.min(1, g.members[m].energy + sc.energy);
     }
   };
 

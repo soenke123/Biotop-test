@@ -82,7 +82,7 @@
       disturb: 200,           // Hunde an der Weide: Stoerung in diesem Umkreis (statt nur ums Haus)
       houseBonus: 1.2,        // ... und das Dorf wirkt weiter (Radius mal diesem Faktor)
       escapeYears: 4,         // so lange nach jeder Karte "Huetehunde" verwildern einmal Hunde
-      escape: [2, 3],         // so viele Hunde (Weibchen, Maennchen, ...)
+      escape: [3, 4],         // so viele Hunde (Weibchen, Maennchen, ...; mit 2-3 starben sie oft gleich wieder aus)
       runaway: [400, 700],    // so weit vom Dorf laufen sie, bevor sie ein Revier suchen
       join: 700               // ein wildes Rudel so nah am Dorf: die Ausreisser schliessen sich ihm an
     },

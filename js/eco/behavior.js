@@ -357,13 +357,14 @@
    * Liegt der Punkt in einem fremden Revier, aus dem der Wanderer vertrieben
    * wird? Woelfe verteidigen das ganze Revier. Adler dulden junge Artgenossen
    * ohne Revier (spec.floater) und vertreiben sie nur aus der Naehe des Horsts.
+   * Reviere einer ueberlegenen Art (spec.dominates, Hunde ueber Woelfe) zaehlen mit.
    */
   function insideForeignTerritory(sim, g, x, y) {
     var spec = g.spec;
     var r = spec.floater ? spec.floater.core : spec.territory;
     for (var i = 0; i < sim.predatorGroups.length; i++) {
       var o = sim.predatorGroups[i];
-      if (o === g || o.spec !== spec || !o.home || !o.members.length) continue;
+      if (o === g || !BT.claims(o.spec, spec) || !o.home || !o.members.length) continue;
       var c = o.horst || o.home;
       if (BT.M.hypot(c.x - x, c.y - y) < r) return true;
     }

@@ -311,7 +311,9 @@
     group: { kind: 'herd', min: 3, max: 100, spread: 30, spacing: 10, start: [8, 8],
       split: { min: 24, energy: 0.5, rest: 90, dist: [250, 500] } },
     start: 0,
-    scarce: 0.3,                      // Suchbild (wie bisher etwa 40 Schafe auf der mittleren Insel)
+    // Suchbild: Ein Rudel (Sicht 230) sucht erst gezielt nach Schafen, wenn es etwa 15 im Blick hat.
+    // Mit 0,3 galten schon 6 frisch ausgebrochene Schafe als Suchbild, und sie wurden meist gefressen
+    scarce: 0.9,
     // Leichte Beute: Woelfe (und Hunde) nehmen Schafe lieber als Hirsche, Adler nur Laemmer.
     // Wenige Schafe schuetzt das Suchbild (scarce): Ausreisser werden kaum gejagt.
     preyOf: { inselwolf: 1.3, inseladler: 0.25 },
@@ -356,9 +358,14 @@
     color: '#ff8c1a',
     start: 0,
     scheu: 0.3,                       // kennt die Menschen
-    huntChance: 0.36,                 // Wolf 0,32
-    prey: { zwerghirsch: 1.0, schaf: 1.3, laufvogel: 0.6 },   // Laufvoegel: leichte Beute, sie fliehen nicht
+    // Abfaelle: Bis 800 von einem Dorf finden sie jeden Tag etwas (Energie 0,015; Verbrauch 0,052).
+    // Ohne das verhungerten die 2-3 Ausreisser oft im ersten Winter
+    scraps: { radius: 800, energy: 0.015 },
+    prey: { zwerghirsch: 1.0, schaf: 1.3, laufvogel: 0.15 },  // Laufvoegel fliehen nicht (Wolf 0,13); mit 0,6 verhungerten die Adler
     unknownTo: ['laufvogel'],
+    // Verdraengung (Vorbild Dingo und Beutelwolf): In einem Revier der Hunde gruenden Woelfe kein
+    // Revier und werden als Wanderer vertrieben. Die Hunde selbst achten nur auf andere Hunde
+    dominates: ['inselwolf'],
     /*
      * Krankheit (Vorbild Staupe): Die Hunde selbst erkranken nicht. Jeden Tag steckt
      * sich jedes gesunde Tier der Arten in `victims` im Umkreis `radius` eines
@@ -388,6 +395,11 @@
     for (var k in byName) arr[B[k]] = byName[k];
     return arr;
   }
+
+  /** Beansprucht ein Revier der Art `owner` den Platz auch fuer die Art `spec`? */
+  BT.claims = function (owner, spec) {
+    return owner === spec || (!!owner.dominates && owner.dominates.indexOf(spec.id) >= 0);
+  };
 
   /** Lebensraeume, durch die eine Art sich am Boden nicht bewegen kann. */
   BT.isBlocked = function (biome, spec) {
