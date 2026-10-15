@@ -132,12 +132,21 @@
    * Futter bzw. ein Revier; mit `join` schliesst sie sich dort dieser Gruppe an
    * (so viele, wie Platz haben). true, solange damit beschaeftigt.
    */
+  var RUNAWAY_HUNGRY = 0.6;
+
   function runAway(sim, g) {
     var r = g.runaway;
     if (!r) return false;
     var j = r.join && r.join.members.length ? r.join : null;
     var tx = j ? j.x : r.x, ty = j ? j.y : r.y;
-    if (BT.M.hypot(tx - g.x, ty - g.y) < 30 || r.ticks-- <= 0) {
+    // Ausreisser, die unterwegs hungrig werden, bleiben, wo sie sind, und suchen Futter
+    var hungry = false;
+    if (r.state === 'ausgebuechst') {
+      var e = 0;
+      for (var m = 0; m < g.members.length; m++) e += g.members[m].energy;
+      hungry = e < g.members.length * RUNAWAY_HUNGRY;
+    }
+    if (BT.M.hypot(tx - g.x, ty - g.y) < 30 || r.ticks-- <= 0 || hungry) {
       if (j && BT.M.hypot(j.x - g.x, j.y - g.y) < 120) sim.joinGroup(g, j);
       g.runaway = null;
       g.tx = null;
