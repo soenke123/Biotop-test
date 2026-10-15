@@ -314,7 +314,8 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   Schafe beißen kürzer und bekommen deshalb noch Lämmer, wo der Hirsch keine Kälber mehr hat. So
   drücken sie das Gras unter das, wovon der Hirsch leben kann (Konkurrenz um dieselbe Nahrung: Wer mit
   weniger auskommt, gewinnt).
-- **Flucht:** 11,5. `scheu` 0,4 (kennt Menschen).
+- **Flucht:** 11,5. `scheu` 0,6 (verwildert: meidet die Dörfer und flieht vor Jägern; mit 0,4
+  grasten die wilden Schafe bis an die Häuser, wo das Gras unberührt ist, und wurden dort erlegt).
 - **Feinde** (`preyOf`): **Wolf 1,3**, Hund 1,3 (lieber als Hirsch, 1,0), Adler 0,25 (nur Lämmer
   bis ½ Jahr). **Leichte Beute** (`easyPrey` 1,2; mit 1,4 hielten die Wölfe die Schafe bei etwa 70): Ein Angriff auf Schafe gelingt 1,2-mal so oft
   (langsam, wenig wachsam). Wenige Schafe schützt das Suchbild (`scarce`), deshalb werden
@@ -448,7 +449,7 @@ wo `Störung · scheu ≥ 0,3` ist.
 | Inselwolf | 0,9 | 170 ums Haus | meidet Menschen, jagt dort nicht |
 | Inseladler | 0,5 | 100 ums Haus | überfliegt das Dorf, jagt aber nicht direkt daneben |
 | Laufvogel | 0,2 | nie | **inselzahm**: kennt keine Menschen (Vorbild Dodo, Takahē) |
-| Schaf | 0,4 | 65 ums Haus | Haustier, hält aber Abstand |
+| Schaf | 0,6 | 130 ums Haus | verwildert scheu (vorher 0,4: 65 ums Haus, dort wurden sie erlegt) |
 | Hund | 0,3 | nie | Haustier |
 
 Ohne Menschen hat `scheu` keine Wirkung.
@@ -460,11 +461,21 @@ reagieren, folgt aus `scheu`:
 
 | Art | gejagt von | Treffer je Schuss | Verhalten |
 |---|---|---|---|
-| Zwerghirsch | Wildjäger (Gewicht 1) | 0,5 × 0,6 | `scheu` ≥ 0,5: flieht, wenn ein Jäger näher als 0,4 × `vision` (72) ist |
-| Laufvogel | Wildjäger (1) | 0,5 | **flieht nicht** (`scheu` 0,2, inselzahm), deshalb die häufigste Beute |
-| Schaf (wild) | Wildjäger (1) | 0,5 | flieht nicht (`scheu` 0,4) |
-| Inselwolf | Wolfsjäger (1) | 0,7 × 0,6 | beschossen flieht das Rudel 300 weit; Wolfsjäger folgen ihm |
-| Hund (wild) | Wolfsjäger (1) | 0,7 | wie der Wolf, aber kaum scheu |
+| Zwerghirsch | Wildjäger (Gewicht 1) | 0,4 × 0,6 | `scheu` ≥ 0,5: flieht, wenn ein Jäger näher als 0,4 × `vision` (72) ist |
+| Laufvogel | Wildjäger (1) | 0,4 | **flieht nicht** (`scheu` 0,2, inselzahm), deshalb die häufigste Beute |
+| Schaf (wild) | Wildjäger (1) | 0,4 × 0,6 | flieht wie der Hirsch (`scheu` 0,6) |
+| Inselwolf | Wolfsjäger (1) | 0,55 | beschossen flieht das Rudel 300 weit; Wolfsjäger folgen ihm |
+| Hund (wild) | Wolfsjäger (1) | 0,55 × 0,15 | **kennt die Jäger** (`wary` 0,15): siehe unten |
+
+Treffer bis Oktober 2026: Wildjäger 0,5, Wolfsjäger 0,7.
+
+**Hunde kennen die Jäger** (`BT.HUMANS.hunt.wary`, 0,15): Ein Jäger findet ein Hunderudel je
+Jagdzug nur mit 15 %, trifft es mit 0,15 × 0,55, und nach dem ersten Schuss verliert er die Spur.
+Die Hunde fliehen dabei nicht aus ihrem Revier und greifen Jäger nur mit 15 % der Chance an.
+Begründung: Ein Rudel von etwa 10 Hunden bekommt rund 4 Welpen im Jahr; die Wölfe (50–80)
+verkraften die Jagd, ein einzelnes Hunderudel nicht. Mit den Wolfswerten (und auch noch mit
+Treffer × 0,5) erschossen die Wolfsjäger alle Hunde gleich nach der Schonfrist; jeder Schuss
+trieb das Rudel 300 weit weg, und die Jäger folgten ihm, bis die Hunde verhungerten.
 
 Wildjäger nehmen, **was sie zuerst sehen**: Kommt unterwegs eine Gruppe Hirsche oder Laufvögel
 näher als 160 und näher als ihr bisheriges Ziel, jagen sie diese – aber erst ab einem Abstand
@@ -478,7 +489,7 @@ ist „Jagd“.
 Jäger an, der ihm näher als 50 kommt, mit 8 % je Tick, mit Beute auf der Schulter mit 16 %. Wildjäger
 sterben dabei zu 30 %, der Wolf zu 40 %; sonst gehen beide auseinander, und die Wölfe nehmen die
 Beute mit. **Wolfsjäger rechnen damit:** Sie sterben nur zu 5 %, der Wolf zu 85 %. Danach flieht das
-Rudel. Tote Jäger ersetzt das Dorf im nächsten Frühling.
+Rudel. Hunde greifen nur mit 15 % dieser Chance an (`wary`). Tote Jäger ersetzt das Dorf im nächsten Frühling.
 
 **Sammler** (Karte „Sammeln“, `BT.HUMANS.gather`): nach demselben Prinzip wie die Jäger, 6 je Karte (vorher 2).
 Je Gang wird gewürfelt, wie weit sie hinausgehen (0–500); ab dort pflücken sie, wo sie zuerst

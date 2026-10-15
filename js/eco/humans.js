@@ -109,7 +109,7 @@
       // Faktor seltener an. Vorher hetzten die
       // Wolfsjaeger die Rudel tagelang (jeder Schuss trieb sie 300 weit weg), bis die Hunde
       // verhungerten, oder fanden das eine kleine Rudel bei jedem Jagdzug
-      wary: { hund: 0.5 },
+      wary: { hund: 0.15 },
       // Ausgebuechste Schafe und Hunde sind fuer die Doerfler erst noch ihre Haustiere: so
       // lange (Jahre) jagen die Jaeger sie nicht, und die Hunde greifen die Jaeger nicht an
       spare: 3,
