@@ -87,7 +87,7 @@
       join: 700               // ein wildes Rudel so nah am Dorf: die Ausreisser schliessen sich ihm an
     },
     hunt: {                   // Karten "Woelfe jagen" und "Wild jagen"
-      perCard: 2,             // Jaeger je Karte
+      perCard: 6,             // Jaeger je Karte
       speed: 25,              // Weltunits je Tick auf dem Weg (jeder Jaeger 0,85- bis 1,15-mal so schnell)
       stalk: 12,              // ... und beim Anschleichen (naeher als 150 an der Beute)
       pause: 0.12,            // Chance je Tick, kurz stehen zu bleiben (1-2 Ticks: umschauen, rasten), jeder fuer sich
@@ -117,7 +117,7 @@
       outcome: { wolf: { hunter: 0.05, wolf: 0.85 }, wild: { hunter: 0.3, wolf: 0.4 }, sammel: { hunter: 0.4, wolf: 0.05 } }
     },
     gather: {                 // Karte "Sammeln" (nach dem Prinzip der Jagd, Werte, die fehlen, aus hunt)
-      perCard: 2,             // Sammler je Karte
+      perCard: 6,             // Sammler je Karte
       speed: 25,              // Weltunits je Tick auf dem Weg
       out: [0, 500],          // so weit vom Dorf fangen sie an zu sammeln (je Gang neu gewuerfelt) ...
       ring: 250,              // ... das Ziel liegt out bis out + ring vom Dorf

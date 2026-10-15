@@ -105,16 +105,16 @@
     woelfeJagen: {
       id: 'woelfeJagen', kind: 'aktiv', icon: '🏹', image: 'assets/doerfler/jagdwolf_2.png', needs: 'landung', repeat: true,
       name: 'Wölfe jagen',
-      text: 'Zwei Wolfsjäger ziehen in die Wolfsreviere, zum Schutz von Dorf und Herden. Greifen Wölfe sie an, gewinnen meist die Jäger.',
-      more: 'Zwei Wolfsjäger ziehen immer wieder für einige Tage los, suchen Wolfsrudel und schießen. Beschossene Rudel fliehen weit weg. Werden die Wölfe weniger, nehmen die Hirsche zu und fressen mehr Gras.',
-      undo: 'Zwei Wolfsjäger hören auf zu jagen. Erlegte Wölfe bleiben tot, aber die Wölfe können sich wieder erholen.'
+      text: 'Sechs Wolfsjäger ziehen in die Wolfsreviere, zum Schutz von Dorf und Herden. Greifen Wölfe sie an, gewinnen meist die Jäger.',
+      more: 'Sechs Wolfsjäger ziehen immer wieder für einige Tage los, suchen Wolfsrudel und schießen. Beschossene Rudel fliehen weit weg. Werden die Wölfe weniger, nehmen die Hirsche zu und fressen mehr Gras.',
+      undo: 'Sechs Wolfsjäger hören auf zu jagen. Erlegte Wölfe bleiben tot, aber die Wölfe können sich wieder erholen.'
     },
     wildJagen: {
       id: 'wildJagen', kind: 'aktiv', icon: '🍖', image: 'assets/doerfler/jagdwild_2.png', needs: 'landung', repeat: true,
       name: 'Wild jagen',
-      text: 'Zwei Jäger erlegen Hirsche und Laufvögel als Nahrung. Die Laufvögel fliehen nicht. Hungrige Wölfe greifen die Jäger manchmal an.',
-      more: 'Zwei Jäger erlegen, was sie zuerst sehen: Hirsche, Laufvögel oder wilde Schafe. Die Hirsche fliehen vor ihnen, die Laufvögel nicht, deshalb treffen sie meist Laufvögel. Den Adlern fehlt dann Beute. Hungrige Wölfe greifen Jäger manchmal an.',
-      undo: 'Zwei Jäger hören auf zu jagen. Was sie erlegt haben, fehlt weiter, bis sich die Tiere erholt haben.'
+      text: 'Sechs Jäger erlegen Hirsche und Laufvögel als Nahrung. Die Laufvögel fliehen nicht. Hungrige Wölfe greifen die Jäger manchmal an.',
+      more: 'Sechs Jäger erlegen, was sie zuerst sehen: Hirsche, Laufvögel oder wilde Schafe. Die Hirsche fliehen vor ihnen, die Laufvögel nicht, deshalb treffen sie meist Laufvögel. Den Adlern fehlt dann Beute. Hungrige Wölfe greifen Jäger manchmal an.',
+      undo: 'Sechs Jäger hören auf zu jagen. Was sie erlegt haben, fehlt weiter, bis sich die Tiere erholt haben.'
     },
     // Folgen der Jagd (eco/humans.js)
     jagdbilanz: {
@@ -135,9 +135,9 @@
     sammeln: {
       id: 'sammeln', kind: 'aktiv', icon: '🫐', image: 'assets/doerfler/sammeln_2.png', needs: 'landung', repeat: true,
       name: 'Sammeln',
-      text: 'Zwei Sammler holen Früchte und Samen, mal nah am Dorf, mal weit draußen. Die fehlen dann den Laufvögeln. Hungrige Wölfe greifen auch Sammler an.',
-      more: 'Zwei Sammler gehen los und pflücken Früchte und Samen, bis ihre Körbe voll sind, mal nah am Dorf, mal weit draußen. Diese Früchte fehlen den Laufvögeln, vor allem im Herbst und Winter. Die Sammler haben keine Waffen, hungrige Wölfe greifen sie an.',
-      undo: 'Zwei Sammler hören auf. Die Früchte wachsen im nächsten Jahr wieder.'
+      text: 'Sechs Sammler holen Früchte und Samen, mal nah am Dorf, mal weit draußen. Die fehlen dann den Laufvögeln. Hungrige Wölfe greifen auch Sammler an.',
+      more: 'Sechs Sammler gehen los und pflücken Früchte und Samen, bis ihre Körbe voll sind, mal nah am Dorf, mal weit draußen. Diese Früchte fehlen den Laufvögeln, vor allem im Herbst und Winter. Die Sammler haben keine Waffen, hungrige Wölfe greifen sie an.',
+      undo: 'Sechs Sammler hören auf. Die Früchte wachsen im nächsten Jahr wieder.'
     },
     ratten: {
       id: 'ratten', kind: 'aktiv', icon: '🐀', image: 'assets/ratten.png', soon: true, needs: 'landung', repeat: true,
