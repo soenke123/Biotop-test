@@ -243,7 +243,8 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
 - **Weglaufen:** Die Ausreißer sind satt und ohne Durst (Energie 1) und laufen erst weit weg
   (Zustand „ist ausgebüchst“, `g.runaway`): Schafe 600 bis 900 vom Dorf zu einem Ort mit gutem
   Gras nah am Wasser, Hunde 700 bis 1000 vom Dorf (vorher 350–600 bzw. 400–700; findet sich so weit
-  draußen nichts, etwas näher). Erst dort suchen sie Weide bzw. Revier. Lebt ein
+  draußen nichts, etwas näher). Werden sie unterwegs hungrig (Energie im Mittel unter 0,6),
+  bleiben sie, wo sie sind, und suchen Futter; sonst verhungerten Schafe auf dem langen Weg. Erst dort suchen sie Weide bzw. Revier. Lebt ein
   wildes Hunderudel mit Platz höchstens 700 vom Dorf, laufen die Hunde zu ihm und schließen sich an.
 - **Zaun:** Die Weiden sind eingezäunt (`humans.fence`, je Rasterzelle). Hinein kommen nur die
   Hütehunde, fliegende Tiere (Adler) und Räuber, die gerade jagen. Wer beim Bau der Weide drinnen
@@ -337,7 +338,17 @@ je Art in `data/arten.md` („Jagd“).
 - **Schonfrist:** Ausgebüchste Schafe und verwilderte Hunde sind für die Dörfler ein Jahr lang
   noch ihre Haustiere (`BT.HUMANS.hunt.spare`, `g.spareUntil`): Die Jäger jagen sie nicht, und die
   Hunde greifen die Jäger nicht an. Vorher erschossen die Wolfsjäger die 3 Ausreißer jedes Mal
-  sofort, die Wildjäger in 2 von 8 Läufen alle ausgebüchsten Schafe.
+  sofort, die Wildjäger in 2 von 8 Läufen alle ausgebüchsten Schafe. Messung (8 Inseln × 30 Jahre,
+  Schafe und Hunde in Jahr 1, Ausbrüche in Jahr 5–6):
+
+  | dazu | Schafe etabliert | Hunde etabliert | vorher (Schafe / Hunde) |
+  |---|---|---|---|
+  | – | 8 von 8 | 8 von 8 | 8 / 8 |
+  | Wild jagen | 7 von 8 | 8 von 8 | 6 / 5 |
+  | Wölfe jagen | 7 von 8 | **0 von 8** | 7 / 0 |
+
+  Gegen die Wolfsjäger hilft die Schonfrist den Hunden nicht: Sie leben ein Jahr länger, danach
+  erschießen die Wolfsjäger das kleine Rudel (3–7 Hunde) im Jahr darauf, so wie die Wölfe.
 - **Karte „Wölfe jagen“:** Wolfsjäger verfolgen Rudel (auch wilde Hunde). Ein beschossenes Rudel
   flieht 300 weit, die Jäger folgen ihm und jagen weiter, bis der Jagdzug um ist.
 - **Wölfe gegen Jäger:** Hungrige Rudel greifen Jäger an, die näher als 50 kommen (8 % je Tick, mit

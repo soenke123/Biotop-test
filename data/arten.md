@@ -285,7 +285,8 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   (3,7–4,3) brechen dort **einmal** **2–6** Schafe aus (Folgekarte 🐑 „Schafe brechen aus“). Die Siedler ersetzen sie im nächsten Frühjahr.
 - **Ausreißer:** satt und ohne Durst. Sie laufen erst 600–900 vom Dorf weg (vorher 350–600), zu gutem
   Gras nah am Wasser, und suchen sich erst dort ihre Weide. Ein Jahr lang jagen die Jäger sie nicht
-  (für die Dörfler sind es noch ihre Schafe).
+  (für die Dörfler sind es noch ihre Schafe). Werden sie unterwegs hungrig,
+  bleiben sie, wo sie sind.
 - **Zaun:** Wilde Tiere kommen nicht auf die Weide, außer Adlern und Räubern auf der Jagd.
 - **Gruppe:** große Herden bis **100** Tiere (ab 3), mit Abstand: Der Radius der Herde ist
   mindestens 30 und wächst mit 10 · √Tiere (100 Schafe: Radius 100). Je größer die Herde, desto
