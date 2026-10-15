@@ -335,7 +335,7 @@ je Art in `data/arten.md` („Jagd“).
   (0–500 vom Dorf): erst ab dort wählen sie Beute und wechseln auf das, was sie sehen. So jagen sie
   mal am Dorf, mal weit draußen, wo die Wölfe sind (gilt auch für Wolfsjäger); ein Viertel bleibt als Aas liegen. Hirsche fliehen vor
   Jägern (`scheu` ≥ 0,5), Laufvögel nicht.
-- **Schonfrist:** Ausgebüchste Schafe und verwilderte Hunde sind für die Dörfler ein Jahr lang
+- **Schonfrist:** Ausgebüchste Schafe und verwilderte Hunde sind für die Dörfler drei Jahre lang
   noch ihre Haustiere (`BT.HUMANS.hunt.spare`, `g.spareUntil`): Die Jäger jagen sie nicht, und die
   Hunde greifen die Jäger nicht an. Vorher erschossen die Wolfsjäger die 3 Ausreißer jedes Mal
   sofort, die Wildjäger in 2 von 8 Läufen alle ausgebüchsten Schafe. Messung (8 Inseln × 30 Jahre,

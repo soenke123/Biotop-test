@@ -105,7 +105,7 @@
       wild: { prey: { zwerghirsch: 1, laufvogel: 1, schaf: 1 }, hit: 0.5, stay: false },
       // Ausgebuechste Schafe und Hunde sind fuer die Doerfler erst noch ihre Haustiere: so
       // lange (Jahre) jagen die Jaeger sie nicht, und die Hunde greifen die Jaeger nicht an
-      spare: 1,
+      spare: 3,
       sight: 160,             // Beute, die ein Jaeger unterwegs naeher sieht als sein Ziel, wird das neue Ziel ...
       out: [0, 500],          // ... aber erst so weit vom Dorf (je Jagdzug neu gewuerfelt: mal nah, mal weit draussen)
       flee: 0.5,              // ab dieser scheu fliehen Tiere vor Jaegern (Laufvogel nicht)
