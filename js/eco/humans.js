@@ -105,7 +105,8 @@
       wild: { prey: { zwerghirsch: 1, laufvogel: 1, schaf: 1 }, hit: 0.4, stay: false },   // vorher 0,5
       // Verwilderte Hunde kennen die Menschen und ihre Waffen: Ein Jaeger findet ein Rudel je
       // Jagdzug nur mit dieser Chance, trifft nur mit diesem Faktor, und nach dem ersten Schuss
-      // verliert er ihre Spur; sie fliehen nicht aus ihrem Revier. Vorher hetzten die
+      // verliert er ihre Spur; sie fliehen nicht aus ihrem Revier und greifen Jaeger mit diesem
+      // Faktor seltener an. Vorher hetzten die
       // Wolfsjaeger die Rudel tagelang (jeder Schuss trieb sie 300 weit weg), bis die Hunde
       // verhungerten, oder fanden das eine kleine Rudel bei jedem Jagdzug
       wary: { hund: 0.5 },
@@ -1189,7 +1190,7 @@
       var e = 0;
       for (var m = 0; m < g.members.length; m++) e += g.members[m].energy;
       if (e / g.members.length >= spec.hungry) continue;
-      if (!this.rng.chance(cfg.attack * (h.carry ? 2 : 1))) continue;
+      if (!this.rng.chance(cfg.attack * (h.carry ? 2 : 1) * (cfg.wary[spec.id] || 1))) continue;
       var out = cfg.outcome[h.kind], r = this.rng.next(), text;
       var A = this.attacks;
       A.total++; A.year[h.kind] = (A.year[h.kind] || 0) + 1;
