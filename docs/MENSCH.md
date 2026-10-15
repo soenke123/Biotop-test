@@ -241,8 +241,9 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
   „Hütehunde“, 4 Jahre danach, 3 bis 4 Hunde (vorher 2 bis 3: sie starben oft gleich wieder aus). (Bis zur dritten Abstimmung brachen sie immer wieder
   aus; das gab ihnen einen unfairen Vorteil, die Messung unten stammt noch von dort.) Im nächsten Frühjahr füllen die Siedler Weide und Hunde wieder auf.
 - **Weglaufen:** Die Ausreißer sind satt und ohne Durst (Energie 1) und laufen erst weit weg
-  (Zustand „ist ausgebüchst“, `g.runaway`): Schafe 350 bis 600 vom Dorf zu einem Ort mit gutem
-  Gras nah am Wasser, Hunde 400 bis 700 vom Dorf. Erst dort suchen sie Weide bzw. Revier. Lebt ein
+  (Zustand „ist ausgebüchst“, `g.runaway`): Schafe 600 bis 900 vom Dorf zu einem Ort mit gutem
+  Gras nah am Wasser, Hunde 700 bis 1000 vom Dorf (vorher 350–600 bzw. 400–700; findet sich so weit
+  draußen nichts, etwas näher). Erst dort suchen sie Weide bzw. Revier. Lebt ein
   wildes Hunderudel mit Platz höchstens 700 vom Dorf, laufen die Hunde zu ihm und schließen sich an.
 - **Zaun:** Die Weiden sind eingezäunt (`humans.fence`, je Rasterzelle). Hinein kommen nur die
   Hütehunde, fliegende Tiere (Adler) und Räuber, die gerade jagen. Wer beim Bau der Weide drinnen
@@ -333,6 +334,10 @@ je Art in `data/arten.md` („Jagd“).
   (0–500 vom Dorf): erst ab dort wählen sie Beute und wechseln auf das, was sie sehen. So jagen sie
   mal am Dorf, mal weit draußen, wo die Wölfe sind (gilt auch für Wolfsjäger); ein Viertel bleibt als Aas liegen. Hirsche fliehen vor
   Jägern (`scheu` ≥ 0,5), Laufvögel nicht.
+- **Schonfrist:** Ausgebüchste Schafe und verwilderte Hunde sind für die Dörfler ein Jahr lang
+  noch ihre Haustiere (`BT.HUMANS.hunt.spare`, `g.spareUntil`): Die Jäger jagen sie nicht, und die
+  Hunde greifen die Jäger nicht an. Vorher erschossen die Wolfsjäger die 3 Ausreißer jedes Mal
+  sofort, die Wildjäger in 2 von 8 Läufen alle ausgebüchsten Schafe.
 - **Karte „Wölfe jagen“:** Wolfsjäger verfolgen Rudel (auch wilde Hunde). Ein beschossenes Rudel
   flieht 300 weit, die Jäger folgen ihm und jagen weiter, bis der Jagdzug um ist.
 - **Wölfe gegen Jäger:** Hungrige Rudel greifen Jäger an, die näher als 50 kommen (8 % je Tick, mit

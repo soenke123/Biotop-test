@@ -283,8 +283,9 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   einer eingezäunten Weide. Die gehören den Siedlern und zählen nicht zum Tierbestand, fressen
   aber das Gras der Weide (0,25 je Tick und Schaf, tagsüber). **Etwa 4 Jahre nach jeder Weide**
   (3,7–4,3) brechen dort **einmal** **2–6** Schafe aus (Folgekarte 🐑 „Schafe brechen aus“). Die Siedler ersetzen sie im nächsten Frühjahr.
-- **Ausreißer:** satt und ohne Durst. Sie laufen erst 350–600 vom Dorf weg, zu gutem Gras nah am
-  Wasser, und suchen sich erst dort ihre Weide.
+- **Ausreißer:** satt und ohne Durst. Sie laufen erst 600–900 vom Dorf weg (vorher 350–600), zu gutem
+  Gras nah am Wasser, und suchen sich erst dort ihre Weide. Ein Jahr lang jagen die Jäger sie nicht
+  (für die Dörfler sind es noch ihre Schafe).
 - **Zaun:** Wilde Tiere kommen nicht auf die Weide, außer Adlern und Räubern auf der Jagd.
 - **Gruppe:** große Herden bis **100** Tiere (ab 3), mit Abstand: Der Radius der Herde ist
   mindestens 30 und wächst mit 10 · √Tiere (100 Schafe: Radius 100). Je größer die Herde, desto
@@ -392,8 +393,9 @@ beides keine Wirkung. Mit ihnen darf das Ökosystem kippen. Die Werte sind noch 
   Dorf und Weiden umher (jede weitere Karte 3 mehr). Sie stören stärker als die Menschen allein:
   Die Störung ums Dorf reicht 20 % weiter, und um jede Weide liegt Störung im Umkreis von 200.
   **4 Jahre nach jeder Karte „Hütehunde“** verwildern **einmal** 3–4 Hunde (Weibchen, Männchen, …;
-  Folgekarte 🐕 „Hunde verwildern“). Sie sind satt, laufen erst 400–700
-  vom Dorf weg und suchen dann ein Revier. Lebt ein wildes Hunderudel mit Platz höchstens 700 vom
+  Folgekarte 🐕 „Hunde verwildern“). Sie sind satt, laufen erst 700–1000
+  vom Dorf weg (vorher 400–700) und suchen dann ein Revier. Ein Jahr lang jagen die Jäger sie nicht, und sie
+  greifen die Jäger nicht an. Lebt ein wildes Hunderudel mit Platz höchstens 700 vom
   Dorf, laufen sie zu ihm und schließen sich an. Die Siedler ersetzen die Hunde im nächsten Frühjahr.
 - **Wie der Wolf:** Alle Werte kommen vom Inselwolf (`Object.assign`), dazu:
   `scheu` 0,3 (Wolf 0,9), Beute Hirsch 1,0, Laufvogel 0,15 (Wolf 0,13), Schaf 1,3 (siehe Schaf).

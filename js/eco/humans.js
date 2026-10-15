@@ -74,7 +74,7 @@
       escapeYears: 4,         // so lange nach jeder neuen Weide brechen dort einmal Schafe aus (± escapeJitter)
       escapeJitter: 0.3,
       escape: [2, 6],         // so viele Schafe (Haelfte Weibchen)
-      runaway: [350, 600]     // so weit vom Dorf laufen sie, bevor sie sich eine Weide suchen
+      runaway: [600, 900]     // so weit vom Dorf laufen sie, bevor sie sich eine Weide suchen (vorher 350-600)
     },
     dogs: {                   // Karte "Huetehunde"
       perCard: 3,
@@ -83,7 +83,7 @@
       houseBonus: 1.2,        // ... und das Dorf wirkt weiter (Radius mal diesem Faktor)
       escapeYears: 4,         // so lange nach jeder Karte "Huetehunde" verwildern einmal Hunde
       escape: [3, 4],         // so viele Hunde (Weibchen, Maennchen, ...; mit 2-3 starben sie oft gleich wieder aus)
-      runaway: [400, 700],    // so weit vom Dorf laufen sie, bevor sie ein Revier suchen
+      runaway: [700, 1000],   // so weit vom Dorf laufen sie, bevor sie ein Revier suchen (vorher 400-700)
       join: 700               // ein wildes Rudel so nah am Dorf: die Ausreisser schliessen sich ihm an
     },
     hunt: {                   // Karten "Woelfe jagen" und "Wild jagen"
@@ -103,6 +103,9 @@
       // Wildjaeger tragen ein Tier heim, Wolfsjaeger jagen weiter, bis der Jagdzug um ist (stay)
       wolf: { prey: { inselwolf: 1, hund: 1 }, hit: 0.7, stay: true },
       wild: { prey: { zwerghirsch: 1, laufvogel: 1, schaf: 1 }, hit: 0.5, stay: false },
+      // Ausgebuechste Schafe und Hunde sind fuer die Doerfler erst noch ihre Haustiere: so
+      // lange (Jahre) jagen die Jaeger sie nicht, und die Hunde greifen die Jaeger nicht an
+      spare: 1,
       sight: 160,             // Beute, die ein Jaeger unterwegs naeher sieht als sein Ziel, wird das neue Ziel ...
       out: [0, 500],          // ... aber erst so weit vom Dorf (je Jagdzug neu gewuerfelt: mal nah, mal weit draussen)
       flee: 0.5,              // ab dieser scheu fliehen Tiere vor Jaegern (Laufvogel nicht)
@@ -887,9 +890,15 @@
       sim.addToGroup(g, an);
       an.x = pt.x + an.ox; an.y = pt.y + an.oy; an.px = an.x; an.py = an.y;
     }
-    var to = join ? null : BT.Behavior.farPoint(sim, spec, { x: v.x, y: v.y }, dist[0], dist[1]);
+    var c = { x: v.x, y: v.y };
+    // so weit wie moeglich weg; liegt dort nichts Passendes (Kueste), etwas naeher
+    var to = join ? null : BT.Behavior.farPoint(sim, spec, c, dist[0], dist[1]) ||
+      BT.Behavior.farPoint(sim, spec, c, dist[0] * 0.6, dist[0]);
+    g.spareUntil = sim.day + BT.Time.years(BT.HUMANS.hunt.spare);
     if (join || to) {
-      g.runaway = { x: to ? to.x : join.x, y: to ? to.y : join.y, join: join, state: 'ausgebuechst', ticks: sim.ticksPerDay * 8 };
+      // Zeit genug fuer den Weg (Laufen mit 2,5-facher Geschwindigkeit, mit Umwegen)
+      var t = to || join, ticks = BT.M.hypot(t.x - pt.x, t.y - pt.y) / (spec.speed * 2.5) * 1.5;
+      g.runaway = { x: t.x, y: t.y, join: join, state: 'ausgebuechst', ticks: Math.max(sim.ticksPerDay * 8, Math.ceil(ticks)) };
       g.state = 'ausgebuechst';
     }
     return pt;
@@ -927,6 +936,11 @@
     });
   };
 
+  /** Ausgebuechste Haustiere in ihrer Schonfrist (HUMANS.hunt.spare): keine Beute, kein Angriff. */
+  Humans.prototype.spared = function (g) {
+    return g.spareUntil != null && this.sim.day < g.spareUntil;
+  };
+
   /** Beutegruppe fuer einen Jaeger: nah beim Jaeger, hoechstens range vom Dorf, nach Gewicht. */
   Humans.prototype.huntTarget = function (h) {
     var cfg = BT.HUMANS.hunt, prey = cfg[h.kind].prey, c = h.village, sim = this.sim;
@@ -935,7 +949,7 @@
     var best = null, bestScore = 0;
     for (var i = 0; i < list.length; i++) {
       var g = list[i], w = prey[g.spec.id];
-      if (!w || !g.members.length) continue;
+      if (!w || !g.members.length || this.spared(g)) continue;
       var dc = BT.M.hypot(g.x - c.x, g.y - c.y);
       if (dc > range) continue;
       var near = dc < (h.out || 0);                  // naeher am Dorf, als der Jaeger heute will
@@ -954,7 +968,7 @@
     var best = null, bestD = Math.min(cfg.sight, BT.M.hypot(g.x - h.x, g.y - h.y));
     for (var i = 0; i < list.length; i++) {
       var o = list[i];
-      if (o === g || !prey[o.spec.id] || !o.members.length) continue;
+      if (o === g || !prey[o.spec.id] || !o.members.length || this.spared(o)) continue;
       var d = BT.M.hypot(o.x - h.x, o.y - h.y);
       if (d < bestD) { bestD = d; best = o; }
     }
@@ -1140,7 +1154,7 @@
     var cfg = BT.HUMANS.hunt, sim = this.sim, preds = sim.predatorGroups;
     for (var i = 0; i < preds.length; i++) {
       var g = preds[i], spec = g.spec;
-      if (!cfg.attackers[spec.id] || !g.members.length || g.runaway) continue;
+      if (!cfg.attackers[spec.id] || !g.members.length || g.runaway || this.spared(g)) continue;
       if (BT.M.hypot(g.x - h.x, g.y - h.y) > cfg.attackRange) continue;
       var e = 0;
       for (var m = 0; m < g.members.length; m++) e += g.members[m].energy;
