@@ -324,7 +324,7 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
 Vorgezogen vor die Ratten. Werte in `BT.HUMANS.hunt` (`js/eco/humans.js`), Begründung und Tabelle
 je Art in `data/arten.md` („Jagd“).
 
-- **Jäger** (`humans.hunters`): Jede Karte bringt 2 Jäger. Sie ziehen auf Jagdzüge (bis 12 Tage,
+- **Jäger** (`humans.hunters`): Jede Karte bringt 6 Jäger (bis Oktober 2026: 2). Sie ziehen auf Jagdzüge (bis 12 Tage,
   nachts lagern sie draußen) bis 1000 vom Dorf (jede weitere Karte derselben Sorte 30 % weiter),
   schleichen sich an und schießen aus 90. Heim gehen sie geradewegs; bleiben sie dabei hängen (an Seen),
   gehen sie auf ihrer eigenen Spur zurück. Danach 2–4 Tage im Dorf.
@@ -381,7 +381,7 @@ je Art in `data/arten.md` („Jagd“).
 Nach dem Prinzip der Jagd (`BT.HUMANS.gather`, `js/eco/humans.js`; die Sammler stehen mit den
 Jägern in `humans.hunters`, `kind: 'sammel'`).
 
-- **Karte „Sammeln“:** 2 Sammler je Karte. Je Gang wird gewürfelt, wie weit sie hinausgehen
+- **Karte „Sammeln“:** 6 Sammler je Karte (vorher 2). Je Gang wird gewürfelt, wie weit sie hinausgehen
   (0–500 vom Dorf). Ab dort pflücken sie Früchte und Samen, wo sie zuerst welche finden
   (mindestens 0,5 je Weidezelle), 2 je Tick aus der Zelle und ihren Nachbarn, dann weiter zur
   nächsten vollen Zelle in der Nähe. Heim gehen sie mit 60 (3 Körben) oder nach 10 Tagen, danach
@@ -401,6 +401,24 @@ Jägern in `humans.hunters`, `kind: 'sammel'`).
   Die Laufvögel gehen um etwa 10 % zurück. Die Sammler werden oft angegriffen, weil sie lange an
   einer Stelle bleiben.
 
+### 6 statt 2 Menschen je Karte
+
+Mit einer Karte soll man in Zahlen und Kurven schon einen Unterschied sehen. Deshalb bringen „Wild
+jagen“, „Wölfe jagen“ und „Sammeln“ jetzt je 6 Menschen (`perCard`). Messung `invasion.js 8 30
+--karten=…@1`, Mittel im letzten Drittel, Median gegenüber nur Landung, 2 → 6 je Karte:
+
+| Karte | Ertrag in 30 Jahren (je Insel) | Menschen tot | Hirsch | Laufvogel | Wolf | Adler |
+|---|---|---|---|---|---|---|
+| Wild jagen | Laufvögel 320–400 → 700–1170, Hirsche 10–44 → 28–183 | 1–7 → 3–15 | 95 → 90 % | 97 → **86 %** | 76 → 91 % | 192 → **33 %** (3 von 8 aus) |
+| Wölfe jagen | Wölfe 115–240 → 116–195 | 0–1 → 0–1 | 85 → 78 % | 92 → 87 % | 43 → 33 % | 199 → 177 % |
+| Sammeln | 4000–5300 → 11300–13700 | 2–11 → 8–26 | 93 → 90 % | 101 → 105 % | 96 → 89 % | 114 → 69 % |
+
+Die Wildjäger erlegen dreimal so viel, die Laufvögel gehen sichtbar zurück, den Adlern fehlt die
+Beute. Die Wolfsjäger erlegen kaum mehr als vorher (es gibt nicht mehr Wölfe zu finden), drücken
+die Wölfe aber etwas tiefer. Die Sammler holen fast das Dreifache, die Laufvögel merken davon im
+Mittel nichts (ihre Zahl hängt an Nestern und Adlern, nicht an den Früchten). Dafür werden die
+Sammler sehr oft von Wölfen getötet. Die Streuung zwischen den Inseln ist groß.
+
 ### Mehrere Dörfer, Zurücknehmen, Infofenster
 
 - **Dörfer** (`humans.villages`): Jede Landung gründet ein Dorf (Dorf 1, 2, … in der Reihenfolge der
@@ -419,7 +437,7 @@ Jägern in `humans.hunters`, `kind: 'sammel'`).
   | Acker | Der Acker wird aufgegeben | – |
   | Schafweide | Weide und Zaun weg, die Schafe darauf nehmen die Siedler mit | ausgebüchste Schafe |
   | Hütehunde | 3 Hunde weniger, der Ausbruch dieser Karte entfällt | verwilderte Hunde, Staupe |
-  | Jagd, Sammeln | 2 Jäger bzw. Sammler weniger | was sie erlegt oder gesammelt haben |
+  | Jagd, Sammeln | 6 Jäger bzw. Sammler weniger | was sie erlegt oder gesammelt haben |
 
   Verlassene Dorfplätze und Äcker werden zu **Erde** und wachsen nach 3–5 Jahren zu: wo Wald war,
   zu Wiese, sonst wieder zu dem, was dort von Natur aus war (`Landuse.abandon`).

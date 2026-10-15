@@ -477,7 +477,7 @@ sterben dabei zu 30 %, der Wolf zu 40 %; sonst gehen beide auseinander, und die 
 Beute mit. **Wolfsjäger rechnen damit:** Sie sterben nur zu 5 %, der Wolf zu 85 %. Danach flieht das
 Rudel. Tote Jäger ersetzt das Dorf im nächsten Frühling.
 
-**Sammler** (Karte „Sammeln“, `BT.HUMANS.gather`): nach demselben Prinzip wie die Jäger, 2 je Karte.
+**Sammler** (Karte „Sammeln“, `BT.HUMANS.gather`): nach demselben Prinzip wie die Jäger, 6 je Karte (vorher 2).
 Je Gang wird gewürfelt, wie weit sie hinausgehen (0–500); ab dort pflücken sie, wo sie zuerst
 Früchte und Samen finden (mindestens 0,5 je Weidezelle), 3 je Tick aus der Zelle und ihren
 Nachbarn, bis sie 60 tragen (3 Körbe) oder 10 Tage um sind. Die Früchte fehlen den Laufvögeln
