@@ -7,7 +7,8 @@
  *   node tools/invasion.js [seeds=8] [jahre=30] [--karten=schafe@1,hunde@1] [--seed=1000] [--jobs=4]
  *                          [--set=schaf.costPerDay=0.035,schaf.habitat.SCRUB=0.9]
  *
- * --set  ueberschreibt Werte der Artentabelle zum Ausprobieren (Lebensraeume beim Namen).
+ * --set  ueberschreibt Werte der Artentabelle zum Ausprobieren (Lebensraeume beim Namen);
+ *        mit HUMANS. vorn Werte der Menschen (z. B. HUMANS.hunt.wary.hund=0.3).
  *
  * Etabliert heisst: am Ende mindestens 20 wilde Schafe bzw. ein wildes
  * Hunderudel mit Revier. Mit Jagdkarten (woelfeJagen, wildJagen) steht dazu, was
@@ -32,6 +33,7 @@ if (flags.lauf) {
     const [key, val] = kv.split('=');
     const parts = key.split('.');
     let o = BT.SPECIES;
+    if (parts[0] === 'HUMANS') { o = BT.HUMANS; parts.shift(); }
     for (let i = 0; i < parts.length - 1; i++) o = o[parts[i]];
     const last = parts[parts.length - 1];
     o[last in BT.BIOME && Array.isArray(o) ? BT.BIOME[last] : last] = JSON.parse(val);

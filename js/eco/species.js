@@ -329,7 +329,7 @@
     fleeToWater: [0.5, 0.7],         // gejagt und durstig: zum Wasser fliehen (nur mit Durst)
     speed: 3.5, fleeSpeed: 11.5, sprintTicks: 4,
     vision: 150,
-    scheu: 0.4,                       // kennt Menschen, haelt aber Abstand
+    scheu: 0.6,                       // verwildert: meidet die Doerfer und flieht vor Jaegern (mit 0,4 grasten sie bis an die Haeuser und wurden dort erlegt)
     searchRadius: 240,
     habitat: pref({ TUSSOCK: 1.0, MEADOW: 1.0, ROCK: 0.6, SCRUB: 0.8, BEACH: 0.4, THERMAL: 0.3, SWAMP: 0.2, FERN: 0.5, MOSS: 0.3, PEAK: 0.1, SOIL: 0.1, FIELD: 1.0 }),
     // Schneller erwachsen und mehr Laemmer als der Hirsch (reif mit 1 Jahr, 1 Kalb, Chance 0,85)

@@ -101,8 +101,11 @@
       // Beute (Gewicht bei der Wahl) und Trefferchance je Schuss (mal 1 - Deckung * 0,5;
       // scheue Tiere (scheu >= flee) bemerken die Jaeger und fliehen: Treffer mal shy).
       // Wildjaeger tragen ein Tier heim, Wolfsjaeger jagen weiter, bis der Jagdzug um ist (stay)
-      wolf: { prey: { inselwolf: 1, hund: 1 }, hit: 0.7, stay: true },
-      wild: { prey: { zwerghirsch: 1, laufvogel: 1, schaf: 1 }, hit: 0.5, stay: false },
+      wolf: { prey: { inselwolf: 1, hund: 1 }, hit: 0.55, stay: true },   // vorher 0,7
+      wild: { prey: { zwerghirsch: 1, laufvogel: 1, schaf: 1 }, hit: 0.4, stay: false },   // vorher 0,5
+      // Treffer mal diesem Faktor: Verwilderte Hunde kennen die Menschen und ihre Waffen
+      // und halten Abstand (mit 1 erschossen die Wolfsjaeger alle Hunde gleich nach der Schonfrist)
+      wary: { hund: 0.5 },
       // Ausgebuechste Schafe und Hunde sind fuer die Doerfler erst noch ihre Haustiere: so
       // lange (Jahre) jagen die Jaeger sie nicht, und die Hunde greifen die Jaeger nicht an
       spare: 3,
@@ -1122,6 +1125,7 @@
     var cfg = BT.HUMANS.hunt, sim = this.sim, spec = g.spec;
     var p = cfg[h.kind].hit * (1 - BT.Behavior.COVER[sim.biomeAt(g.x, g.y)] * 0.5);
     if (spec.scheu >= cfg.flee) p *= cfg.shy;
+    if (cfg.wary[spec.id]) p *= cfg.wary[spec.id];
     h.reload = cfg.reload;
     if (this.rng.chance(p)) {
       var victim = g.members[this.rng.int(0, g.members.length - 1)];
