@@ -104,8 +104,9 @@
       wolf: { prey: { inselwolf: 1, hund: 1 }, hit: 0.55, stay: true },   // vorher 0,7
       wild: { prey: { zwerghirsch: 1, laufvogel: 1, schaf: 1 }, hit: 0.4, stay: false },   // vorher 0,5
       // Verwilderte Hunde kennen die Menschen und ihre Waffen: Treffer mal diesem Faktor, und
-      // nach dem ersten Schuss verliert der Jaeger ihre Spur fuer den Rest des Jagdzugs. Ohne
-      // das hetzten die Wolfsjaeger die Rudel tagelang, bis die Hunde verhungerten
+      // nach dem ersten Schuss verliert der Jaeger ihre Spur fuer den Rest des Jagdzugs; sie
+      // fliehen nicht aus ihrem Revier. Ohne das hetzten die Wolfsjaeger die Rudel tagelang
+      // (jeder Schuss trieb sie 300 weit weg), bis die Hunde verhungerten
       wary: { hund: 0.5 },
       // Ausgebuechste Schafe und Hunde sind fuer die Doerfler erst noch ihre Haustiere: so
       // lange (Jahre) jagen die Jaeger sie nicht, und die Hunde greifen die Jaeger nicht an
@@ -1143,13 +1144,14 @@
       sim.addCarcass(victim.x, victim.y, meat * cfg.offal);
       if (!cfg[h.kind].stay) { h.carry = { id: spec.id, meat: meat * (1 - cfg.offal) }; h.state = 'heim'; h.target = null; }
     }
-    // Beschossene Raeuber fliehen weit weg (scheue Pflanzenfresser fliehen von selbst)
-    if (spec.role === 'predator' && g.members.length) this.scare(g, h);
-    // Hunde verschwinden: Der Jaeger verliert ihre Spur und sucht sich anderes
-    if (cfg.wary[spec.id] && g.members.length) {
-      (h.lost = h.lost || []).push(g);
+    // Hunde verschwinden nur kurz im Gelaende und bleiben in ihrem Revier: Der Jaeger
+    // verliert ihre Spur und sucht sich anderes
+    if (cfg.wary[spec.id]) {
+      if (g.members.length) (h.lost = h.lost || []).push(g);
       if (h.target === g) h.target = null;
     }
+    // Andere beschossene Raeuber fliehen weit weg (scheue Pflanzenfresser fliehen von selbst)
+    else if (spec.role === 'predator' && g.members.length) this.scare(g, h);
   };
 
   /** Raeubergruppe flieht vor dem Menschen bei `from` (ein, zwei Tage weit weg). */
