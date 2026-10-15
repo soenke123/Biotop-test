@@ -350,6 +350,41 @@ je Art in `data/arten.md` („Jagd“).
   (Ohne Jäger mit 1 Jahr Schonfrist gemessen, sie wirkt dort nicht.) Gegen die Wolfsjäger hilft
   die Schonfrist den Hunden nur auf Zeit: Nach den 3 Jahren erschießen die Wolfsjäger die Hunde
   in Jahr 9–11, so wie die Wölfe. Das ist gewollt: Wolfsjäger jagen Hunde.
+- **Jäger schwächer, Hunde kennen die Jäger** (Oktober 2026, nach dem Testen): Mit der
+  Schonfrist starben die Hunde trotzdem gleich danach, und die wilden Schafe grasten bis an die
+  Häuser (dort ist das Gras unberührt, weil die Hirsche das Dorf meiden) und wurden dort erlegt.
+  - Treffer Wolfsjäger 0,7 → 0,55, Wildjäger 0,5 → 0,4.
+  - Schafe `scheu` 0,4 → 0,6: Sie meiden 130 ums Haus (vorher 65) und fliehen vor Jägern. Insel
+    482917, 20 Jahre, alle vier Karten: am Dorf (unter 300) erlegte Schafe 21 → 3, insgesamt 27 → 14.
+  - **Hunde** (`BT.HUMANS.hunt.wary`, 0,15): Ein Jäger findet ein Hunderudel je Jagdzug nur mit
+    15 %, trifft mit 0,55 × 0,15, verliert nach dem ersten Schuss die Spur; die Hunde fliehen nicht
+    aus ihrem Revier und greifen Jäger nur mit 15 % der Chance an. Nur der Treffer (× 0,5, 0,25,
+    0,1) reichte nicht: Jeder Schuss trieb das Rudel 300 weit weg, die Jäger folgten ihm, und die
+    Hunde verhungerten; oder sechs Jäger fanden das eine Rudel (etwa 10 Hunde, rund 4 Welpen im
+    Jahr) bei jedem Jagdzug; oder hungrige Hunde griffen Wolfsjäger an und starben zu 85 %.
+    `invasion.js 8 30 --karten=hunde@1,woelfeJagen@1` mit verschiedenen `wary`
+    (`--set=HUMANS.hunt.wary.hund=…`):
+
+    | `wary` | Hunde etabliert | erlegte Hunde je Insel | Hunde aus (Jahr) |
+    |---|---|---|---|
+    | – (vorher) | 0 von 8 | 3–11 | 9–12 |
+    | 0,5 | 0 von 8 | 5–36 | 9–27 |
+    | 0,25 | 0 von 8 | 7–35 | 12–30 |
+    | **0,15** | **5 von 8** | 1–47 | 9–27 |
+
+  Messung mit den neuen Werten (`invasion.js 8 30`, Median gegenüber nur Landung):
+
+  | Karten | Schafe | Hunde | Hirsch | Laufvogel | Wolf | Adler |
+  |---|---|---|---|---|---|---|
+  | Wölfe jagen | – | – | 75 % | 91 % | 33 % | 102 % |
+  | Wild jagen | – | – | 89 % | 105 % | 63 % | 66 % |
+  | Schafe, Wild jagen | 7 von 8 | – | 57 % | 90 % | 103 % | 43 % |
+  | Hunde, Wild jagen | – | 5 von 8 | 57 % | 58 % | 12 % | 19 % |
+  | alle vier | 8 von 8 | 4 von 8 (vorher 0) | 26 % | 58 % | 0 % | 6 % |
+
+  Mit „Wölfe jagen“ brechen die Wölfe weiter stark ein (33 %). Überleben die Hunde, verdrängen
+  sie zusammen mit den Jägern die Wölfe ganz. Mit allen vier Karten erlegen die Jäger 11–37 Hunde
+  und 14–91 Schafe (vorher 16–193).
 - **Karte „Wölfe jagen“:** Wolfsjäger verfolgen Rudel (auch wilde Hunde). Ein beschossenes Rudel
   flieht 300 weit, die Jäger folgen ihm und jagen weiter, bis der Jagdzug um ist.
 - **Wölfe gegen Jäger:** Hungrige Rudel greifen Jäger an, die näher als 50 kommen (8 % je Tick, mit
