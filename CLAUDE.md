@@ -60,7 +60,7 @@ js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (
             humans (Schiffe, Dörfer, Häuser, Siedler, Äcker und Ernte, Weiden, Jäger, Störungsfeld,
             Karten zurücknehmen), behavior (Gruppen-Entscheidungen),
             stats, simulation (Tick/Tag, sim.play für Karten)
-js/ui/      app.js (Karte, Kamera folgt einem angeklickten Tier, Zeitregler, Reiter Tierbestand/Menschen, Kartenleiste mit + und −, Infofenster
+js/ui/      app.js (Karte, Kamera folgt einem angeklickten Tier, Zeitregler, Seitenleiste aus einklappbaren Bereichen (Zeit, Bestand, Menschen, Verlauf, Menschen auf der Insel; breit = zwei Spalten; Neustart-Fenster mit Startbestand), Kartenleiste mit + und −, Infofenster
             der Karten, Chronik, Bildpuffer, Großansicht der Diagramme), cardInfo.js (Bild im Infofenster:
             Kartenausschnitt assets/karte_<id>.png),
             charts.js (LineChart; ChartView: gemeinsamer Zeitraum und Fadenkreuz)

@@ -100,7 +100,6 @@
     setAim(null);
     setFollow(null);
     tickAcc = 0;
-    $('restart').classList.remove('primary');
     updatePanel(true);
     dirty = true;
   }
@@ -123,12 +122,10 @@
     });
   }
 
-  /** Startbestand geaendert: vor dem Start sofort uebernehmen, sonst Neustart anbieten. */
+  /** Startbestand geaendert: gilt ab dem naechsten Neustart (Knopf im Fenster). */
   function startValuesChanged() {
     customStart = BT.SPECIES_ORDER.some(function (id) { return startValues[id] !== recommended[id]; });
     syncStartSliders();
-    if (sim && sim.day === 0 && !running) restart();
-    else $('restart').classList.add('primary');
   }
 
   // ---------------------------------------------------------------- Zeit
@@ -524,20 +521,54 @@
       : ready ? 'Nächste Karte: jetzt' : 'Nächste Karte: ' + BT.Time.label(nd).replace(' · ', ', ');
     next.classList.toggle('ready', !!ready);
     // Am Reiter zeigen, dass wieder eine Karte gespielt werden darf
-    $('tabBadge').hidden = !ready || currentTab === 'menschen';
-    $('tabBadge').textContent = H.villages.length ? 'Karte bereit' : 'Landung';
   }
 
-  // ---------------------------------------------------------------- Reiter
-  var currentTab = 'tiere';
-  function setTab(name) {
-    currentTab = name;
-    ['tiere', 'menschen'].forEach(function (t) {
-      $('tab-' + t).setAttribute('aria-selected', String(t === name));
-      $('pane-' + t).hidden = t !== name;
+  // ---------------------------------------------------------------- Seitenleiste
+  // Bereiche einklappen, Leiste breit (zwei Spalten), Fenster fuer den Neustart.
+  function store(key, val) {
+    try { if (val === undefined) return global.localStorage.getItem('biotop.' + key); global.localStorage.setItem('biotop.' + key, val); } catch (e) { /* ohne Speicher */ }
+    return null;
+  }
+
+  function setFold(sec, open) {
+    sec.classList.toggle('closed', !open);
+    sec.querySelector('.fold-toggle').setAttribute('aria-expanded', String(open));
+    store('fold.' + sec.dataset.fold, open ? '1' : '0');
+    if (open && chartView) chartView.drawAll();
+  }
+
+  function setWide(wide) {
+    doc.body.classList.toggle('wide', wide);
+    $('widen').setAttribute('aria-pressed', String(wide));
+    $('widen').textContent = wide ? '⇔ Schmal' : '⇔ Breit';
+    store('wide', wide ? '1' : '0');
+    resize();
+    if (chartView) chartView.drawAll();
+    dirty = true;
+  }
+
+  function setRestartBox(open) {
+    $('restartBox').hidden = !open;
+    $('openRestart').setAttribute('aria-expanded', String(open));
+  }
+
+  function initPanel() {
+    doc.querySelectorAll('.panel .fold').forEach(function (sec) {
+      var saved = store('fold.' + sec.dataset.fold);
+      var open = saved === null ? !sec.dataset.closed : saved === '1';
+      sec.classList.toggle('closed', !open);
+      sec.querySelector('.fold-toggle').setAttribute('aria-expanded', String(open));
     });
-    if (name === 'tiere' && chartView) chartView.drawAll();
-    updateCards();
+    $('widen').addEventListener('click', function () { setWide(!doc.body.classList.contains('wide')); });
+    $('openRestart').addEventListener('click', function () { setRestartBox($('restartBox').hidden); });
+    $('restartClose').addEventListener('click', function () { setRestartBox(false); });
+    doc.querySelector('.panel').addEventListener('click', function (e) {
+      var t = e.target.closest('.fold-toggle');
+      if (!t) return;
+      var sec = t.closest('.fold');
+      setFold(sec, sec.classList.contains('closed'));
+    });
+    if (store('wide') === '1') setWide(true);
   }
 
   function pct(v) {
@@ -902,8 +933,6 @@
     dirty = true;
   });
   $('skip').addEventListener('click', function () { skipYears(5); });
-  $('tab-tiere').addEventListener('click', function () { setTab('tiere'); });
-  $('tab-menschen').addEventListener('click', function () { setTab('menschen'); });
   $('cardPause').addEventListener('change', function () {
     if (sim) sim.cardPause = BT.Time.years(+$('cardPause').value);
     updateCards();
@@ -944,8 +973,10 @@
     startValuesChanged();
   });
   $('restart').addEventListener('click', function () {
+    setRestartBox(false);
     setRunning(false);
     restart();
+    setRunning(true);
   });
   $('csv').addEventListener('click', function () {
     if (!sim) return;
@@ -960,7 +991,7 @@
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
     if (e.key === 'r' || e.key === 'R') { if (camera) { setFollow(null); camera.reset(); interacted(); } }
     if (e.key === ' ') { e.preventDefault(); setRunning(!running); }
-    if (e.key === 'Escape') { if (infoCard) closeInfo(); else if (bigOpen()) setBig(false); else if (aiming) setAim(null); else setHighlight(null); }
+    if (e.key === 'Escape') { if (infoCard) closeInfo(); else if (!$('restartBox').hidden) setRestartBox(false); else if (bigOpen()) setBig(false); else if (aiming) setAim(null); else setHighlight(null); }
   });
   global.addEventListener('resize', function () {
     resize();
@@ -971,6 +1002,7 @@
 
   // ---------------------------------------------------------------- Start
   buildPanel();
+  initPanel();
   updateSpeedLabel();
   BT.Sprites.preload(function () { dirty = true; drawTileImages(); });
   BT.HumanRenderer.preload();
@@ -993,11 +1025,13 @@
       restart();
     },
     setRunning: setRunning,
+    /** Bereich der Seitenleiste auf-/zuklappen: fold('menschen', true) */
+    fold: function (name, open) { setFold(doc.querySelector('.fold[data-fold="' + name + '"]'), open !== false); },
+    wide: setWide,
     /** Karte spielen, z. B. play('landung', { x: 400, y: 800 }); liefert null oder einen Fehlertext */
     play: function (id, params) { return playCard(id, params || {}); },
     /** Karte zuruecknehmen, z. B. unplay('acker'); mit { x, y } in dem Dorf, das dort am naechsten liegt */
     unplay: function (id, params) { return playCard(id, params || {}, true); },
-    info: function (id) { if (id) openInfo(id); else closeInfo(); },
-    tab: setTab
+    info: function (id) { if (id) openInfo(id); else closeInfo(); }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

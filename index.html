@@ -49,86 +49,97 @@
     </main>
 
     <aside class="panel">
-      <section class="time">
-        <div id="clock" class="clock">Jahr 1 · Frühling, Tag 1</div>
-        <div id="weather" class="weather"></div>
-        <div class="row">
-          <button id="play" type="button" class="primary" title="Start/Pause (Leertaste)">▶ Start</button>
-          <button id="stepDay" type="button" title="Einen Tag weiter">+1 Tag</button>
-          <button id="skip" type="button" title="Ohne Zeichnen vorspulen">⏩ 5 Jahre</button>
-        </div>
-        <label class="speed">Tempo
-          <input id="speed" type="range" min="0" max="100" value="38">
-          <span id="speedLabel"></span>
-        </label>
-      </section>
-
-      <div class="tabs" role="tablist" aria-label="Ansicht">
-        <button type="button" role="tab" id="tab-tiere" class="tab" aria-selected="true" aria-controls="pane-tiere">🦌 Tierbestand</button>
-        <button type="button" role="tab" id="tab-menschen" class="tab" aria-selected="false" aria-controls="pane-menschen">🏠 Menschen <span id="tabBadge" class="tab-badge" hidden>Karte bereit</span></button>
+      <div class="panel-top">
+        <button id="widen" type="button" class="widen" aria-pressed="false" title="Seitenleiste breiter: alle Bereiche in zwei Spalten">⇔ Breit</button>
       </div>
 
-      <div id="pane-tiere" role="tabpanel" aria-labelledby="tab-tiere" class="pane">
-        <section class="startvalues">
-          <h2>Startbestand <small>für diese Insel</small></h2>
-          <div id="startInputs" class="start-list"></div>
-          <div class="row">
-            <button id="restart" type="button">Neu starten</button>
-            <button id="defaults" type="button">Empfohlene Werte</button>
+      <div class="panel-grid">
+        <section class="fold time" data-fold="zeit">
+          <div class="fold-head">
+            <button type="button" class="fold-toggle" aria-expanded="true"><span class="chev">▾</span><span id="clock" class="clock">Jahr 1 · Frühling, Tag 1</span></button>
+            <button id="openRestart" type="button" class="restart-open" aria-haspopup="dialog" aria-expanded="false" aria-controls="restartBox" title="Startbestand einstellen und neu starten">↻ Neustarten</button>
+          </div>
+          <div class="fold-body">
+            <div id="weather" class="weather"></div>
+            <div class="row">
+              <button id="play" type="button" class="primary" title="Start/Pause (Leertaste)">▶ Start</button>
+              <button id="stepDay" type="button" title="Einen Tag weiter">+1 Tag</button>
+              <button id="skip" type="button" title="Ohne Zeichnen vorspulen">⏩ 5 Jahre</button>
+            </div>
+            <label class="speed">Tempo
+              <input id="speed" type="range" min="0" max="100" value="38">
+              <span id="speedLabel"></span>
+            </label>
           </div>
         </section>
 
-        <section>
-          <h2>Bestand <small>Art anklicken: auf der Karte zeigen</small></h2>
-          <div id="tiles" class="tiles"></div>
-        </section>
-
-        <section>
-          <h2>Verlauf <small>Zeiger über ein Diagramm: derselbe Tag in allen</small></h2>
-          <div class="chart-tools">
-            <div id="chartTools"></div>
-            <button id="openBig" type="button" aria-expanded="false" aria-controls="bigView" title="Alle Diagramme groß untereinander">⤢ Groß</button>
+        <section class="fold" data-fold="bestand">
+          <button type="button" class="fold-head fold-toggle" aria-expanded="true"><span class="chev">▾</span><h2>Bestand <small>Art anklicken: auf der Karte zeigen</small></h2></button>
+          <div class="fold-body">
+            <div id="tiles" class="tiles"></div>
           </div>
-          <div id="charts"></div>
-          <p class="chart-note"><i class="mast"></i> Mastjahr (viele Früchte) <i class="winter"></i> harter Winter <i class="ev-card"></i> Karte gespielt <i class="ev-undo"></i> zurückgenommen <i class="ev-folge"></i> Folge, von selbst</p>
         </section>
 
-        <section>
-          <h2>Todesursachen <small>seit Start</small></h2>
-          <table id="deaths" class="deaths"></table>
+        <section class="fold people" data-fold="menschen">
+          <button type="button" class="fold-head fold-toggle" aria-expanded="true"><span class="chev">▾</span><h2>Menschen <small>+ spielen · − zurücknehmen · Karte antippen: Erklärung</small></h2></button>
+          <div class="fold-body">
+            <div id="cards" class="cards"></div>
+            <div class="card-rule">
+              <span id="nextCard" class="next-card"></span>
+              <label class="field">Pause
+                <select id="cardPause" title="So lange muss man nach einer Karte warten">
+                  <option value="0">keine</option>
+                  <option value="1">1 Jahr</option>
+                  <option value="2" selected>2 Jahre</option>
+                  <option value="3">3 Jahre</option>
+                </select>
+              </label>
+            </div>
+            <ol id="chronicle" class="chronicle"></ol>
+          </div>
         </section>
 
-        <section>
+        <section class="fold" data-fold="verlauf">
+          <button type="button" class="fold-head fold-toggle" aria-expanded="true"><span class="chev">▾</span><h2>Verlauf und Todesursachen <small>Zeiger über ein Diagramm: derselbe Tag in allen</small></h2></button>
+          <div class="fold-body">
+            <div class="chart-tools">
+              <div id="chartTools"></div>
+              <button id="openBig" type="button" class="big-btn" aria-expanded="false" aria-controls="bigView" title="Alle Diagramme groß untereinander">⤢ Diagramme groß</button>
+            </div>
+            <div id="charts"></div>
+            <p class="chart-note"><i class="mast"></i> Mastjahr (viele Früchte) <i class="winter"></i> harter Winter <i class="ev-card"></i> Karte gespielt <i class="ev-undo"></i> zurückgenommen <i class="ev-folge"></i> Folge, von selbst</p>
+            <h2>Todesursachen <small>seit Start</small></h2>
+            <table id="deaths" class="deaths"></table>
+          </div>
+        </section>
+
+        <section class="fold" data-fold="insel" data-closed="1">
+          <button type="button" class="fold-head fold-toggle" aria-expanded="false"><span class="chev">▾</span><h2>Menschen auf der Insel <small>Zahlen</small></h2></button>
+          <div class="fold-body">
+            <div id="peopleStats" class="people-stats"></div>
+          </div>
+        </section>
+
+        <section class="fold-plain">
           <div class="row">
             <button id="csv" type="button">Daten herunterladen (CSV)</button>
           </div>
         </section>
       </div>
-
-      <div id="pane-menschen" role="tabpanel" aria-labelledby="tab-menschen" class="pane" hidden>
-        <section>
-          <h2>Auf der Insel</h2>
-          <div id="peopleStats" class="people-stats"></div>
-        </section>
-
-        <section class="people">
-          <h2>Karten <small>+ spielen · − zurücknehmen · Karte antippen: Erklärung</small></h2>
-          <div id="cards" class="cards"></div>
-          <div class="card-rule">
-            <span id="nextCard" class="next-card"></span>
-            <label class="field">Pause
-              <select id="cardPause" title="So lange muss man nach einer Karte warten">
-                <option value="0">keine</option>
-                <option value="1">1 Jahr</option>
-                <option value="2" selected>2 Jahre</option>
-                <option value="3">3 Jahre</option>
-              </select>
-            </label>
-          </div>
-          <ol id="chronicle" class="chronicle"></ol>
-        </section>
-      </div>
     </aside>
+  </div>
+
+  <!-- Neustart: Startbestand, links neben der Seitenleiste -->
+  <div id="restartBox" class="restart-box" role="dialog" aria-labelledby="restartTitle" hidden>
+    <div class="rb-head">
+      <h2 id="restartTitle">Startbestand <small>für diese Insel</small></h2>
+      <button id="restartClose" type="button" class="rb-close" title="Schließen (Esc)">✕</button>
+    </div>
+    <div id="startInputs" class="start-list"></div>
+    <div class="row">
+      <button id="restart" type="button" class="primary">↻ Neu starten</button>
+      <button id="defaults" type="button">Empfohlene Werte</button>
+    </div>
   </div>
 
   <!-- Grossansicht der Diagramme: volle Breite, untereinander -->
