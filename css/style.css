@@ -364,3 +364,8 @@ body.wide .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18
 .fold-toggle:hover h2, .fold-toggle:hover .clock { text-decoration: underline; text-decoration-color: rgba(255,255,255,0.3); }
 .stage { background: #1b5a7e; }
 @media (max-width: 820px) { body.wide .panel-grid { display: block; } }
+
+.chronicle { scrollbar-width: thin; scrollbar-color: #2d6684 #153f58; }
+.chronicle::-webkit-scrollbar { width: 8px; }
+.chronicle::-webkit-scrollbar-track { background: #153f58; border-radius: 4px; }
+.chronicle::-webkit-scrollbar-thumb { background: #2d6684; border-radius: 4px; }
