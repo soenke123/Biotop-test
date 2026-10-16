@@ -35,6 +35,7 @@
     </label>
     <span class="spacer"></span>
     <span id="status" class="status"></span>
+    <button id="widen" type="button" class="widen" aria-pressed="false" title="Seitenleiste doppelt so breit: alle Bereiche in zwei Spalten">⇔ Leiste</button>
   </header>
 
   <div class="layout">
@@ -49,11 +50,8 @@
     </main>
 
     <aside class="panel">
-      <div class="panel-top">
-        <button id="widen" type="button" class="widen" aria-pressed="false" title="Seitenleiste breiter: alle Bereiche in zwei Spalten">⇔ Breit</button>
-      </div>
-
       <div class="panel-grid">
+        <div class="col col-l">
         <section class="fold time" data-fold="zeit">
           <div class="fold-head">
             <button type="button" class="fold-toggle" aria-expanded="true"><span class="chev">▾</span><span id="clock" class="clock">Jahr 1 · Frühling, Tag 1</span></button>
@@ -80,8 +78,8 @@
           </div>
         </section>
 
-        <section class="fold people" data-fold="menschen">
-          <button type="button" class="fold-head fold-toggle" aria-expanded="true"><span class="chev">▾</span><h2>Menschen <small>+ spielen · − zurücknehmen · Karte antippen: Erklärung</small></h2></button>
+        <section class="fold people" data-fold="menschen" data-closed="1">
+          <button type="button" class="fold-head fold-toggle" aria-expanded="false"><span class="chev">▾</span><h2>Menschen <small>+ spielen · − zurücknehmen · Karte antippen: Erklärung</small></h2></button>
           <div class="fold-body">
             <div id="cards" class="cards"></div>
             <div class="card-rule">
@@ -99,17 +97,21 @@
           </div>
         </section>
 
+        </div>
+        <div class="col col-r">
         <section class="fold" data-fold="verlauf">
-          <button type="button" class="fold-head fold-toggle" aria-expanded="true"><span class="chev">▾</span><h2>Verlauf und Todesursachen <small>Zeiger über ein Diagramm: derselbe Tag in allen</small></h2></button>
+          <div class="fold-head">
+            <button type="button" class="fold-toggle" aria-expanded="true"><span class="chev">▾</span><h2>Verlauf und Todesursachen</h2></button>
+            <button id="openBig" type="button" class="big-btn" aria-expanded="false" aria-controls="bigView" title="Alle Diagramme groß untereinander">⤢ Groß</button>
+          </div>
           <div class="fold-body">
             <div class="chart-tools">
               <div id="chartTools"></div>
-              <button id="openBig" type="button" class="big-btn" aria-expanded="false" aria-controls="bigView" title="Alle Diagramme groß untereinander">⤢ Diagramme groß</button>
             </div>
             <div id="charts"></div>
             <p class="chart-note"><i class="mast"></i> Mastjahr (viele Früchte) <i class="winter"></i> harter Winter <i class="ev-card"></i> Karte gespielt <i class="ev-undo"></i> zurückgenommen <i class="ev-folge"></i> Folge, von selbst</p>
             <h2>Todesursachen <small>seit Start</small></h2>
-            <table id="deaths" class="deaths"></table>
+            <div class="deaths-wrap"><table id="deaths" class="deaths"></table></div>
           </div>
         </section>
 
@@ -125,6 +127,7 @@
             <button id="csv" type="button">Daten herunterladen (CSV)</button>
           </div>
         </section>
+        </div>
       </div>
     </aside>
   </div>

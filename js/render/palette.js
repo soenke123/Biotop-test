@@ -9,7 +9,7 @@
   var BT = global.BT || (global.BT = {});
 
   BT.PALETTE = {
-    background: '#14435f',
+    background: '#1b5a7e',
     deep:    { base: '#1b5a7e', band: '#20698f' },
     shallow: { base: '#36a6ad', band: '#52c2c0', edge: '#8fe0d4' },
     beach:   { base: '#ecdcaa', band: '#f5e8c0', edge: '#d9c58d', shell: '#fffaf0' },

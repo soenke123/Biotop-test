@@ -533,14 +533,17 @@
   function setFold(sec, open) {
     sec.classList.toggle('closed', !open);
     sec.querySelector('.fold-toggle').setAttribute('aria-expanded', String(open));
-    store('fold.' + sec.dataset.fold, open ? '1' : '0');
+    store('fold2.' + sec.dataset.fold, open ? '1' : '0');
     if (open && chartView) chartView.drawAll();
   }
 
   function setWide(wide) {
     doc.body.classList.toggle('wide', wide);
     $('widen').setAttribute('aria-pressed', String(wide));
-    $('widen').textContent = wide ? '⇔ Schmal' : '⇔ Breit';
+        // "Menschen auf der Insel" gehoert thematisch unter die Karten: im breiten Modus links
+    var insel = doc.querySelector('.fold[data-fold="insel"]');
+    if (wide) doc.querySelector('.col-l').appendChild(insel);
+    else doc.querySelector('.col-r').insertBefore(insel, doc.querySelector('.fold-plain'));
     store('wide', wide ? '1' : '0');
     resize();
     if (chartView) chartView.drawAll();
@@ -554,7 +557,7 @@
 
   function initPanel() {
     doc.querySelectorAll('.panel .fold').forEach(function (sec) {
-      var saved = store('fold.' + sec.dataset.fold);
+      var saved = store('fold2.' + sec.dataset.fold);
       var open = saved === null ? !sec.dataset.closed : saved === '1';
       sec.classList.toggle('closed', !open);
       sec.querySelector('.fold-toggle').setAttribute('aria-expanded', String(open));
