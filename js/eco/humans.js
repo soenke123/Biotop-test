@@ -50,7 +50,7 @@
       night: 0.4              // nachts sind die Siedler im Haus: so viel Stoerung bleibt
     },
     field: {                  // Karte "Acker anlegen"
-      radius: 55,             // Groesse eines Ackers (unregelmaessig)
+      radius: 85,             // Groesse eines Ackers (unregelmaessig; vorher 55)
       distMin: 150,           // Abstand der Ackermitte vom Dorf
       distMax: 270,
       harvestSeason: 2,       // geerntet wird am ersten Tag des Herbstes
@@ -127,21 +127,28 @@
       outcome: { wolf: { hunter: 0.05, wolf: 0.85 }, wild: { hunter: 0.3, wolf: 0.4 }, sammel: { hunter: 0.4, wolf: 0.05 } }
     },
     gather: {                 // Karte "Sammeln" (nach dem Prinzip der Jagd, Werte, die fehlen, aus hunt)
-      perCard: 6,             // Sammler je Karte
+      perCard: 8,             // Sammler je Karte (vorher 6)
       speed: 25,              // Weltunits je Tick auf dem Weg
       out: [0, 500],          // so weit vom Dorf fangen sie an zu sammeln (je Gang neu gewuerfelt) ...
       ring: 250,              // ... das Ziel liegt out bis out + ring vom Dorf
       min: 0.5,               // gesammelt wird, wo eine Weidezelle so viele Fruechte traegt (Busch voll: 3,3)
-      bite: 2,                // Fruechte je Tick
-      load: 60,               // so viel tragen sie heim (3 Koerbe), dann geht es heim
+      bite: 3,                // Fruechte je Tick (vorher 2)
+      load: 80,               // so viel tragen sie heim (4 Koerbe, vorher 3), dann geht es heim
       basket: 20,             // ein Korb (fuer die Sammelbilanz)
       tripDays: 10,
-      restDays: [1, 2]
+      restDays: [1, 2],
+      // Wo gesammelt wird, fehlt den Bodenbruetern die Ruhe und das Futter fuer die Brut: Je mehr in der
+      // Gegend des Nests (3 x 3 Weidezellen) in letzter Zeit gesammelt wurde (`heat`, halbiert sich
+      // in einem Jahr), desto seltener legt ein Paar Eier, hoechstens um `nest.max`
+      nest: { full: 60, max: 0.7 }
+    },
+    use: {                    // "regelmaessig genutzt": eine Weidezelle, in der in einem Jahr etwa so viele
+      regular: 3              // Tage Menschen waren (Siedler, Jaeger, Sammler, Hunde, Schafe)
     },
     village: {                // Karte "Dorf vergroessern"
       houses: 2,              // neue Haeuser je Karte
       settlersPerHouse: 2,
-      clearRadius: 75,        // Rodung: Radius der (unregelmaessigen) Flaeche
+      clearRadius: 110,       // Rodung: Radius der (unregelmaessigen) Flaeche (vorher 75: 2 % des Waldes, jetzt 4-5 %)
       clearMin: 70,           // ... deren Mitte so weit vom Dorf entfernt liegt
       clearMax: 300,
       yard: 24,               // um jedes Haus wird das Land zu Dorf
@@ -183,6 +190,11 @@
     this.attacks = { total: 0, hunters: 0, wolves: 0, year: {}, yearDead: {} };   // year, yearDead: je Art der Menschen
     var f = sim.fields;
     this.disturb = new Float32Array(f.cols * f.rows);
+    this.use = new Float32Array(f.cols * f.rows);       // Tage mit Menschen in der Zelle, ueber ein Jahr gewichtet
+    this.touch = new Uint8Array(f.cols * f.rows);       // heute waren Menschen hier
+    this.heat = new Float32Array(f.cols * f.rows);      // Fruechte, die hier zuletzt gesammelt wurden
+    this.usedShare = 0;                                 // Anteil der Inselflaeche, der regelmaessig genutzt wird
+    this.landCells = 0;
   }
 
   // ------------------------------------------------------------ Abfragen
@@ -476,6 +488,63 @@
     if (this.pastures.length) this.moveSheep();
     if (this.dogs.length) this.moveDogs();
     if (this.hunters.length) this.moveHunters();
+    if (this.active) this.touchCells();
+  };
+
+  /** Merkt sich, in welchen Weidezellen heute Menschen (oder ihre Tiere) waren. */
+  Humans.prototype.touchCells = function () {
+    var f = this.sim.fields, t = this.touch, i, k, list;
+    var lists = [this.people, this.hunters, this.dogs];
+    for (k = 0; k < lists.length; k++) {
+      list = lists[k];
+      for (i = 0; i < list.length; i++) { var j = f.index(list[i].x, list[i].y); if (j >= 0) t[j] = 1; }
+    }
+    for (k = 0; k < this.pastures.length; k++) {
+      var sheep = this.pastures[k].sheep;
+      for (i = 0; i < sheep.length; i++) { var q = f.index(sheep[i].x, sheep[i].y); if (q >= 0) t[q] = 1; }
+    }
+  };
+
+  /**
+   * Einmal am Tag: Nutzung fortschreiben (jeder Tag mit Menschen zaehlt 1, alte Tage verblassen ueber
+   * ein Jahr), Sammelspuren verblassen, Anteil der regelmaessig genutzten Flaeche neu zaehlen.
+   */
+  Humans.prototype.dayUse = function () {
+    if (!this.active) return;
+    var f = this.sim.fields, w = this.world, n = this.use.length;
+    if (!this.landCells) {
+      this.landMask = new Uint8Array(n);
+      for (var i = 0; i < n; i++) {
+        var c = f.center(i);
+        if (BT.BIOME_INFO[w.query.biomeAt(c.x, c.y)].land) { this.landMask[i] = 1; this.landCells++; }
+      }
+      this.landCells = Math.max(1, this.landCells);
+    }
+    var keep = 1 - 1 / BT.Time.DAYS_PER_YEAR, heatKeep = 1 - 0.7 / BT.Time.DAYS_PER_YEAR;
+    var reg = BT.HUMANS.use.regular, regular = 0;
+    for (var i = 0; i < n; i++) {
+      this.use[i] = this.use[i] * keep + this.touch[i];
+      this.touch[i] = 0;
+      this.heat[i] *= heatKeep;
+      if (this.landMask[i] && this.use[i] >= reg) regular++;
+    }
+    this.usedShare = regular / this.landCells;
+  };
+
+  /**
+   * Faktor auf die Eiablage der Bodenbrueter am Nest (x, y): 1 ohne Sammler in der Gegend,
+   * sonst bis zu 1 - nest.max (siehe BT.HUMANS.gather.nest).
+   */
+  Humans.prototype.nestFactor = function (x, y) {
+    if (!this.active) return 1;
+    var f = this.sim.fields, c = BT.HUMANS.gather.nest, sum = 0;
+    for (var dy = -1; dy <= 1; dy++) {
+      for (var dx = -1; dx <= 1; dx++) {
+        var j = f.index(x + dx * f.size, y + dy * f.size);
+        if (j >= 0) sum += this.heat[j];
+      }
+    }
+    return sum <= 0 ? 1 : 1 - c.max * Math.min(1, sum / c.full);
   };
 
   // ------------------------------------------------------------ Acker
@@ -515,6 +584,7 @@
    * gefressen haben, fehlt (Bilanz in this.harvests und in der Chronik).
    */
   Humans.prototype.newDay = function () {
+    this.dayUse();
     this.checkEscape();
     this.spring();
     if (this.hunters.length || this.huntersKept.wolf || this.huntersKept.wild || this.huntersKept.sammel) this.huntDay();
@@ -1118,7 +1188,11 @@
       for (var dy = -1; dy <= 1 && got < want; dy++) {
         for (var dx = -1; dx <= 1 && got < want; dx++) {
           var j = f.index(h.x + dx * f.size, h.y + dy * f.size);
-          if (j >= 0 && !this.fenced(f.center(j).x, f.center(j).y)) got += f.eat(j, { frucht: 1 }, want - got);
+          if (j >= 0 && !this.fenced(f.center(j).x, f.center(j).y)) {
+            var took = f.eat(j, { frucht: 1 }, want - got);
+            got += took;
+            this.heat[j] += took;
+          }
         }
       }
       h.load += got;

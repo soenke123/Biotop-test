@@ -35,7 +35,7 @@
   Stats.prototype.record = function () {
     var sim = this.sim;
     var row = { day: sim.day, count: {}, young: {}, groups: {}, sick: {}, food: sim.fields.levels(), health: sim.fields.healthLevels(), weather: sim.weatherNow,
-      menschen: sim.humans ? sim.humans.people.length : 0 };
+      menschen: sim.humans ? sim.humans.people.length : 0, crop: this.cropNow(), used: sim.humans ? sim.humans.usedShare : 0 };
     for (var k = 0; k < BT.SPECIES_ORDER.length; k++) {
       var id = BT.SPECIES_ORDER[k];
       row.count[id] = 0; row.young[id] = 0; row.groups[id] = 0; row.sick[id] = 0;
@@ -57,6 +57,19 @@
       if (row.count[id] === 0 && this.extinct[id] == null && (sim.startCounts[id] > 0 || this.seen[id])) this.extinct[id] = sim.day;
     }
     this.history.push(row);
+  };
+
+  /**
+   * Getreide auf den Aeckern: ripe = Anteil der Reife (1 = Ernte steht), eaten = Anteil, den die Tiere
+   * seit der letzten Ernte schon gefressen haben (sinkt auf 0 mit der Ernte). Ohne Acker null.
+   */
+  Stats.prototype.cropNow = function () {
+    var sim = this.sim, H = sim.humans;
+    if (!H || !H.fields.length) return null;
+    var f = sim.fields, v = f.value.korn, K = f.capacity.korn, sv = 0, sk = 0;
+    for (var i = 0; i < v.length; i++) { sv += v[i]; sk += K[i]; }
+    var eaten = f.eaten.korn - H.cropMark;
+    return { ripe: sk > 0 ? sv / sk : 0, eaten: sv + eaten > 0 ? eaten / (sv + eaten) : 0 };
   };
 
   Stats.prototype.latest = function () { return this.history[this.history.length - 1]; };

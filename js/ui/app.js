@@ -377,7 +377,8 @@
   var SERIES_COLOR = {
     zwerghirsch: '#d95926', laufvogel: '#3987e5', inselwolf: '#9085e9', inseladler: '#c98500',
     schaf: '#d03fc8', hund: '#e07b00',
-    gras: '#199e70', frucht: '#e66767', laub: '#008300', insekten: '#d55181'
+    gras: '#199e70', frucht: '#e66767', laub: '#008300', insekten: '#d55181',
+    korn: '#c9a227', gefressen: '#d95926'
   };
   var charts = [], bigCharts = [], chartView = null;
   // Schichten mit Pflanzenzustand (Gras, Laub, ... - je nach Artentabelle)
@@ -393,16 +394,26 @@
       new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Pflanzenfresser', series: series(['zwerghirsch', 'laufvogel', 'schaf'], count) }),
       new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Räuber', series: series(['inselwolf', 'inseladler', 'hund'], count) }),
       new BT.LineChart(box, {
-        view: chartView, allowMean: allowMean, title: 'Nahrung (Anteil am Höchststand)', percent: true,
+        view: chartView, allowMean: allowMean, title: 'Nahrung (100 % = unberührte Insel)', percent: true,
         series: ['gras', 'frucht', 'laub', 'insekten'].map(function (k) {
           return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.food[k]; } };
         })
       }),
       new BT.LineChart(box, {
-        view: chartView, allowMean: allowMean, title: 'Zustand der Pflanzen (100 % = gesund, sinkt bei Übernutzung)', percent: true,
+        view: chartView, allowMean: allowMean, title: 'Zustand der Pflanzen (100 % = unberührte Insel, sinkt bei Übernutzung, Rodung und Acker)', percent: true,
         series: HEALTH_KEYS.map(function (k) {
           return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.health && r.health[k] != null ? r.health[k] : 1; } };
         })
+      }),
+      // Erst mit dem ersten Acker sichtbar: das Getreide reift bis zum Spaetsommer, die Ernte setzt es auf 0;
+      // die zweite Linie zeigt den Schaden: wie viel davon Tiere seit der letzten Ernte gefressen haben
+      new BT.LineChart(box, {
+        view: chartView, allowMean: false, title: 'Äcker: Reife und Fraßschaden', percent: true,
+        when: function (s) { return s.humans && s.humans.fields.length > 0; },
+        series: [
+          { label: 'Getreide (Reife)', color: SERIES_COLOR.korn, get: function (r) { return r.crop ? r.crop.ripe : 0; } },
+          { label: 'von Tieren gefressen', color: SERIES_COLOR.gefressen, get: function (r) { return r.crop ? r.crop.eaten : 0; } }
+        ]
       })
     ];
   }
@@ -410,6 +421,8 @@
   function updateCharts() {
     if (!sim) return;
     var h = sim.stats.history;
+    var all = charts.concat(bigCharts);
+    for (var c = 0; c < all.length; c++) if (all[c].opts.when) all[c].root.hidden = !all[c].opts.when(sim);
     for (var i = 0; i < charts.length; i++) charts[i].update(h);
     if (bigOpen()) for (i = 0; i < bigCharts.length; i++) bigCharts[i].update(h);
   }
@@ -494,6 +507,7 @@
       [sheepOnPastures(H), 'Schafe auf ' + (H.pastures.length === 1 ? 'der Weide' : H.pastures.length + ' Weiden')],
       [H.dogs.length, 'Hütehunde'],
       [pct(lu.counts.gerodet / lu.woodyCells), 'des Waldes gerodet'],
+      [pct(H.usedShare), 'der Insel regelmäßig von Menschen genutzt'],
       [last ? pct(last.share) : '–', 'der letzten Ernte von Tieren gefressen']
     ];
     if (H.huntersKept.wolf || H.huntersKept.wild) {

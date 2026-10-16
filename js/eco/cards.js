@@ -48,14 +48,14 @@
       id: 'dorf', kind: 'aktiv', icon: '🏘️', image: 'assets/haus_fachwerk.png', needs: 'landung', repeat: true,
       name: 'Dorf vergrößern',
       text: 'Wald am Dorfrand wird gerodet, neue Häuser entstehen. Auf der gerodeten Erde wächst erst nach Jahren wieder etwas.',
-      more: 'Die Siedler roden ein Stück Wald neben dem Dorf und bauen zwei neue Häuser mit vier Siedlern. Auf der Rodung bleibt erst nackte Erde, nach drei bis fünf Jahren wächst dort Wiese, aber kein Wald. Weniger Wald heißt weniger Laub, Früchte und Verstecke. Das größere Dorf stört die Tiere in einem größeren Umkreis.',
+      more: 'Die Siedler roden ein großes Stück Wald neben dem Dorf (rund 4 bis 5 % des Waldes) und bauen zwei neue Häuser mit vier Siedlern. Auf der Rodung bleibt erst nackte Erde, nach drei bis fünf Jahren wächst dort Wiese, aber kein Wald. Weniger Wald heißt weniger Laub, Früchte und Verstecke; in den Diagrammen sinken Nahrung und Pflanzenzustand dauerhaft. Das größere Dorf stört die Tiere in einem größeren Umkreis.',
       undo: 'Die zwei Häuser dieser Karte werden verlassen, ihre Siedler ziehen weg. Die Rodung bleibt: Der Wald kommt nicht zurück.'
     },
     acker: {
       id: 'acker', kind: 'aktiv', icon: '🌾', needs: 'landung', repeat: true,
       name: 'Acker anlegen',
       text: 'Ein Getreidefeld nahe am Dorf. Geerntet wird im Herbst. Hirsche finden das Getreide auch lecker.',
-      more: 'Ein Acker entsteht nahe am Dorf, wenn nötig wird dafür Wald gerodet. Im Frühling und Sommer wächst Getreide, im Herbst wird geerntet, danach ist der Acker kahl. Hirsche kommen nachts und fressen am Getreide. Wie viel, steht nach jeder Ernte in der Chronik.',
+      more: 'Ein großer Acker entsteht nahe am Dorf, wenn nötig wird dafür Wald gerodet. Im Frühling und Sommer wächst Getreide und reift bis zum Spätsommer, im Herbst wird geerntet, danach ist der Acker kahl. Hirsche und Laufvögel fressen am Getreide, Hirsche vor allem nachts. Wie viel, steht nach jeder Ernte in der Chronik, und im Diagramm „Äcker“ sieht man Reife und Fraßschaden.',
       undo: 'Der Acker wird aufgegeben. Erst ist dort nackte Erde, nach einigen Jahren wächst wieder, was vorher da war (aus Wald wird Wiese).'
     },
     // Meldungen, die von selbst entstehen (nur Chronik, keine Marke im Diagramm)
@@ -135,9 +135,9 @@
     sammeln: {
       id: 'sammeln', kind: 'aktiv', icon: '🫐', image: 'assets/doerfler/sammeln_2.png', needs: 'landung', repeat: true,
       name: 'Sammeln',
-      text: 'Sechs Sammler holen Früchte und Samen, mal nah am Dorf, mal weit draußen. Die fehlen dann den Laufvögeln. Hungrige Wölfe greifen auch Sammler an.',
-      more: 'Sechs Sammler gehen los und pflücken Früchte und Samen, bis ihre Körbe voll sind, mal nah am Dorf, mal weit draußen. Diese Früchte fehlen den Laufvögeln, vor allem im Herbst und Winter. Die Sammler haben keine Waffen, hungrige Wölfe greifen sie an.',
-      undo: 'Sechs Sammler hören auf. Die Früchte wachsen im nächsten Jahr wieder.'
+      text: 'Acht Sammler holen Früchte und Samen, mal nah am Dorf, mal weit draußen. Die fehlen dann den Laufvögeln, und wo gesammelt wird, brüten weniger von ihnen. Hungrige Wölfe greifen auch Sammler an.',
+      more: 'Acht Sammler gehen los und pflücken Früchte und Samen, bis ihre Körbe voll sind, mal nah am Dorf, mal weit draußen. Diese Früchte fehlen den Laufvögeln, vor allem im Herbst und Winter. Wo viel gesammelt wird, sind sie gestört und legen im Frühling weniger Eier. Die Sammler haben keine Waffen, hungrige Wölfe greifen sie an.',
+      undo: 'Acht Sammler hören auf. Die Früchte wachsen im nächsten Jahr wieder.'
     },
     ratten: {
       id: 'ratten', kind: 'aktiv', icon: '🐀', image: 'assets/ratten.png', soon: true, needs: 'landung', repeat: true,

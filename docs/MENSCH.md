@@ -500,6 +500,38 @@ Sammler sehr oft von Wölfen getötet. Die Streuung zwischen den Inseln ist gro�
   Karten stehen in der Chronik mit ↩ und als lang gestrichelte blaue Marke im Diagramm.
 - **Mit einem Dorf läuft alles exakt wie vorher** (gleiche Prüfsummen mit allen Karten).
 
+### Stärkere Wirkung, sichtbarer Schaden (Oktober 2026)
+
+Rodung, Acker und Sammeln waren in Zahlen und Kurven kaum zu sehen. Jetzt:
+
+- **Diagramme messen an der unberührten Insel** (`Fields.startTotal`): „Nahrung“ und „Zustand der
+  Pflanzen“ haben 100 % = Kapazität zu Beginn. Gerodetes, gepflügtes oder bebautes Land senkt die
+  Kurven dauerhaft (vorher: Anteil an der heutigen Kapazität, die Rodung selbst fiel heraus).
+  Getreide, das es zu Beginn nicht gab, wird an den heutigen Äckern gemessen. Auf der Wiese wächst
+  nach der Rodung viel Gras; deshalb sinkt die Gras-Kurve nach einer Rodung kaum, Laub und Früchte
+  dagegen schon.
+- **Rodung** `clearRadius` 75 → 110: etwa 4–5 % des Waldes je Karte (vorher 2 %). **Acker** `radius`
+  55 → 85: gut 600 Zellen je Acker (vorher 230).
+- **Sammeln:** 8 Sammler je Karte (vorher 6), 3 Früchte je Tick (2), Korb 80 (60). Wo sie sammeln,
+  legen Laufvögel weniger Eier: `humans.heat` (gesammelte Früchte je Weidezelle, halbiert sich in
+  einem Jahr) senkt die Chance der Gelege im 3 × 3-Umkreis um bis zu 70 % (`gather.nest`,
+  `Humans.nestFactor`). Ohne Sammler ist der Faktor genau 1.
+- **Getreide als Futter:** Laufvögel fressen es jetzt auch (`korn: 0,1`), Hirsche und Schafe wie
+  vorher. Es reift bis zum Spätsommer und wird am ersten Herbsttag geerntet (Kurve mit Sägezahn).
+- **Neues Diagramm „Äcker: Reife und Fraßschaden“** (erst mit dem ersten Acker sichtbar): Reife des
+  Getreides und der Anteil, den Tiere seit der letzten Ernte gefressen haben (`row.crop`).
+- **Neue Zahl bei den Menschen:** „der Insel regelmäßig von Menschen genutzt“ (`Humans.usedShare`,
+  `row.used`): Anteil der Land-Weidezellen, in denen Siedler, Jäger, Sammler, Hunde oder Weideschafe
+  in einem Jahr mindestens 3 Tage waren (`BT.HUMANS.use.regular`). Nicht die Dorffläche, sondern
+  das Gebiet, in dem sich Menschen mehrheitlich bewegen.
+- **Messung** (`balance.js 8 30 --karten=dorf@1,acker@3,sammeln@5`, Mittel ab Jahr 10, vorher →
+  nachher): Laub 87 → 80 %, Getreide 33 → 26 % der heutigen Äcker (die Äcker sind jetzt größer),
+  Laufvogel 332 → 322, Wolf 60 → 57; alle Arten überleben auf 6 → 5 von 8 Inseln (je 2–3 Adler- bzw.
+  Wolfsausfälle, im Rahmen der Streuung). Einzelne Karten, 24 Jahre, 3 Karten, 4 Inseln, Median
+  gegenüber nur Landung: Sammeln Laufvogel −15 bis −29 % auf 3 von 4 Inseln; Rodung (3 × Dorf, mit
+  Acker) 11–15 % des Waldes weg; bei den Äckern fressen die Tiere 30–60 % der Ernte; regelmäßig
+  genutzt 8–12 % der Insel. **Ohne Karten unverändert** (`balance.js 4 20`, gleiche Zahlen).
+
 ### Oberfläche: Reiter und Marken
 
 - Unter der Zeitsteuerung gibt es zwei Reiter: **🦌 Tierbestand** (Startbestand, Bestand,

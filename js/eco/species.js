@@ -180,7 +180,7 @@
       group: { kind: 'flock', min: 2, max: 6, spread: 16, start: [2, 4] },
       start: 160,                     // Tiere zu Beginn
       scarce: 0.5,
-      diet: { frucht: 0.1, insekten: 0.11 },   // kein Gras: das Gras haengt allein an den Hirschen
+      diet: { frucht: 0.1, insekten: 0.11, korn: 0.1 },   // kein Gras: das Gras haengt allein an den Hirschen; Koerner vom Acker (inselzahm) schon
       bite: 0.32,
       costPerDay: 0.055,
       winterCost: 0.015,

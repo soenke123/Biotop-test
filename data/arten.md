@@ -148,10 +148,11 @@ einschalten. Ohne Durst ziehen die Tiere nicht mehr gezielt zum Wasser.
 - **Rolle:** Beute für Adler und Wölfe; später besonders gefährdet durch eingeschleppte Ratten.
 - **Gruppe:** lose Gruppe mit 2–6 Tieren. Einzelne Vögel schließen sich der nächsten Gruppe an
   (sonst finden sie keinen Partner).
-- **Nahrung:** Früchte, Samen, Insekten (kein Gras).
+- **Nahrung:** Früchte, Samen, Insekten (kein Gras). Mit Äckern auch Getreide (0,1; Oktober 2026).
 - **Lebensraum:** Buschland, Wald, Sumpf.
 - **Fortpflanzung:** Im Frühling legt jedes Paar 2–4 Eier in ein gemeinsames **Nest am Boden**.
-  Die Küken schlüpfen nach 8 Tagen. Solange brütet die Gruppe in der Nähe des Nests.
+  Die Küken schlüpfen nach 8 Tagen. Solange brütet die Gruppe in der Nähe des Nests. Wo Sammler
+  unterwegs waren, legen die Paare seltener (bis 70 % weniger, `BT.HUMANS.gather.nest`).
 - **Verhalten:** sucht Futter, flieht vor Räubern, brütet.
 
 ### Ökologische Nische

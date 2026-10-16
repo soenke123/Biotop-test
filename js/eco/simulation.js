@@ -600,8 +600,10 @@
       // Bodenbrueter: ein gemeinsames Nest, Kueken schluepfen spaeter
       var pairs = Math.min(mothers.length, males);
       var eggs = 0;
+      // Wo Sammler unterwegs waren, legen die Paare seltener (eco/humans.js nestFactor)
+      var calm = this.humans.nestFactor(g.x, g.y);
       for (i = 0; i < pairs; i++) {
-        if (!this.rng.chance(b.chance)) continue;
+        if (!this.rng.chance(b.chance * calm)) continue;
         eggs += this.rng.intIn(b.litter);
         mothers[i].energy -= b.cost;
       }

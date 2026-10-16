@@ -14,7 +14,7 @@ Mechanismen, die das Ökosystem stabil halten. Werte, die im Code geändert werd
 zurück in die Datei.
 
 Stufe 3 läuft: Der Mensch kommt mit Karten auf die Insel. **Plan, Karten und Stand in
-`docs/MENSCH.md`.** Ohne gespielte Karte muss die Simulation exakt wie vorher laufen.
+`docs/MENSCH.md`.** Ohne gespielte Karte muss die Simulation exakt wie vorher laufen. Die Diagramme „Nahrung“ und „Zustand der Pflanzen“ messen an der unberührten Insel (`Fields.startTotal`).
 
 Soll später ein Skill in MPSkills werden (wie Wild Clusters in `newTablet-Schulung`).
 
