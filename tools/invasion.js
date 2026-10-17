@@ -8,7 +8,13 @@
  *                          [--set=schaf.costPerDay=0.035,schaf.habitat.SCRUB=0.9]
  *
  * --set  ueberschreibt Werte der Artentabelle zum Ausprobieren (Lebensraeume beim Namen);
- *        mit HUMANS. vorn Werte der Menschen (z. B. HUMANS.hunt.wary.hund=0.3).
+ *        mit HUMANS. vorn Werte der Menschen (z. B. HUMANS.hunt.wary.hund=0.3), mit RATS.
+ *        Werte der Ratten (z. B. RATS.birth=[0.1,0.1,0.06,0]).
+ *
+ * Mit der Karte ratten steht dazu je Insel: Ratten am Ende und an der Spitze, auf welchem
+ * Anteil der Insel (und in welchem Jahr 25 % und 50 % erreicht waren), gefressene Eier und
+ * Kueken, und wie viele Ratten Woelfe, Hunde und Adler gefangen haben (mit dem Anteil an
+ * dem, was diese Raeuber im Jahr verbrauchen).
  *
  * Etabliert heisst: am Ende mindestens 20 wilde Schafe bzw. ein wildes
  * Hunderudel mit Revier. Mit Jagdkarten (woelfeJagen, wildJagen) steht dazu, was
@@ -34,6 +40,7 @@ if (flags.lauf) {
     const parts = key.split('.');
     let o = BT.SPECIES;
     if (parts[0] === 'HUMANS') { o = BT.HUMANS; parts.shift(); }
+    else if (parts[0] === 'RATS') { o = BT.RATS; parts.shift(); }
     for (let i = 0; i < parts.length - 1; i++) o = o[parts[i]];
     const last = parts[parts.length - 1];
     o[last in BT.BIOME && Array.isArray(o) ? BT.BIOME[last] : last] = JSON.parse(val);
@@ -55,11 +62,28 @@ if (flags.lauf) {
     sim.runDays(10);
   }
   const yearly = [];
+  const rats = { peak: 0, share: [], summer: [] };
   for (let y = 0; y < YEARS; y++) {
     for (const c of cards) if (c.year === y) sim.play(c.id, {});
-    sim.runDays(BT.Time.DAYS_PER_YEAR);
+    sim.runDays(BT.Time.DAYS_PER_SEASON * 2);
+    rats.summer.push(Math.round(sim.rats.total));     // Ende des Sommers
+    rats.peak = Math.max(rats.peak, sim.rats.total);
+    sim.runDays(BT.Time.DAYS_PER_YEAR - BT.Time.DAYS_PER_SEASON * 2);
+    rats.share.push(sim.rats.share);
     yearly.push(Object.assign({}, sim.stats.latest().count));
   }
+  rats.end = Math.round(sim.rats.total);
+  rats.peak = Math.round(rats.peak);
+  rats.eaten = sim.rats.eaten;
+  rats.caught = Object.fromEntries(Object.keys(BT.RATS.eatenBy).map((id) => [id, Math.round(sim.rats.deaths[id] || 0)]));
+  // Anteil der Energie aus Ratten am Verbrauch der Raeuber (grob: Mittel der Bestaende mal Verbrauch je Tag)
+  rats.energy = {};
+  for (const id in BT.RATS.eatenBy) {
+    const avg = yearly.reduce((a, r) => a + (r[id] || 0), 0) / yearly.length;
+    const use = avg * BT.SPECIES[id].costPerDay * BT.Time.DAYS_PER_YEAR * YEARS;
+    rats.energy[id] = use > 0 ? rats.caught[id] * BT.RATS.eatenBy[id].energy / use : 0;
+  }
+  rats.deathsVogel = sim.stats.deaths.laufvogel;
   const ids = BT.SPECIES_ORDER;
   const late = yearly.slice(Math.floor(YEARS * 2 / 3));
   const mean = {};
@@ -72,7 +96,7 @@ if (flags.lauf) {
   for (const id of ids) if (sim.stats.extinct[id] != null) extinct[id] = BT.Time.calendar(sim.stats.extinct[id]).year;
   const escapes = sim.events.filter((e) => e.card === 'schafeAus' || e.card === 'hundeWild').map((e) => e.card[0] + BT.Time.calendar(e.day).year);
   process.stdout.write(JSON.stringify({ seed, end: yearly[yearly.length - 1], mean, peak, dogPacks, herds, extinct, escapes,
-    deaths: { schaf: sim.stats.deaths.schaf, hund: sim.stats.deaths.hund },
+    deaths: { schaf: sim.stats.deaths.schaf, hund: sim.stats.deaths.hund }, rats,
     hunt: { bag: sim.humans.bag, attacks: sim.humans.attacks, gathered: Math.round(sim.humans.gathered) } }));
   process.exit(0);
 }
@@ -106,6 +130,14 @@ function startNext(done) {
 }
 const short = { zwerghirsch: 'Hirsch', laufvogel: 'Vogel', inselwolf: 'Wolf', inseladler: 'Adler', schaf: 'Schaf', hund: 'Hund' };
 const NATIVE = ['zwerghirsch', 'laufvogel', 'inselwolf', 'inseladler'];
+function ratLine(r) {
+  const pct = (v) => Math.round(v * 100) + ' %';
+  const step = Math.max(1, Math.floor(r.summer.length / 6));
+  return `Ratten Ende ${r.end} (Spitze ${r.peak}, Insel ${pct(r.share[r.share.length - 1])}), Sommer ${r.summer.filter((_, i) => i % step === step - 1).join(' ')}` +
+    ` · Eier ${r.eaten.eggs}, Küken ${r.eaten.chicks}` +
+    ` · gefangen ${Object.entries(r.caught).map(([id, n]) => short[id] + ' ' + n + ' (' + pct(r.energy[id]) + ' Energie)').join(', ')}`;
+}
+
 function report() {
   console.log(`${SEEDS} Inseln × ${YEARS} Jahre, Karten ${karten}${flags.set ? ', ' + flags.set : ''}. Mittel im letzten Drittel, mit Karten / nur Landung`);
   let sheepOk = 0, dogOk = 0;
@@ -125,9 +157,13 @@ function report() {
       (ext ? '  ✗ ' + ext : '') + `\n          Ausbrüche ${mit.escapes.join(' ')} · Tod Schafe ${JSON.stringify(mit.deaths.schaf)} · Hunde ${JSON.stringify(mit.deaths.hund)}` +
       (/sammeln/.test(karten) ? `\n          Gesammelt ${mit.hunt.gathered} (Körbe ${Math.round(mit.hunt.gathered / 20)})` : '') +
       (/jagen|sammeln/i.test(karten) ? `\n          Erlegt ${Object.entries(mit.hunt.bag).map(([id, n]) => short[id] + ' ' + n).join(', ') || '-'}` +
-        ` · Angriffe auf Jäger ${mit.hunt.attacks.total} (Jäger tot ${mit.hunt.attacks.hunters}, Wolf tot ${mit.hunt.attacks.wolves})` : ''));
+        ` · Angriffe auf Jäger ${mit.hunt.attacks.total} (Jäger tot ${mit.hunt.attacks.hunters}, Wolf tot ${mit.hunt.attacks.wolves})` : '') +
+      (/ratten/.test(karten) ? '\n          ' + ratLine(mit.rats) : ''));
   }
-  console.log(`Schafe etabliert: ${sheepOk} von ${SEEDS} · Hunde etabliert: ${dogOk} von ${SEEDS}`);
+  if (/ratten/.test(karten)) {
+    const yearOf = (r, q) => { const i = r.share.findIndex((v) => v >= q); return i < 0 ? '-' : 'J' + (i + 1); };
+    console.log('Ratten 25 % / 50 % der Insel: ' + seeds.map((s) => yearOf(results[s].mit.rats, 0.25) + '/' + yearOf(results[s].mit.rats, 0.5)).join(' · '));
+  } else console.log(`Schafe etabliert: ${sheepOk} von ${SEEDS} · Hunde etabliert: ${dogOk} von ${SEEDS}`);
   const med = (a) => { const s = a.slice().sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
   console.log('Heimische Arten mit Karten gegenüber nur Landung (Median): ' +
     NATIVE.map((id) => short[id] + ' ' + Math.round(med(ratio[id]) * 100) + ' %').join(' · '));

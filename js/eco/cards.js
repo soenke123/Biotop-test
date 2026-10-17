@@ -13,14 +13,15 @@
  *   repeat   darf mehrfach gespielt werden (jede weitere Karte verstaerkt)
  *   more     ausfuehrliche Erklaerung (Infofenster der Kartenleiste)
  *   undo     was beim Zuruecknehmen (−) passiert; die Folgen bleiben
+ *   fixed    laesst sich nicht zuruecknehmen (Grund, steht am − der Karte)
  *   needs    Karte, die vorher gespielt sein muss
  *   soon     noch nicht umgesetzt (wird in der Leiste nur angezeigt)
  *   icon     Symbol (Chronik, Titel des Infofensters; in der Leiste, wenn es kein image gibt)
  *   image    Bild auf der Karte in der Leiste. Das Bild im Infofenster ist ein Ausschnitt
  *            der Inselkarte, assets/karte_<id>.png (erzeugt mit tools/kartenbilder.js)
  *
- * Jede aktive Karte laesst sich zuruecknehmen (sim.unplay): Dann verschwindet,
- * was sie gebracht hat (Haeuser, Acker, Weide, Hunde, Jaeger), aber was schon
+ * Jede aktive Karte (ausser `fixed`, die Ratten) laesst sich zuruecknehmen (sim.unplay): Dann
+ * verschwindet, was sie gebracht hat (Haeuser, Acker, Weide, Hunde, Jaeger), aber was schon
  * geschehen ist, bleibt (gerodeter Wald, ausgebuechste Schafe, wilde Hunde).
  */
 (function (global) {
@@ -140,9 +141,22 @@
       undo: 'Acht Sammler hören auf. Die Früchte wachsen im nächsten Jahr wieder.'
     },
     ratten: {
-      id: 'ratten', kind: 'aktiv', icon: '🐀', image: 'assets/ratten.png', soon: true, needs: 'landung', repeat: true,
+      id: 'ratten', kind: 'aktiv', icon: '🐀', image: 'assets/ratten.png', needs: 'landung', repeat: true,
       name: 'Ratten an Bord',
-      text: 'Mit einem Vorratsschiff kommen Ratten an Land. Sie fressen Eier, Samen und Küken.'
+      text: 'Ein Vorratsschiff legt am Dorf an. Mit ihm kommen Ratten an Land. Sie fressen Eier, Küken, Früchte und Insekten und vermehren sich rasend schnell.',
+      more: 'Mit den Vorräten kommen etwa vierzig Ratten an Land. Am Dorf finden sie Abfälle und Vorräte, auch im Winter, von dort breiten sie sich aus: Jede Ratte bleibt in ihrer Gegend, aber wird es zu eng, ziehen die Jungen weiter. So wandert eine Front über die Jahre über die Insel, nur ins kahle Gebirge kommen sie kaum. Ratten fressen dieselben Früchte, Samen und Insekten wie die Laufvögel, dazu Aas und Getreide, und sie plündern die Nester der Laufvögel: Eier und junge Küken. Wölfe, Hunde und Adler fangen Ratten, aber gegen so viele Junge kommen sie nicht an. Im Diagramm zählt eine Linie hundert Ratten.',
+      fixed: 'Ratten lassen sich nicht wieder einfangen'
+    },
+    // Folgen der Ratten (eco/rats.js)
+    rattenplage: {
+      id: 'rattenplage', kind: 'folge', mark: true, icon: '🐀',
+      name: 'Rattenplage',
+      text: 'Die Ratten haben sich über ein Viertel der Insel ausgebreitet.'
+    },
+    rattenbilanz: {
+      id: 'rattenbilanz', kind: 'info', icon: '🐀',
+      name: 'Rattenbilanz',
+      text: 'Wie viele Ratten es gibt und was sie im letzten Jahr gefressen haben.'
     }
   };
 

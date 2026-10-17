@@ -44,6 +44,7 @@
       this.startCounts[id] = opts.start && opts.start[id] != null ? opts.start[id] : defaults[id];
     }
     this.humans = new BT.Humans(this);
+    this.rats = new BT.Rats(this);  // Ratten als Feld, erst mit der Karte "Ratten an Bord" (eco/rats.js)
     this.events = [];               // gespielte Karten: { day, tick, card, params, at, undo }
     this.cardPause = opts.cardPause != null ? opts.cardPause : BT.Time.years(BT.CARD_RULES.pauseYears);
     this.pending = [];              // gespielt, wird beim naechsten Tick ausgefuehrt
@@ -281,6 +282,7 @@
   Simulation.prototype.undoBlocked = function (id) {
     var c = BT.CARDS[id];
     if (!c || c.soon || (c.kind !== 'start' && c.kind !== 'aktiv')) return 'Lässt sich nicht zurücknehmen';
+    if (c.fixed) return c.fixed;
     for (var i = 0; i < this.pending.length; i++) if (this.pending[i].card === id) return 'Moment, die Karte wird gerade ausgeführt';
     if (!this.humans.villagesWith(id).length) {
       return id === 'landung' && this.cardCount('landung') ? 'Das Schiff ist noch nicht angekommen' : 'Nichts zurückzunehmen';
@@ -448,6 +450,7 @@
     shuffle(this.groups, this.rng);
     this.disease();
     this.scraps();
+    this.rats.newDay();
 
     var groups = this.groups.slice();
     for (var i = 0; i < groups.length; i++) {

@@ -93,12 +93,12 @@ const SCENES = {
     }
   },
   ratten: {
-    cards: [], days: 0, width: 230, rats: true,
+    cards: ['ratten'], days: 0, width: 260,
     wait: () => {
-      const H = BT.app.sim.humans, s = H.ships[0];
-      if (!s || s.phase !== 'liegt' || !H.houses.length || s.t < 4) return null;
-      const v = H.villages[0];
-      return { x: (s.x * 0.75 + v.x * 0.25), y: (s.y * 0.75 + v.y * 0.25) };
+      const sim = BT.app.sim, s = sim.humans.ships.find((sh) => sh.supply);
+      if (!s || s.phase !== 'liegt' || s.t < 4 || !sim.rats.total) return null;
+      const v = s.supply;
+      return { x: (s.x * 0.55 + v.x * 0.45), y: (s.y * 0.55 + v.y * 0.45) };
     }
   }
 };
@@ -161,7 +161,7 @@ function hunterNearPrey(kind) {
       return { err: 'Szene nicht gefunden' };
     }, { fx, fy, cards: sc.cards, days: sc.days, wait: sc.wait.toString() });
     if (at.err) { console.log(id + ':', at.err); failed++; await page.close(); continue; }
-    const box = await page.evaluate(({ at, width, rats }) => {
+    const box = await page.evaluate(({ at, width }) => {
       const cam = BT.app.camera, canvas = document.getElementById('map');
       const r = canvas.getBoundingClientRect();
       // naeher heran, als man in der Oberflaeche zoomen darf; die Seite soll es nicht zuruecksetzen
@@ -171,26 +171,11 @@ function hunterNearPrey(kind) {
       cam.y = at.y - r.height / cam.scale / 2;
       BT.app.updatePanel && BT.app.updatePanel();
       BT.app.redraw();
-      return { x: r.left + r.width / 2 - 480, y: r.top + r.height / 2 - 240, rats };
-    }, { at, width: sc.width, rats: !!sc.rats });
+      return { x: r.left + r.width / 2 - 480, y: r.top + r.height / 2 - 240 };
+    }, { at, width: sc.width });
     // zwei Bilder abwarten, damit alles gezeichnet und alle Bilder geladen sind
     await page.waitForTimeout(800);
     await page.evaluate(() => new Promise((res) => requestAnimationFrame(() => { BT.app.redraw(); setTimeout(() => requestAnimationFrame(res), 300); })));
-    if (box.rats) {
-      // Ratten gibt es in der Simulation noch nicht: ein paar Bilder an den Strand stellen
-      await page.evaluate(() => new Promise((res) => {
-        const r = document.getElementById('map').getBoundingClientRect();
-        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-        [[90, 30, 1], [170, 85, 0.85], [210, -10, 0.9], [60, 120, 0.8]].forEach(([dx, dy, f], k) => {
-          const img = document.createElement('img');
-          img.src = 'assets/ratten.png';
-          img.style.cssText = 'position:fixed;z-index:50;pointer-events:none;width:' + 80 * f + 'px;left:' + (cx + dx - 40 * f) + 'px;top:' + (cy + dy - 30 * f) + 'px';
-          if (k % 2) img.style.transform = 'scaleX(-1)';
-          document.body.appendChild(img);
-        });
-        setTimeout(res, 300);
-      }));
-    }
     const out = path.join(__dirname, '..', 'assets', 'karte_' + id + '.png');
     await page.screenshot({ path: out, clip: { x: box.x, y: box.y, width: W, height: H } });
     console.log(errors.length ? id + ': Fehler\n' + errors.join('\n') : 'geschrieben: ' + path.relative(process.cwd(), out));

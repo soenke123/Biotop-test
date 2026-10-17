@@ -63,17 +63,20 @@ Gruppen, die verschiedene Karten spielen, lassen sich direkt vergleichen.
 | **Hunde verwildern** | je Jahr mit Hütehunden eine Wahrscheinlichkeit | Ein kleines Rudel wird frei: **verwilderte Hunde** wie Wölfe (Rudel, Revier), aber erfolgreicher auf der Jagd; Laufvögel kennen sie nicht. Sie tragen eine **Krankheit**, die Wölfe in ihrer Nähe schwächt und tötet |
 | **Wölfe töten einen Jäger** (umgesetzt mit Schritt 7) | ein Jäger ist draußen auf der Jagd, ein hungriges Rudel ist nah | Wolfsjäger gewinnen fast immer (der Wolf stirbt, Ursache „Jagd“), Wildjäger sterben öfter selbst. Siedler im Dorf werden nicht angegriffen |
 | **Hirsche im Acker** | Hirsche fressen am Acker | Meldung in der Chronik; später vielleicht: Siedler jagen dann von selbst |
-| **Rattenplage** | Ratten erreichen einen Schwellenwert | Meldung; Ratten breiten sich über die ganze Insel aus |
+| **Rattenplage** (umgesetzt mit Schritt 6) | Ratten leben auf einem Viertel der Insel | Meldung und Marke im Diagramm; die Ratten breiten sich weiter aus |
 
 ### Die Ratten genauer
 
-- Fressen **Eier** (Laufvogelnester und Adlerhorste), **Küken** der Laufvögel, **Samen und
-  Früchte**, **Insekten**.
-- Vermehren sich sehr schnell, leben kurz (etwa 1 Jahr), breiten sich vom Dorf aus über die Insel aus.
-- Sind selbst **Beute für Wölfe und Adler**. Das ist eine schöne Doppelrolle: Zuerst geht es
-  den Räubern sogar besser, den Laufvögeln aber schlechter.
-- Technisch: wahrscheinlich ein **Feld** (Rattendichte je Weidezelle) statt einzelner Tiere,
-  sonst werden es Tausende. Auf der Karte als gestreute Ratten gezeichnet, dichter, wo viele sind.
+Umgesetzt mit Schritt 6 (Abschnitt 8):
+
+- Fressen **Eier** und junge **Küken** der Laufvögel (die Adlerhorste bleiben verschont),
+  **Samen und Früchte**, **Insekten**, **Getreide** und **Aas**.
+- Vermehren sich sehr schnell, leben kurz, breiten sich vom Dorf aus über die Insel aus. Am Dorf
+  überwintern sie (Vorräte), draußen verhungern im Winter viele.
+- Sind selbst **Beute für Wölfe, Hunde und Adler**. Das ist eine schöne Doppelrolle: Den Räubern
+  geht es eher besser, den Laufvögeln deutlich schlechter.
+- Technisch ein **Feld** (Ratten je Weidezelle) statt einzelner Tiere. Auf der Karte gestreute
+  Rattengruppen, dichter, wo viele sind.
 
 ## 4. Was noch fehlen könnte (Vorschläge)
 
@@ -119,7 +122,7 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 | **3** | **Acker:** Ackerflächen mit Saison und Ernte, Hirsche fressen dort, Bilanz in der Chronik | erledigt |
 | 4 | **Schafe:** Weide mit Zaun, Schaf als Art, Folgekarte „Schafe brechen aus“ (vorgezogen) | erledigt, ohne Wölfe an der Weide |
 | 5 | **Hunde:** Hütehunde (Störung), verwilderte Hunde als Art, Staupe bei Wölfen (vorgezogen) | erledigt |
-| 6 | **Ratten:** Ratten als Feld, Gelegeraub, Ratten als Beute | |
+| 6 | **Ratten:** Ratten als Feld, Gelegeraub, Ratten als Beute | erledigt |
 | 7 | **Jagd:** Wölfe jagen, Wild jagen, Wölfe gegen Jäger (vorgezogen vor die Ratten) | erledigt |
 | 8 | **Sammeln** (nach dem Prinzip der Jagd) | erledigt |
 | 9 | **Gegenmaßnahmen:** Katzen, Gift, Schutzgebiet (nach Absprache) | |
@@ -141,6 +144,9 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 ## 7a. Noch offen
 
 - Darf eine Art endgültig aussterben, oder gibt es immer einen Weg zur Rettung (Schritt 9)?
+- **Gegenmaßnahmen gegen die Ratten** (Schritt 9): Die Rattenkarte könnte, wenn sie gespielt ist,
+  durch Gegenmaßnahmen ersetzt werden (Giftköder, Katzen). Das Feld macht das einfach (weniger
+  Ratten in einem Gebiet); Giftköder könnten über vergiftete Ratten auch Adler und Wölfe treffen.
 
 ## 8. Umgesetzt
 
@@ -329,6 +335,40 @@ einmal aus** (je Weide bzw. je Karte „Hütehunde“); sie leben dann als einge
 - **Noch nicht:** Wölfe reißen Schafe auf der Weide.
 - **Mit Schafen und Hunden darf das Ökosystem kippen.** Die Werte sind noch nicht abgestimmt
   (das Testen übernimmt die Projektleitung). **Ohne Karte läuft alles exakt wie vorher.**
+
+### Schritt 6: Ratten
+
+Die Ratten kommen zuletzt (nach Jagd und Sammeln). Werte und Begründung: `data/arten.md`
+(„Ratten“), Code `js/eco/rats.js` (`BT.RATS`, `sim.rats`) und `js/render/ratRenderer.js`.
+
+- **Karte „Ratten an Bord“** (aktiv, wiederholbar): Ein **Vorratsschiff** fährt zur Küste des Dorfs
+  (dorthin, wo das Dorf gegründet wurde), legt an, und etwa 40 Ratten gehen an Land. Gibt es
+  mehrere Dörfer, klickt man das Dorf an. **Nicht zurücknehmbar** (`fixed` in `BT.CARDS`): Am −
+  steht „Ratten lassen sich nicht wieder einfangen“.
+- **Ratten sind ein Feld** (Zahl je Weidezelle), keine Tiere. Am Tag: fressen (Vorräte im Dorf,
+  Aas, Früchte, Insekten, Getreide), Junge (Frühling bis Herbst, je nach Futter und Platz), sterben
+  (kurzes Leben, Hunger), abwandern in die Nachbarzellen. Eine Ratte bleibt in ihrer Gegend, die
+  Front wandert. Auf der mittleren Insel leben sie nach 9–13 Jahren auf einem Viertel, nach 15–17
+  auf der Hälfte und nach 30 Jahren auf fast allem außer dem kahlen Gebirge. Auf der großen Insel dauert es
+  etwa doppelt so lange (die Hälfte nach 20–22 Jahren, fast alles nach 35–40).
+- **Dorf:** Vorräte und Abfälle um jedes Haus, auch im Winter. Dort überwintern die Ratten.
+- **Nester:** Eier und Küken (bis 15 Tage) der Laufvögel, je mehr Ratten, desto öfter
+  (Todesursache „Ratte“).
+- **Beute:** Hungrige Wölfe, Hunde und Adler fangen Ratten, wo sie welche finden, und ziehen in
+  Gegenden mit vielen Ratten. Gegen die Vermehrung kommen sie nicht an.
+- **Folgen** (Median über 8 Inseln, letztes Drittel von 30 Jahren): Laufvögel 44 %, Adler 104 %
+  (stark schwankend: mal ausgestorben, mal doppelt so viele), Wölfe 105 %, Hirsche 112 %. Die
+  Ratten schaden den Laufvögeln dreifach: Eier und Küken, Futter, und mehr Adler, die von Ratten
+  leben und dann auch mehr Laufvögel schlagen.
+- **Chronik:** 🐀 Rattenplage (Folgekarte mit Marke, ab einem Viertel der Insel), 🐀 Rattenbilanz
+  jedes Jahr.
+- **Anzeige:** gestreute Rattengruppen (`assets/ratten.png`), je 4 Ratten eine Gruppe, höchstens 4
+  je Zelle, aus der Ferne eine. Kachel „Ratten“ im Bestand (gerundet, Anteil der Insel, gefressene
+  Eier und Küken; anklicken hebt sie hervor), Linie „Ratten ×100“ im Diagramm der Pflanzenfresser
+  (100 Ratten = 1), eine Zeile in den Todesursachen, Spalte „Ratte“ (Küken). Der Tooltip über dem
+  Gelände nennt die Ratten der Zelle.
+- **Ohne Karte läuft alles exakt wie vorher** (die Ratten haben einen eigenen Zufall und rechnen
+  erst mit der Karte).
 
 ### Schritt 7: Jagd
 
@@ -587,8 +627,7 @@ Rodung, Acker und Sammeln waren in Zahlen und Kurven kaum zu sehen. Jetzt:
   hat noch keines und behält 🌾).
 - **Infofenster:** `node tools/kartenbilder.js [karte …]` lädt die Insel (Seed 482917, Landung bei
   0,17/0,5), spielt die Karte, simuliert, bis die Szene zu sehen ist (z. B. ein Jäger nahe bei
-  Wölfen, Frühling oder Sommer), und schneidet 960 × 480 Pixel um diese Stelle aus. Die Ratten gibt
-  es in der Simulation noch nicht, dort stehen die Rattenbilder am Strand neben dem Schiff. Nach
+  Wölfen, Frühling oder Sommer), und schneidet 960 × 480 Pixel um diese Stelle aus. Nach
   Änderungen an Grafiken die Bilder neu erzeugen.
 - **Siedler gehen** jeder für sich: eigenes Tempo (0,75–1,25 × 3), an jedem Ziel 2–9 Ticks, ab
   und zu (20 %, nachts meist) heim und dann 3–12 Ticks im Haus. Vorher gingen nachts alle zugleich

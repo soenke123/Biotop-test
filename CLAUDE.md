@@ -8,7 +8,7 @@ beobachten und greifen ein. Das Konzept mit den Ausbaustufen und der Begründung
 Architektur steht in `docs/KONZEPT.md`. **Vor größeren Änderungen lesen.**
 
 Stand: Stufe 1 steht – Insel, Nahrungsfelder und vier Arten (Zwerghirsch, Laufvogel,
-Inselwolf, Inseladler; dazu eingeschleppt über Karten: Schaf, Hund) mit Herden, Rudeln, Revieren, Nestern, Adlerhorsten, Aas, Jahreszeiten.
+Inselwolf, Inseladler; dazu eingeschleppt über Karten: Schaf, Hund, Ratten als Feld) mit Herden, Rudeln, Revieren, Nestern, Adlerhorsten, Aas, Jahreszeiten.
 **Vor jeder Arbeit an Tieren `data/arten.md` lesen** – dort stehen die Arten, ihre Werte und die
 Mechanismen, die das Ökosystem stabil halten. Werte, die im Code geändert werden, wandern
 zurück in die Datei.
@@ -53,28 +53,31 @@ js/render/  palette, shapes (Konturen), camera, terrainRenderer (inkl. Reliefsch
             seasonRenderer (Jahreszeiten als Farbschicht; Schnee waechst je nach Winterhaerte von den Gipfeln bergab), plantRenderer (Weidezustand:
             entsättigt die Textur, abgefressen blasser, überweidet grau), sprites, agentRenderer (Tiere kleiner als spec.size gezeichnet, Hervorhebung einer Art, Ring ums verfolgte Tier),
             humanRenderer (Schiff, Häuser, Siedler, Jäger, Sammler; Bildvarianten je Person),
+            ratRenderer (Ratten als gestreute Gruppen je Weidezelle, wuseln),
             landuseRenderer (gerodete Erde, Dorfplatz, Wiese, Acker als Schicht über dem Gelände)
 js/eco/     time (Kalender), species (Artentabelle, Nahrungsschichten), fields (Nahrung und
             Pflanzenzustand je Weidezelle, Überweidung), landuse (Nutzung: Erde, Dorf, Wiese, Acker
             über der Natur; sim.biomeAt), movement, cards (Kartentabelle, Pause zwischen Karten),
             humans (Schiffe, Dörfer, Häuser, Siedler, Äcker und Ernte, Weiden, Jäger, Störungsfeld,
-            Karten zurücknehmen), behavior (Gruppen-Entscheidungen),
+            Karten zurücknehmen; Vorratsschiff), rats (Ratten als Feld je Weidezelle: Fressen, Junge,
+            Ausbreitung, Nestraub; BT.RATS), behavior (Gruppen-Entscheidungen; Räuber fangen Ratten),
             stats, simulation (Tick/Tag, sim.play für Karten)
 js/ui/      app.js (Karte, Kamera folgt einem angeklickten Tier, Zeitregler, Seitenleiste aus einklappbaren Bereichen (Zeit, Bestand, Menschen, Verlauf, Menschen auf der Insel; breit = zwei Spalten; Neustart-Fenster mit Startbestand), Kartenleiste mit + und −, Infofenster
             der Karten, Chronik, Bildpuffer, Großansicht der Diagramme), cardInfo.js (Bild im Infofenster:
             Kartenausschnitt assets/karte_<id>.png),
             charts.js (LineChart; ChartView: gemeinsamer Zeitraum und Fadenkreuz)
 data/       arten.md (fachliche Wahrheit für species.js)
-assets/     Tierbilder, schaf/, hund/, doerfler/ (Menschen), Schiff, Häuser, karte_<id>.png (Infofenster)
+assets/     Tierbilder, schaf/, hund/, doerfler/ (Menschen), ratten.png, Schiff, Häuser, karte_<id>.png (Infofenster)
 tools/      load.js (Skripte in Node laden), smoketest.js, balance.js (Abstimmung),
-            invasion.js (fassen Schafe und Hunde Fuß? was erlegen Jäger? Vergleich mit/ohne Karten, parallel),
+            invasion.js (fassen Schafe und Hunde Fuß? was erlegen Jäger? wie breiten sich Ratten aus?
+            Vergleich mit/ohne Karten, parallel),
             shot.js (Playwright-Screenshot, optional nach N simulierten Tagen),
             kartenbilder.js (Bilder der Infofenster: Ausschnitte der echten Karte)
 ```
 
 Simulation: Pro Tick zuerst gespielte Karten und Menschen, dann die Tiere. Entschieden wird je **Gruppe** (Herde, Rudel …), die Tiere folgen dem Anker der
 Gruppe mit eigenem Versatz. Pro Tick: Verhalten, Bewegung, Fressen, Energie (Durst ist abgeschaltet, `thirstDays: 0`). Pro Tag:
-Wachstum, Alter, Geburt, Nester und Horste, Abwanderung, Gruppen teilen/zusammenlegen, Statistik.
+Wachstum, Ratten (Feld), Alter, Geburt, Nester und Horste, Abwanderung, Gruppen teilen/zusammenlegen, Statistik.
 
 Generator-Reihenfolge in `island.js`: Form → Relief → Feuchte (ohne Gewässer) → Wasser
 (Priority-Flood, Seen, Abfluss, Flüsse) → Feuchte (mit Gewässern) → Biome.
@@ -90,6 +93,7 @@ node tools/shot.js /tmp/x.png 482917 mittel 4 0.2 0.46 300 --landung=0.17,0.5   
 node tools/balance.js 8 30 --karten=schafe@1,hunde@1    # Menschen mit Karten
 node tools/invasion.js 8 30 --karten=schafe@1           # Schafe etabliert? heimische Arten im Vergleich
 node tools/invasion.js 8 30 --karten=wildJagen@1,woelfeJagen@1   # Jagd: Strecke, Angriffe auf Jäger
+node tools/invasion.js 8 30 --karten=ratten@1           # Ratten: Ausbreitung, Eier, Küken, Beute der Räuber
 ```
 
 `tools/shot.js` meldet Fehler aus der Browser-Konsole und endet dann mit Code 1. Nach

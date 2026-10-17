@@ -534,6 +534,9 @@
         var d = BT.M.hypot(h.x - p.x, h.y - p.y);
         if (d < 220) score += w * h.members.length * (1 - d / 220);
       }
+      // Ratten (eco/rats.js): eine Gegend mit vielen Ratten lohnt auch
+      var R = sim.rats.total && BT.RATS.eatenBy[spec.id];
+      if (R) { var rd = sim.rats.at(p.x, p.y); score += R.lure * rd / (rd + R.half); }
       if (score > bestScore) { bestScore = score; best = p; }
     }
     return best;
@@ -594,6 +597,35 @@
       if (d < bestD) { bestD = d; best = p; }
     }
     return best;
+  }
+
+  /**
+   * Ratten fangen (BT.RATS.eatenBy): Ein hungriger Raeuber (unter `below`), der streift, erwischt in
+   * seiner Zelle Ratten, je mehr es dort gibt, desto leichter; Deckung versteckt sie
+   * (vor allem vor Greifvoegeln). Jeder Jaeger der Gruppe versucht es einmal je Tick.
+   * Am Horst wird die Beute heimgebracht. true, wenn etwas gefangen wurde.
+   */
+  function catchRats(sim, g, energy, hungry) {
+    var R = sim.rats, how = BT.RATS.eatenBy[g.spec.id];
+    if (!R.total || !how || energy >= Math.max(hungry, how.below || 0)) return false;
+    var i = sim.fields.index(g.x, g.y);
+    var d = i < 0 ? 0 : R.n[i];
+    if (d < 1) return false;
+    var p = how.chance * d / (d + how.half) * (1 - COVER[sim.biomeAt(g.x, g.y)] * how.cover);
+    if (p <= 0) return false;
+    var caught = 0;
+    for (var k = 0; k < g.members.length; k++) {
+      var a = g.members[k];
+      if (a.age >= g.spec.maturity * 0.6 && !inHorst(g, a) && R.rng.chance(p)) caught++;
+    }
+    caught = caught && R.take(i, caught, g.spec.id);
+    if (!caught) return false;
+    var e = caught * how.energy;
+    if (g.horst) { g.carry = (g.carry || 0) + e; g.state = 'heimflug'; g.tx = null; return true; }
+    sim.feed(g, e);
+    g.ateTick = sim.tick;
+    g.state = 'ruhen'; g.stateTicks = 1; g.speedNow = 0;
+    return true;
   }
 
   /** Ein Rudel bewacht seinen Riss: Liegt ein Landraeuber daneben, kommt kein Greifvogel heran. */
@@ -780,6 +812,9 @@
         return;
       }
     }
+
+    // Unterwegs Ratten fangen, wo es welche gibt (BT.RATS.eatenBy[..].below: schon unter dieser Energie)
+    if (catchRats(sim, g, energy, hungry)) return;
 
     // Streifen im Revier oder wandern auf der Suche nach einem. Wer auch
     // Pflanzliches oder Insekten frisst (spec.diet), sucht dabei nebenher Futter.

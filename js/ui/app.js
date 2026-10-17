@@ -283,7 +283,7 @@
       tiles[i].setAttribute('aria-pressed', String(on));
     }
     if (highlight) {
-      var s = BT.SPECIES[highlight];
+      var s = BT.SPECIES[highlight] || BT.RATS;
       hlBadge.innerHTML = '<i style="background:' + SERIES_COLOR[highlight] + '"></i>' + s.plural +
         ' hervorgehoben <span id="hlCount"></span> <button type="button" aria-label="Hervorhebung aufheben">✕</button>';
       updateHighlightCount();
@@ -331,7 +331,8 @@
   function updateHighlightCount() {
     var el = $('hlCount');
     if (!el || !sim || !highlight) return;
-    el.textContent = '(' + sim.stats.latest().count[highlight] + ')';
+    var row = sim.stats.latest();
+    el.textContent = '(' + (highlight === 'ratten' ? '≈ ' + row.ratten.toLocaleString('de-DE') : row.count[highlight]) + ')';
   }
 
   function frame(now) {
@@ -366,6 +367,8 @@
       if (sim && showPlants()) BT.PlantRenderer.draw(ctx, world, sim);
       else if (sim) BT.FoodOverlay.draw(ctx, sim, mapMode.value);
       BT.HumanRenderer.drawGround(ctx, sim, camera.visibleRect(0), camera.scale, alpha);
+      if (sim) BT.RatRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale, alpha,
+        { highlight: highlight, highlightColor: highlight && SERIES_COLOR[highlight] });
       BT.AgentRenderer.draw(ctx, sim, camera.visibleRect(0), camera.scale, alpha,
         { highlight: highlight, highlightColor: highlight && SERIES_COLOR[highlight], follow: follow });
       BT.HumanRenderer.drawSea(ctx, sim, camera.visibleRect(0), camera.scale, alpha);
@@ -376,7 +379,7 @@
   // ---------------------------------------------------------------- Seitenleiste
   var SERIES_COLOR = {
     zwerghirsch: '#d95926', laufvogel: '#3987e5', inselwolf: '#9085e9', inseladler: '#c98500',
-    schaf: '#d03fc8', hund: '#e07b00',
+    schaf: '#d03fc8', hund: '#e07b00', ratten: '#b59c7a',
     gras: '#199e70', frucht: '#e66767', laub: '#008300', insekten: '#d55181',
     korn: '#c9a227', kornMoeglich: '#efe2a0', gefressen: '#d95926'
   };
@@ -408,7 +411,10 @@
     }
     var count = function (id) { return function (r) { return r.count[id]; }; };
     return [
-      new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Pflanzenfresser', series: series(['zwerghirsch', 'laufvogel', 'schaf'], count) }),
+      // Ratten (eco/rats.js) sind viel zahlreicher: eine Einheit sind hundert Ratten
+      new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: big ? 'Pflanzenfresser (Ratten in Hundert)' : 'Pflanzenfresser',
+        series: series(['zwerghirsch', 'laufvogel', 'schaf'], count).concat([
+          { label: 'Ratten ×100', color: SERIES_COLOR.ratten, get: function (r) { return (r.ratten || 0) / 100; } }]) }),
       new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Räuber', series: series(['inselwolf', 'inseladler', 'hund'], count) }),
       new BT.LineChart(box, {
         view: chartView, allowMean: allowMean, title: big ? 'Nahrung (100 % = unberührte Insel)' : 'Nahrung', percent: true,
@@ -463,7 +469,7 @@
   function drawTileImages() {
     var canvases = doc.querySelectorAll('#tiles .tile-img');
     for (var i = 0; i < canvases.length; i++) {
-      var c = canvases[i], img = BT.Sprites.get(c.dataset.id, 'm', 'stand');
+      var c = canvases[i], img = c.dataset.id === 'ratten' ? BT.RatRenderer.image() : BT.Sprites.get(c.dataset.id, 'm', 'stand');
       if (!img) continue;
       var ctx = c.getContext('2d');
       var k = Math.min(c.width / img.width, c.height / img.height);
@@ -707,7 +713,12 @@
         '<canvas class="tile-img" width="76" height="66" data-id="' + id + '"></canvas><div><div class="tile-name">' +
         '<i style="background:' + SERIES_COLOR[id] + '"></i>' + s.plural + '</div>' +
         '<div class="tile-count" id="count-' + id + '">–</div><div class="tile-sub" id="sub-' + id + '"></div></div></div>';
-    }).join('');
+    }).join('') +
+      // Ratten: keine Art der Tabelle, sondern ein Feld (eco/rats.js); erscheinen mit der Karte
+      '<div class="tile" role="button" tabindex="0" aria-pressed="false" data-id="ratten" title="Alle Ratten auf der Karte zeigen" hidden>' +
+      '<canvas class="tile-img" width="76" height="66" data-id="ratten"></canvas><div><div class="tile-name">' +
+      '<i style="background:' + SERIES_COLOR.ratten + '"></i>' + BT.RATS.plural + '</div>' +
+      '<div class="tile-count" id="count-ratten">–</div><div class="tile-sub" id="sub-ratten"></div></div></div>';
 
     // Diagramme: kleine in der Seitenleiste, grosse in der Grossansicht.
     // Beide teilen Zeitraum und Fadenkreuz.
@@ -749,6 +760,13 @@
       $('sub-' + id).textContent = row.count[id] ? row.young[id] + ' Jungtiere · ' + g + ' ' + kind[g === 1 ? 0 : 1] + (row.sick && row.sick[id] ? ' · ' + row.sick[id] + ' krank' : '')
         : sim.stats.extinct[id] != null ? 'ausgestorben in ' + BT.Time.label(sim.stats.extinct[id]).replace(/,.*/, '') : 'nicht auf der Insel';
     });
+    var rt = doc.querySelector('#tiles .tile[data-id="ratten"]');
+    rt.hidden = sim.rats.day == null;
+    if (!rt.hidden) {
+      $('count-ratten').textContent = '≈ ' + (Math.round(row.ratten / 10) * 10).toLocaleString('de-DE');
+      $('sub-ratten').textContent = row.ratten ? 'auf ' + Math.round(row.rattenShare * 100) + ' % der Insel · ' + sim.rats.eaten.eggs + ' Eier, ' + sim.rats.eaten.chicks + ' Küken gefressen'
+        : 'ausgestorben';
+    }
     updateCharts();
     updateDeaths();
     updateHighlightCount();
@@ -757,7 +775,7 @@
   }
 
   function updateDeaths() {
-    var causes = [['hunger', 'Hunger'], ['alter', 'Alter'], ['inselwolf', 'Wolf'], ['inseladler', 'Adler'], ['hund', 'Hund'], ['krankheit', 'Krankheit'], ['jagd', 'Jagd']];
+    var causes = [['hunger', 'Hunger'], ['alter', 'Alter'], ['inselwolf', 'Wolf'], ['inseladler', 'Adler'], ['hund', 'Hund'], ['krankheit', 'Krankheit'], ['jagd', 'Jagd'], ['ratte', 'Ratte']];
     var html = '<tr><th></th>' + causes.map(function (c) { return '<th>' + c[1] + '</th>'; }).join('') + '</tr>';
     BT.SPECIES_ORDER.forEach(function (id) {
       if (BT.SPECIES[id].introduced && !sim.stats.seen[id]) return;
@@ -766,6 +784,14 @@
         return '<td>' + (d[c[0]] || '·') + '</td>';
       }).join('') + '</tr>';
     });
+    // Ratten: gerundet (ein Feld, keine einzelnen Tiere)
+    if (sim.rats.day != null) {
+      var rd = sim.rats.deaths;
+      html += '<tr><td>' + BT.RATS.plural + '</td>' + causes.map(function (c) {
+        var v = Math.round(rd[c[0]] || 0);
+        return '<td>' + (v ? v.toLocaleString('de-DE') : '·') + '</td>';
+      }).join('') + '</tr>';
+    }
     $('deaths').innerHTML = html;
   }
 
@@ -929,6 +955,8 @@
           ' · Früchte ' + pctOf(f, 'frucht', i) + ' · Insekten ' + pctOf(f, 'insekten', i) +
           healthOf(f, i);
       }
+      var rats = sim ? sim.rats.at(w.x, w.y) : 0;
+      if (rats >= 1) text += ' · etwa ' + Math.round(rats) + (Math.round(rats) === 1 ? ' Ratte' : ' Ratten');
     }
     tooltip.textContent = text;
     tooltip.style.left = pos.x + 'px';
@@ -1044,6 +1072,7 @@
   initPanel();
   updateSpeedLabel();
   BT.Sprites.preload(function () { dirty = true; drawTileImages(); });
+  BT.RatRenderer.image(drawTileImages);
   BT.HumanRenderer.preload();
   var h = readHash();
   load(h.seed ? BT.parseSeed(h.seed) : BT.randomSeed(), h.size || BT.CONFIG.size);

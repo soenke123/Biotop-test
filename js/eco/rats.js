@@ -1,0 +1,333 @@
+/**
+ * Ratten: eingeschleppt mit einem Vorratsschiff (Karte "Ratten an Bord").
+ *
+ * Ratten sind keine einzelnen Tiere der Simulation, sondern ein Feld: eine
+ * Zahl je Weidezelle (wie die Nahrung in eco/fields.js). Sonst waeren es
+ * Zehntausende Tiere. Gezeichnet werden sie als gestreute Rattengruppen
+ * (render/ratRenderer.js), dichter, wo viele sind.
+ *
+ * Einmal am Tag je Zelle:
+ *   Fressen     Abfaelle und Vorraete im Dorf, Aas, dann Fruechte, Insekten und
+ *               Getreide (dieselbe Nahrung wie die Laufvoegel). fed = gefressen / Bedarf.
+ *   Geburten    von Fruehling bis Herbst, mal fed, mal Platz in der Zelle (Kapazitaet
+ *               aus dem Lebensraum).
+ *   Sterben     Grundsterblichkeit (Ratten leben kurz), dazu Hunger. Im Winter gibt es
+ *               draussen kaum Futter: viele verhungern, am Dorf nicht.
+ *   Abwandern   ein kleiner Teil immer, mehr, wenn die Zelle voll ist oder Futter fehlt,
+ *               in die Nachbarzellen mit Lebensraum. Ratten wandern nicht weit, aber die
+ *               Front schiebt sich ueber die Jahre ueber die Insel.
+ *   Nester      Ratten fressen Eier und Kueken der Laufvoegel (BT.RATS.prey).
+ *
+ * Als Beute (BT.RATS.eatenBy): Hungrige Woelfe, Hunde und Adler fangen Ratten in
+ * der Zelle, in der sie gerade sind (eco/behavior.js catchRats).
+ *
+ * Ohne Ratten (vor der Karte) passiert hier nichts und es wird kein Zufall
+ * verbraucht: Die Simulation laeuft genau wie ohne diese Datei. Die Ratten haben
+ * ihren eigenen Zufallsgenerator.
+ */
+(function (global) {
+  'use strict';
+
+  var BT = global.BT || (global.BT = {});
+  var B = BT.BIOME;
+
+  function pref(byName) {
+    var arr = new Array(BT.BIOME_INFO.length).fill(0);
+    for (var k in byName) arr[B[k]] = byName[k];
+    return arr;
+  }
+
+  /*
+   * Alle Zahlen sind Startwerte fuer die Abstimmung (tools/invasion.js), Begruendung
+   * in data/arten.md ("Ratten"). Zeiten in Tagen (1 Jahr = 60 Tage).
+   */
+  BT.RATS = {
+    name: 'Ratte', plural: 'Ratten',
+    ship: 40,                       // so viele kommen mit einem Vorratsschiff an Land
+    max: 12,                        // Ratten je Weidezelle im besten Lebensraum (Platz fuer Nester)
+    // Lebensraum (Platz, Verstecke): Buschland und Wald am besten, im Dorf noch mehr
+    // (Scheunen, Vorraete), im Gebirge kaum, am Gipfel nicht
+    habitat: pref({ SCRUB: 1, FERN: 1, MOSS: 0.8, SWAMP: 0.7, TUSSOCK: 0.5, BEACH: 0.5, THERMAL: 0.3, ROCK: 0.1, PEAK: 0,
+      SOIL: 0.4, VILLAGE: 2, MEADOW: 0.6, FIELD: 1 }),
+    diet: { frucht: 0.1, insekten: 0.11, korn: 0.1 },   // Energie je Einheit (wie der Laufvogel)
+    need: 0.0003,                   // Energie je Ratte und Tag (Laufvogel 0,055)
+    winterNeed: 0.5,                // im Winter mehr (mal Winterhaerte), nicht im Dorf
+    birth: [0.1, 0.1, 0.06, 0],     // Junge je Ratte und Tag nach Jahreszeit, satt und mit Platz
+    death: 0.012,                   // Grundsterblichkeit je Tag (im Mittel etwa 1,5 Jahre)
+    starve: 0.12,                   // zusaetzlich je Tag bei voellig fehlendem Futter
+    // Abwandern je Tag: base, sobald die Zelle halb voll ist (vorher anteilig: wenige bleiben
+    // beisammen), crowd je Anteil ueber `at` der Kapazitaet, hungry bei fehlendem Futter
+    disperse: { base: 0.2, crowd: 0.3, at: 0.7, hungry: 0.1 },
+    // Dorf: Vorraete und Abfaelle im Umkreis jedes Hauses, auch im Winter
+    village: { radius: 70, food: 0.03 },
+    // Gelege: Je Tag frisst eine Ratte ein Ei bzw. Kueken mit egg bzw. chick * d / (d + half)
+    // (d: Ratten in der Zelle). Kueken nur bis maxAge Tage.
+    prey: {
+      laufvogel: { egg: 0.2, chick: 0.08, maxAge: 15, half: 6 }
+    },
+    // Raeuber, die Ratten fangen: unter der Energie `below` (oder ihrer Jagdschwelle) je Tick und Jaeger
+    // mit chance * d / (d + half), mal (1 - Deckung * cover); jede Ratte bringt `energy`.
+    // lure: so stark zieht eine Gegend mit Ratten hungrige Raeuber an
+    eatenBy: {
+      inselwolf: { chance: 0.6, half: 3, cover: 0.4, energy: 0.04, below: 0.8, lure: 3 },
+      hund: { chance: 0.6, half: 3, cover: 0.4, energy: 0.04, below: 0.8, lure: 3 },
+      inseladler: { chance: 0.5, half: 3, cover: 1, energy: 0.05, below: 0.75, lure: 4 }
+    },
+    plague: 0.25                    // Rattenplage: Ratten auf diesem Anteil der Insel
+  };
+
+  // Nachbarzellen: 4 direkte (Gewicht 1) und 4 schraege (Gewicht 0,7)
+  var NB = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 0.7], [-1, 1, 0.7], [1, -1, 0.7], [-1, -1, 0.7]];
+
+  function Rats(sim) {
+    this.sim = sim;
+    this.rng = new BT.Rng(sim.world.seed).fork('ratten');
+    var f = sim.fields, n = f.cols * f.rows;
+    this.n = new Float64Array(n);       // Ratten je Weidezelle
+    this.next = new Float64Array(n);
+    this.fed = new Float64Array(n);     // Futterlage gestern (fuer die Darstellung: 0..1)
+    this.K = new Float64Array(n);       // Kapazitaet je Zelle
+    this.scrap = new Float64Array(n);   // Futter aus dem Dorf je Zelle und Tag
+    this.kVersion = -1;
+    this.total = 0;                     // Ratten auf der Insel (gestern)
+    this.cells = 0;                     // Zellen mit mindestens einer Ratte
+    this.landCells = 0;
+    this.share = 0;                     // Anteil der Insel mit Ratten
+    this.day = null;                    // Tag der ersten Ratten
+    this.plagueDay = null;
+    this.deaths = {};                   // Ratten nach Todesursache (gerundet in der Anzeige)
+    this.eaten = { eggs: 0, chicks: 0 };
+    this.year = { eggs: 0, chicks: 0, caught: {} };
+  }
+
+  /** Ratten an Land setzen (Vorratsschiff an der Kueste bei x, y). */
+  Rats.prototype.release = function (x, y, count) {
+    var f = this.sim.fields, i = f.index(x, y);
+    if (i < 0) return;
+    this.updateK();
+    this.updateScraps();
+    // in die beste Zelle gleich hinter der Kueste (im Umkreis von 2 Zellen)
+    var best = -1, bestK = 0, cx = i % f.cols, cy = (i - cx) / f.cols;
+    for (var dy = -2; dy <= 2; dy++) {
+      for (var dx = -2; dx <= 2; dx++) {
+        var x2 = cx + dx, y2 = cy + dy;
+        if (x2 < 0 || y2 < 0 || x2 >= f.cols || y2 >= f.rows) continue;
+        var k = this.K[y2 * f.cols + x2] + this.scrap[y2 * f.cols + x2] / BT.RATS.need;
+        if (k > bestK) { bestK = k; best = y2 * f.cols + x2; }
+      }
+    }
+    if (best < 0) return;
+    this.n[best] += count;
+    this.total += count;
+    if (this.day == null) this.day = this.sim.day;
+  };
+
+  /** Ratten in der Zelle bei (x, y). */
+  Rats.prototype.at = function (x, y) {
+    if (!this.total) return 0;
+    var i = this.sim.fields.index(x, y);
+    return i < 0 ? 0 : this.n[i];
+  };
+
+  /** Ein Raeuber (id) faengt bis zu `count` Ratten in Zelle i. Liefert, wie viele. */
+  Rats.prototype.take = function (i, count, id) {
+    var got = Math.min(count, Math.floor(this.n[i]));
+    if (got <= 0) return 0;
+    this.n[i] -= got;
+    this.total -= got;
+    this.deaths[id] = (this.deaths[id] || 0) + got;
+    this.year.caught[id] = (this.year.caught[id] || 0) + got;
+    return got;
+  };
+
+  /** Kapazitaet je Weidezelle aus dem Lebensraum (mit Nutzung), neu bei jeder Aenderung des Gelaendes. */
+  Rats.prototype.updateK = function () {
+    var sim = this.sim, lu = sim.landuse;
+    if (this.kVersion === lu.version) return;
+    this.kVersion = lu.version;
+    var f = sim.fields, w = sim.world, g = lu.ground, s = f.step, H = BT.RATS.habitat, land = 0;
+    for (var fy = 0; fy < f.rows; fy++) {
+      for (var fx = 0; fx < f.cols; fx++) {
+        var sum = 0, count = 0;
+        for (var y = fy * s; y < Math.min(w.rows, fy * s + s); y++) {
+          for (var x = fx * s; x < Math.min(w.cols, fx * s + s); x++) { sum += H[g[y * w.cols + x]]; count++; }
+        }
+        var k = sum / count * BT.RATS.max;
+        this.K[fy * f.cols + fx] = k;
+        if (k > 0) land++;
+      }
+    }
+    this.landCells = Math.max(1, land);
+  };
+
+  /** Futter aus den Doerfern: im Umkreis jedes Hauses, je Zelle hoechstens einmal. */
+  Rats.prototype.updateScraps = function () {
+    var f = this.sim.fields, houses = this.sim.humans.houses, V = BT.RATS.village;
+    this.scrap.fill(0);
+    var rc = Math.ceil(V.radius / f.size);
+    for (var h = 0; h < houses.length; h++) {
+      var hx = Math.floor(houses[h].x / f.size), hy = Math.floor(houses[h].y / f.size);
+      for (var dy = -rc; dy <= rc; dy++) {
+        for (var dx = -rc; dx <= rc; dx++) {
+          var x = hx + dx, y = hy + dy;
+          if (x < 0 || y < 0 || x >= f.cols || y >= f.rows) continue;
+          var cx = (x + 0.5) * f.size - houses[h].x, cy = (y + 0.5) * f.size - houses[h].y;
+          if (cx * cx + cy * cy <= V.radius * V.radius) this.scrap[y * f.cols + x] = V.food;
+        }
+      }
+    }
+  };
+
+  /** Einmal am Tag (aus Simulation.newDay, nach dem Wachstum der Pflanzen). */
+  Rats.prototype.newDay = function () {
+    if (!this.total) return;
+    var sim = this.sim, R = BT.RATS, f = sim.fields, cal = sim.calendar;
+    this.updateK();
+    this.updateScraps();
+    this.eatCarrion();
+    var n = this.n, next = this.next, K = this.K, cols = f.cols, rows = f.rows;
+    var winter = cal.season === 3;
+    var birth = R.birth[cal.season], D = R.disperse;
+    var cold = winter ? 1 + R.winterNeed * sim.weatherNow.winter : 1;
+    next.fill(0);
+    var total = 0, cells = 0;
+    for (var i = 0; i < n.length; i++) {
+      var r = n[i];
+      if (r <= 0) continue;
+      if (K[i] <= 0) { this.die(r, 'hunger'); continue; }      // Gelaende hat sich geaendert (sollte kaum vorkommen)
+      // Fressen: erst Dorf, dann Aas (schon in eatCarrion), dann die Felder
+      var village = this.scrap[i] > 0;
+      var need = r * R.need * (village ? 1 : cold);
+      var got = Math.min(need, this.scrap[i] + (this.carrion ? this.carrion[i] : 0));
+      if (got < need) got += f.eat(i, R.diet, (need - got) / 0.1);
+      var fed = need > 0 ? Math.min(1, got / need) : 1;
+      this.fed[i] = fed;
+      // Geburten und Tod
+      var room = Math.max(0, 1 - r / K[i]);
+      var born = r * birth * fed * room;
+      var old = r * R.death, hunger = r * R.starve * (1 - fed);
+      this.die(old, 'alter');
+      this.die(hunger, 'hunger');
+      r = r + born - old - hunger;
+      // Abwandern in die Nachbarzellen mit Lebensraum
+      var share = Math.min(0.5, D.base * Math.min(1, 2 * r / K[i]) + D.crowd * Math.max(0, r / K[i] - D.at) + D.hungry * (1 - fed));
+      var cx = i % cols, cy = (i - cx) / cols, wsum = 0, k, j;
+      for (k = 0; k < 8; k++) {
+        j = nb(cx, cy, k, cols, rows);
+        if (j >= 0 && K[j] > 0) wsum += NB[k][2] * K[j];
+      }
+      if (wsum > 0) {
+        var out = r * share;
+        for (k = 0; k < 8; k++) {
+          j = nb(cx, cy, k, cols, rows);
+          if (j >= 0 && K[j] > 0) next[j] += out * NB[k][2] * K[j] / wsum;
+        }
+        r -= out;
+      }
+      next[i] += r;
+    }
+    for (i = 0; i < n.length; i++) {
+      var v = next[i];
+      if (v > 0 && v < 0.05) { v = 0; }             // verlaufen: so wenige bleiben nicht
+      n[i] = v;
+      total += v;
+      if (v >= 1) cells++;
+    }
+    this.total = total;
+    this.cells = cells;
+    this.share = cells / this.landCells;
+    this.carrion = null;
+    this.raidNests();
+    this.events();
+  };
+
+  function nb(cx, cy, k, cols, rows) {
+    var x = cx + NB[k][0], y = cy + NB[k][1];
+    return x < 0 || y < 0 || x >= cols || y >= rows ? -1 : y * cols + x;
+  }
+
+  Rats.prototype.die = function (count, cause) {
+    if (count > 0) this.deaths[cause] = (this.deaths[cause] || 0) + count;
+  };
+
+  /**
+   * Aas: Ratten fressen an jedem Kadaver in ihrer Zelle, so viel sie brauchen.
+   * Was sie fressen, fehlt den Woelfen und Adlern.
+   */
+  Rats.prototype.eatCarrion = function () {
+    var sim = this.sim, f = sim.fields, R = BT.RATS, list = sim.carcasses;
+    if (!list.length) return;
+    var food = this.carrion = new Float64Array(this.n.length);
+    for (var c = list.length - 1; c >= 0; c--) {
+      var cc = list[c], i = f.index(cc.x, cc.y);
+      if (i < 0 || this.n[i] < 1) continue;
+      var want = this.n[i] * R.need * 2 - food[i];
+      if (want <= 0) continue;
+      var take = Math.min(cc.meat, want);
+      cc.meat -= take;
+      food[i] += take;
+      if (cc.meat < 0.05) list.splice(c, 1);
+    }
+  };
+
+  /** Eier und Kueken der Bodenbrueter (BT.RATS.prey). */
+  Rats.prototype.raidNests = function () {
+    var sim = this.sim, P = BT.RATS.prey;
+    var groups = sim.herbivoreGroups;
+    for (var i = 0; i < groups.length; i++) {
+      var g = groups[i], p = P[g.spec.id];
+      if (!p || !g.members.length) continue;
+      if (g.nest && g.nest.eggs) {
+        var d = this.at(g.nest.x, g.nest.y);
+        if (d >= 1) {
+          var pe = p.egg * d / (d + p.half), lost = 0;
+          for (var e = 0; e < g.nest.eggs; e++) if (this.rng.chance(pe)) lost++;
+          if (lost) {
+            g.nest.eggs -= lost;
+            this.eaten.eggs += lost;
+            this.year.eggs += lost;
+            if (!g.nest.eggs) g.nest = null;
+          }
+        }
+      }
+      var chicks = null;
+      for (var m = 0; m < g.members.length; m++) if (g.members[m].age <= p.maxAge) (chicks || (chicks = [])).push(g.members[m]);
+      if (!chicks) continue;
+      for (m = 0; m < chicks.length; m++) {
+        var a = chicks[m], dc = this.at(a.x, a.y);
+        if (dc < 1 || !this.rng.chance(p.chick * dc / (dc + p.half))) continue;
+        sim.kill(a, 'ratte');
+        this.eaten.chicks++;
+        this.year.chicks++;
+      }
+    }
+  };
+
+  /** Folgekarte Rattenplage und die Rattenbilanz zu Beginn jedes Jahres (Chronik). */
+  Rats.prototype.events = function () {
+    var sim = this.sim;
+    if (this.plagueDay == null && this.share >= BT.RATS.plague) {
+      this.plagueDay = sim.day;
+      sim.events.push({ day: sim.day, tick: sim.tick, card: 'rattenplage', params: {},
+        at: { text: 'Ratten leben schon auf ' + Math.round(this.share * 100) + ' % der Insel, etwa ' + roundRats(this.total) } });
+    }
+    if (sim.calendar.dayOfYear !== 0) return;
+    var Y = this.year, parts = [];
+    if (Y.eggs || Y.chicks) parts.push('gefressen: ' + Y.eggs + (Y.eggs === 1 ? ' Ei' : ' Eier') + ' und ' + Y.chicks + ' Küken der Laufvögel');
+    var by = [];
+    for (var id in BT.RATS.eatenBy) if (Y.caught[id]) by.push(BT.SPECIES[id].plural + ' ' + Y.caught[id]);
+    if (by.length) parts.push('gefangen von ' + by.join(', '));
+    sim.events.push({ day: sim.day, tick: sim.tick, card: 'rattenbilanz', params: {},
+      at: { text: 'Etwa ' + roundRats(this.total) + ' auf ' + Math.round(this.share * 100) + ' % der Insel' + (parts.length ? '; im letzten Jahr ' + parts.join('; ') : '') } });
+    this.year = { eggs: 0, chicks: 0, caught: {} };
+  };
+
+  /** Anzahl fuer Texte: auf Zehner bzw. Hunderter gerundet. */
+  function roundRats(n) {
+    var step = n >= 1000 ? 100 : n >= 100 ? 10 : 1;
+    return (Math.round(n / step) * step).toLocaleString('de-DE') + ' Ratten';
+  }
+
+  Rats.roundText = roundRats;
+  BT.Rats = Rats;
+})(typeof window !== 'undefined' ? window : globalThis);

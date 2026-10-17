@@ -1,5 +1,6 @@
 /**
- * Statistik: einmal pro Tag Bestaende, Jungtiere, Gruppen, Nahrungsfuellstand;
+ * Statistik: einmal pro Tag Bestaende, Jungtiere, Gruppen, Nahrungsfuellstand,
+ * Ratten (ein Feld, keine Tiere: row.ratten, row.rattenShare);
  * laufend Geburten und Todesfaelle nach Ursache.
  *
  * history[i] ist der Stand am Ende von Tag i - Grundlage fuer Diagramme und
@@ -35,7 +36,8 @@
   Stats.prototype.record = function () {
     var sim = this.sim;
     var row = { day: sim.day, count: {}, young: {}, groups: {}, sick: {}, food: sim.fields.levels(), health: sim.fields.healthLevels(), weather: sim.weatherNow,
-      menschen: sim.humans ? sim.humans.people.length : 0, crop: this.cropNow(), used: sim.humans ? sim.humans.usedShare : 0 };
+      menschen: sim.humans ? sim.humans.people.length : 0, crop: this.cropNow(), used: sim.humans ? sim.humans.usedShare : 0,
+      ratten: sim.rats ? Math.round(sim.rats.total) : 0, rattenShare: sim.rats ? sim.rats.share : 0 };
     for (var k = 0; k < BT.SPECIES_ORDER.length; k++) {
       var id = BT.SPECIES_ORDER[k];
       row.count[id] = 0; row.young[id] = 0; row.groups[id] = 0; row.sick[id] = 0;
@@ -81,6 +83,7 @@
     var head = ['Tag', 'Jahr', 'Jahreszeit'];
     var ids = BT.SPECIES_ORDER;
     for (var k = 0; k < ids.length; k++) head.push(BT.SPECIES[ids[k]].plural, BT.SPECIES[ids[k]].plural + ' (Jungtiere)');
+    head.push(BT.RATS.plural);
     for (k = 0; k < BT.FOOD_ORDER.length; k++) head.push(BT.FOOD[BT.FOOD_ORDER[k]].name + ' (%)');
     var healthKeys = Object.keys(this.sim.fields.health);
     for (k = 0; k < healthKeys.length; k++) head.push('Zustand ' + BT.FOOD[healthKeys[k]].name + ' (%)');
@@ -90,6 +93,7 @@
       var cal = BT.Time.calendar(r.day);
       var cells = [r.day, cal.year, cal.seasonName];
       for (k = 0; k < ids.length; k++) cells.push(r.count[ids[k]], r.young[ids[k]]);
+      cells.push(r.ratten || 0);
       for (k = 0; k < BT.FOOD_ORDER.length; k++) cells.push(String(Math.round(r.food[BT.FOOD_ORDER[k]] * 1000) / 10).replace('.', ','));
       for (k = 0; k < healthKeys.length; k++) cells.push(String(Math.round(r.health[healthKeys[k]] * 1000) / 10).replace('.', ','));
       lines.push(cells.join(';'));

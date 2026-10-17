@@ -309,9 +309,14 @@
     return null;
   };
 
-  Humans.prototype.land = function (params) {
+  /**
+   * Ein Schiff faehrt zur Kueste bei params.x/y. Ohne supply gruendet es dort ein
+   * Dorf; mit supply (Dorf) ist es ein Vorratsschiff fuer dieses Dorf, und mit ihm
+   * kommen Ratten an Land (Karte "Ratten an Bord").
+   */
+  Humans.prototype.land = function (params, supply) {
     var cfg = BT.HUMANS.landing, w = this.world;
-    var coast = this.findCoast(params.x, params.y);
+    var coast = supply ? supply.coast : this.findCoast(params.x, params.y);
     var dir = this.seaDirection(coast);
     // Ankerplatz: das erste Wasser vor der Kueste
     var anchor = { x: coast.x + dir.x * 18, y: coast.y + dir.y * 18 };
@@ -325,7 +330,7 @@
       id: this.nextId++, x: sx, y: sy, px: sx, py: sy,
       from: { x: sx, y: sy }, anchor: anchor, coast: coast, dir: dir,
       heading: BT.M.atan2(anchor.y - sy, anchor.x - sx),
-      phase: 'anfahrt', t: 0, ticks: ticks, number: ++this.villageCount
+      phase: 'anfahrt', t: 0, ticks: ticks, number: supply ? null : ++this.villageCount, supply: supply || null
     });
     return coast;
   };
@@ -348,6 +353,7 @@
       expansions: [], dogsKept: 0, huntersKept: { wolf: 0, wild: 0, sammel: 0 }
     };
     v.number = ship.number;
+    v.coast = ship.coast;           // hier legen auch die Vorratsschiffe an
     this.villages.push(v);
     var house = this.addHouse(v, site.x, site.y);
     for (var k = 0; k < cfg.settlers; k++) this.addSettler(house, c.x, c.y);
@@ -651,7 +657,11 @@
         var e = 1 - (1 - k) * (1 - k);
         s.x = s.from.x + (s.anchor.x - s.from.x) * e;
         s.y = s.from.y + (s.anchor.y - s.from.y) * e;
-        if (k >= 1) { s.phase = 'liegt'; s.t = 0; this.settle(s); }
+        if (k >= 1) {
+          s.phase = 'liegt'; s.t = 0;
+          if (s.supply) this.sim.rats.release(s.coast.x, s.coast.y, BT.RATS.ship);
+          else this.settle(s);
+        }
       } else if (s.phase === 'liegt') {
         if (s.t >= cfg.stayDays * this.sim.ticksPerDay) {
           s.phase = 'abfahrt'; s.t = 0;
@@ -1381,7 +1391,7 @@
     if (card === 'landung') {
       if (v) return 1;
       var n = this.villages.length;
-      for (var i = 0; i < this.ships.length; i++) if (this.ships[i].phase === 'anfahrt') n++;
+      for (var i = 0; i < this.ships.length; i++) if (this.ships[i].phase === 'anfahrt' && !this.ships[i].supply) n++;
       return n;
     }
     if (!v) {
@@ -1393,6 +1403,7 @@
     if (card === 'acker') return v.fields.length;
     if (card === 'schafe') return v.pastures.length;
     if (card === 'hunde') return Math.round(v.dogsKept / BT.HUMANS.dogs.perCard);
+    if (card === 'ratten') return v.supplies || 0;
     var kind = HUNTER_CARD[card];
     if (kind) return Math.round(v.huntersKept[kind] / (kind === 'sammel' ? BT.HUMANS.gather : BT.HUMANS.hunt).perCard);
     return 0;
@@ -1429,6 +1440,10 @@
       var kind = HUNTER_CARD[card];
       r = this.addHunters(kind, v);
       r.text = r.hunters + ' ' + HUNTER_PLURAL[kind] + ' im Dorf';
+    } else if (card === 'ratten') {
+      this.land(null, v);
+      v.supplies = (v.supplies || 0) + 1;
+      r = { x: v.coast.x, y: v.coast.y, text: 'Ein Vorratsschiff kommt, mit ihm etwa ' + BT.RATS.ship + ' Ratten' };
     } else if (card === 'dorf') {
       r = this.expand(v);
       r.text = r.houses + (r.houses === 1 ? ' Haus' : ' Häuser') + (r.cleared ? ', ' + r.cleared + ' Zellen Wald gerodet' : ', kein Wald in der Nähe');
