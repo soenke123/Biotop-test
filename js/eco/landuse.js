@@ -67,10 +67,16 @@
     }
   }
 
-  /** Wie viele Wald- und Buschzellen liegen im Umkreis? */
+  /** Liegt die Zelle in einer eingezaeunten Weide? Die bleibt, wie sie ist (kein Roden, Pfluegen, Bauen). */
+  Landuse.prototype.fenced = function (i) {
+    var h = this.sim.humans;
+    return !!(h && h.fence && h.fence[i]);
+  };
+
+  /** Wie viele Wald- und Buschzellen (ausserhalb von Weiden) liegen im Umkreis? */
   Landuse.prototype.woodyAround = function (x, y, radius) {
-    var n = 0, g = this.ground, woody = BT.LANDUSE.woody;
-    eachCell(this.world, x, y, radius, null, function (i) { if (woody.indexOf(g[i]) >= 0) n++; });
+    var n = 0, g = this.ground, woody = BT.LANDUSE.woody, self = this;
+    eachCell(this.world, x, y, radius, null, function (i) { if (woody.indexOf(g[i]) >= 0 && !self.fenced(i)) n++; });
     return n;
   };
 
@@ -82,7 +88,7 @@
   Landuse.prototype.clear = function (x, y, radius, shape) {
     var self = this, cfg = BT.LANDUSE, n = 0;
     eachCell(this.world, x, y, radius, shape, function (i) {
-      if (cfg.woody.indexOf(self.ground[i]) < 0) return;
+      if (cfg.woody.indexOf(self.ground[i]) < 0 || self.fenced(i)) return;
       self.soil(i);
       n++;
     });
@@ -117,10 +123,11 @@
     return n;
   };
 
-  /** Wie viele Zellen im Umkreis koennten Acker werden (und wie viele davon sind Wald)? */
+  /** Wie viele Zellen im Umkreis koennten Acker werden (und wie viele davon sind Wald, Acker, Weide)? */
   Landuse.prototype.fieldAround = function (x, y, radius) {
-    var g = this.ground, cfg = BT.LANDUSE, out = { ok: 0, woody: 0, field: 0 };
+    var g = this.ground, cfg = BT.LANDUSE, self = this, out = { ok: 0, woody: 0, field: 0, fence: 0 };
     eachCell(this.world, x, y, radius, null, function (i) {
+      if (self.fenced(i)) { out.fence++; return; }
       if (g[i] === B.FIELD) { out.field++; return; }
       if (cfg.noField.indexOf(g[i]) >= 0) return;
       out.ok++;
@@ -134,7 +141,7 @@
     var self = this, cfg = BT.LANDUSE, n = 0;
     eachCell(this.world, x, y, radius, shape, function (i) {
       var b = self.ground[i];
-      if (b === B.FIELD || cfg.noField.indexOf(b) >= 0) return;
+      if (b === B.FIELD || cfg.noField.indexOf(b) >= 0 || self.fenced(i)) return;
       self.ground[i] = B.FIELD;
       if (out) out.push(i);
       n++;
@@ -152,7 +159,7 @@
     var self = this, n = 0;
     eachCell(this.world, x, y, radius, null, function (i) {
       var b = self.ground[i];
-      if (!BT.BIOME_INFO[b].land || b === B.VILLAGE) return;
+      if (!BT.BIOME_INFO[b].land || b === B.VILLAGE || b === B.FIELD || self.fenced(i)) return;
       self.ground[i] = B.VILLAGE;
       n++;
     });

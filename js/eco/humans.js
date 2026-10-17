@@ -71,6 +71,9 @@
       radius: 60,             // eingezaeunte Weide (unregelmaessig)
       distMin: 130,           // Abstand der Weidemitte vom Dorf
       distMax: 280,
+      rings: 5,               // ist es nahe am Dorf eng, wird bis zu so viele Ringe weiter draussen gesucht ...
+      ringStep: 150,          // ... jeder so viel weiter weg
+      overlap: 0.03,          // hoechstens so viel der Weide darf auf Dorf, Acker oder einer anderen Weide liegen
       sheep: 12,              // Schafe je Weide
       speed: 1.6,             // Weltunits je Tick
       bite: 0.25,             // Gras je Tick und Schaf (tagsueber)
@@ -155,7 +158,9 @@
       clearMin: 70,           // ... deren Mitte so weit vom Dorf entfernt liegt
       clearMax: 300,
       yard: 24,               // um jedes Haus wird das Land zu Dorf
-      spacing: 34             // Mindestabstand zwischen Haeusern
+      spacing: 34,            // Mindestabstand zwischen Haeusern
+      siteRings: 5,           // ist es um die Mitte eng (Acker, Weiden, Haeuser), wird bis zu so viele Ringe weiter draussen gesucht ...
+      siteStep: 60            // ... jeder so viel weiter weg
     }
   };
 
@@ -431,27 +436,41 @@
 
   /** Bauplatz nahe `near`: an Land, nicht im Wasser, mit Abstand zu allen Haeusern. */
   Humans.prototype.houseSite = function (near, center) {
-    var cfg = BT.HUMANS.village, w = this.world;
+    var cfg = BT.HUMANS.village, w = this.world, lu = this.sim.landuse;
     var best = null, bestD = Infinity;
-    for (var t = 0; t < 40; t++) {
-      var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(0, 90);
-      var px = near.x + BT.M.cos(a) * r, py = near.y + BT.M.sin(a) * r;
-      var b = w.query.biomeAt(px, py);
-      if (!BT.BIOME_INFO[b].land || b === BT.BIOME.PEAK || BT.Move.blockedAt(w, null, px, py)) continue;
-      // nicht direkt am Wasser bauen
-      if (w.query.freshWaterDistance(px, py) < 12 || w.fields.distSea[w.query.index(px, py)] < 2) continue;
-      var free = true;
-      for (var i = 0; i < this.houses.length && free; i++) {
-        var o = this.houses[i];
-        if ((o.x - px) * (o.x - px) + (o.y - py) * (o.y - py) < cfg.spacing * cfg.spacing) free = false;
+    // Ist es um `near` eng, wird weiter draussen gesucht; Acker und Weiden bleiben frei
+    for (var ring = 0; ring <= cfg.siteRings && !best; ring++) {
+      for (var t = 0; t < 40; t++) {
+        var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(0, 90) + ring * cfg.siteStep;
+        var px = near.x + BT.M.cos(a) * r, py = near.y + BT.M.sin(a) * r;
+        var b = w.query.biomeAt(px, py);
+        if (!BT.BIOME_INFO[b].land || b === BT.BIOME.PEAK || BT.Move.blockedAt(w, null, px, py)) continue;
+        // nicht direkt am Wasser bauen
+        if (w.query.freshWaterDistance(px, py) < 12 || w.fields.distSea[w.query.index(px, py)] < 2) continue;
+        // nicht auf einen Acker oder in eine Weide (auch das Hofland darum nicht)
+        if (this.takenAround(px, py, cfg.yard)) continue;
+        var free = true;
+        for (var i = 0; i < this.houses.length && free; i++) {
+          var o = this.houses[i];
+          if ((o.x - px) * (o.x - px) + (o.y - py) * (o.y - py) < cfg.spacing * cfg.spacing) free = false;
+        }
+        if (!free) continue;
+        // moeglichst nah am Dorf bleiben
+        var d = (px - near.x) * (px - near.x) + (py - near.y) * (py - near.y) +
+          0.3 * ((px - center.x) * (px - center.x) + (py - center.y) * (py - center.y));
+        if (d < bestD) { bestD = d; best = { x: px, y: py }; }
       }
-      if (!free) continue;
-      // moeglichst nah am Dorf bleiben
-      var d = (px - near.x) * (px - near.x) + (py - near.y) * (py - near.y) +
-        0.3 * ((px - center.x) * (px - center.x) + (py - center.y) * (py - center.y));
-      if (d < bestD) { bestD = d; best = { x: px, y: py }; }
     }
     return best;
+  };
+
+  /** Liegt im Umkreis ein Acker oder eine Weide (Zaun)? */
+  Humans.prototype.takenAround = function (x, y, radius) {
+    var lu = this.sim.landuse, g = lu.ground, taken = false;
+    BT.Landuse.eachCell(this.world, x, y, radius, null, function (i) {
+      if (g[i] === BT.BIOME.FIELD || lu.fenced(i)) taken = true;
+    });
+    return taken;
   };
 
   /** Stoerungsfeld neu berechnen (nach jedem neuen Haus). */
@@ -571,7 +590,8 @@
         if (BT.Move.blockedAt(w, null, px, py)) continue;
         var f = lu.fieldAround(px, py, R);
         // neben bestehenden Aeckern liegt man gut, auf ihnen nicht
-        var score = f.ok - f.woody * 0.5 - f.field * 2 + (f.field > 0 && f.field < f.ok ? 15 : 0);
+        if (f.fence > 0.03 * full) continue;   // nicht auf eine Weide
+        var score = f.ok - f.woody * 0.5 - f.field * 2 - f.fence * 3 + (f.field > 0 && f.field < f.ok ? 15 : 0);
         if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
       }
     }
@@ -724,25 +744,31 @@
    * Grasland. Die Weide wird eingezaeunt, das Land bleibt, wie es ist.
    */
   Humans.prototype.addPasture = function (v) {
-    var cfg = BT.HUMANS.pasture, w = this.world, g = this.sim.landuse.ground;
+    var cfg = BT.HUMANS.pasture, w = this.world, lu = this.sim.landuse, g = lu.ground;
     var c = { x: v.x, y: v.y }, R = cfg.radius;
     var best = null, bestScore = 0;
-    for (var t = 0; t < 30; t++) {
-      var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(cfg.distMin, cfg.distMax);
-      var px = c.x + BT.M.cos(a) * r, py = c.y + BT.M.sin(a) * r;
-      if (BT.Move.blockedAt(w, null, px, py)) continue;
-      // nicht auf eine andere Weide
-      var free = this.pastures.every(function (o) { return BT.M.hypot(o.x - px, o.y - py) > o.r + R; });
-      if (!free) continue;
-      var score = 0;
-      BT.Landuse.eachCell(w, px, py, R, null, function (i) {
-        var b = g[i];
-        if (b === BT.BIOME.TUSSOCK || b === BT.BIOME.MEADOW) score += 1;
-        else if (b === BT.BIOME.SCRUB || b === BT.BIOME.BEACH) score += 0.3;
-        else if (b === BT.BIOME.VILLAGE || b === BT.BIOME.FIELD || BT.isBlocked(b, null)) score -= 1;
-      });
-      score -= r * 0.05;
-      if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
+    var full = Math.PI * R * R / (w.cellSize * w.cellSize);
+    // Ist es nahe am Dorf eng, wird der Ring weiter draussen abgesucht
+    for (var ring = 0; ring <= cfg.rings && !best; ring++) {
+      for (var t = 0; t < 30; t++) {
+        var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(cfg.distMin, cfg.distMax) + ring * cfg.ringStep;
+        var px = c.x + BT.M.cos(a) * r, py = c.y + BT.M.sin(a) * r;
+        if (BT.Move.blockedAt(w, null, px, py)) continue;
+        // nicht auf eine andere Weide
+        var free = this.pastures.every(function (o) { return BT.M.hypot(o.x - px, o.y - py) > o.r + R; });
+        if (!free) continue;
+        var score = 0, taken = 0;
+        BT.Landuse.eachCell(w, px, py, R, null, function (i) {
+          var b = g[i];
+          if (lu.fenced(i) || b === BT.BIOME.VILLAGE || b === BT.BIOME.FIELD) { taken++; score -= 3; }
+          else if (b === BT.BIOME.TUSSOCK || b === BT.BIOME.MEADOW) score += 1;
+          else if (b === BT.BIOME.SCRUB || b === BT.BIOME.BEACH) score += 0.3;
+          else if (BT.isBlocked(b, null)) score -= 1;
+        });
+        if (taken > cfg.overlap * full) continue;   // nicht auf Dorf, Acker oder Weide
+        score -= r * 0.05;
+        if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
+      }
     }
     if (!best) return null;
     var p = {
@@ -804,7 +830,9 @@
     for (var gy = y0; gy <= y1; gy++) {
       for (var gx = x0; gx <= x1; gx++) {
         var dx = (gx + 0.5) * cell - p.x, dy = (gy + 0.5) * cell - p.y;
-        if (Math.sqrt(dx * dx + dy * dy) <= this.pastureRadius(p, BT.M.atan2(dy, dx))) this.fence[gy * w.cols + gx] = 1;
+        var gi = gy * w.cols + gx, b = this.sim.landuse.ground[gi];
+        if (b === BT.BIOME.FIELD || b === BT.BIOME.VILLAGE) continue;   // Acker und Dorf bleiben ausserhalb des Zauns
+        if (Math.sqrt(dx * dx + dy * dy) <= this.pastureRadius(p, BT.M.atan2(dy, dx))) this.fence[gi] = 1;
       }
     }
   };

@@ -204,6 +204,12 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
   bestehenden Acker liegt man gut, deshalb wird ein Acker mit der nächsten Karte meist größer.
   Ein Acker hat etwa 55 Einheiten Radius (rund 230 Zellen). Nie Acker werden Wasser, Fels,
   Gipfel, Strand, Thermalfeld, Sumpf und Dorf.
+- **Nichts liegt übereinander** (Oktober 2026): Häuser, Weiden und Äcker teilen sich kein Land.
+  Ein Acker meidet Weiden (`Landuse.fenced`), pflügt, rodet und bebaut keine Zaunzellen; der Zaun
+  spart Acker- und Dorfzellen aus; ein Haus (und sein Hof) steht nie auf Acker oder Weide
+  (`Humans.takenAround`). Die **Schafweide** (`pasture.rings`, `ringStep`, `overlap` 3 %) und der
+  **Hausbau** bei „Dorf vergrößern“ (`village.siteRings`, `siteStep`) suchen wie der Acker in Ringen
+  nach außen, wenn es nahe am Dorf eng ist.
 - **Getreide** ist eine eigene Nahrungsschicht (`BT.FOOD.korn`, Kapazität 14 je Weidezelle,
   nur auf dem Acker). Es wächst im Frühling und Sommer aus der Saat. Am ersten Herbsttag wird
   geerntet, dann stehen Stoppeln bis zum nächsten Frühling.
