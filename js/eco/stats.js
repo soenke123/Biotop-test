@@ -60,9 +60,10 @@
   };
 
   /**
-   * Getreide auf den Aeckern, gemessen an allen Aeckern zusammen (1 = alles steht reif da, auch wenn ein
-   * Acker dazukommt): ripe = was wirklich steht, could = was ohne Fressen stuende (die Differenz haben
-   * Tiere gefressen, seit der letzten Ernte; beide sind mit der Ernte 0). Ohne Acker null.
+   * Getreide auf den Aeckern in Mengen (nicht in Prozent): ripe = was wirklich steht, could = was ohne
+   * Fressen stuende (die Differenz haben Tiere gefressen, seit der letzten Ernte; beide sind mit der
+   * Ernte 0), cap = was alle Aecker an diesem Tag tragen koennen. Das Diagramm teilt durch cap von
+   * heute (ui/app.js), so rutschen die Jahre vor einem neuen Acker nach unten. Ohne Acker null.
    */
   Stats.prototype.cropNow = function () {
     var sim = this.sim, H = sim.humans;
@@ -70,7 +71,7 @@
     var f = sim.fields, v = f.value.korn, p = f.potential, K = f.capacity.korn, sv = 0, sp = 0, sk = 0;
     for (var i = 0; i < v.length; i++) { sv += v[i]; sp += p[i]; sk += K[i]; }
     if (!(sk > 0)) return null;
-    return { ripe: sv / sk, could: Math.max(sv, sp) / sk };
+    return { ripe: sv, could: Math.max(sv, sp), cap: sk };
   };
 
   Stats.prototype.latest = function () { return this.history[this.history.length - 1]; };

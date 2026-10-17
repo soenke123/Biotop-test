@@ -385,6 +385,21 @@
   var HEALTH_KEYS = BT.FOOD_ORDER.filter(function (k) { return BT.FOOD[k].damage; });
   var lastPanelUpdate = 0;
 
+  /**
+   * Was alle Aecker heute tragen koennen (100 % im Ackerdiagramm), aus dem letzten Tag mit Acker. Fuer die ganze
+   * Kurve dasselbe: Mit dem zweiten Acker rutscht alles davor auf 50 %, mit dem dritten auf 33 %.
+   */
+  var cropCapCache = { len: -1, hist: null, cap: 0 };
+  function cropCap() {
+    var h = sim ? sim.stats.history : null;
+    if (!h) return 0;
+    if (cropCapCache.hist === h && cropCapCache.len === h.length) return cropCapCache.cap;
+    var cap = 0;
+    for (var i = h.length - 1; i >= 0 && !cap; i--) if (h[i].crop) cap = h[i].crop.cap;
+    cropCapCache = { hist: h, len: h.length, cap: cap };
+    return cap;
+  }
+
   function makeCharts(box, allowMean) {
     // Die Erklaerung in Klammern steht nur in der Grossansicht (allowMean), die Seitenleiste bleibt knapp
     var big = !!allowMean;
@@ -412,14 +427,14 @@
       }),
       // Erst mit dem ersten Acker sichtbar. Unten das Getreide, das wirklich steht, darueber (gestrichelt), was
       // ohne Fressen gestanden haette; die Flaeche dazwischen haben Tiere gefressen. Mit der Ernte faellt alles
-      // auf 0. 100 % sind alle Aecker zusammen: kommt ein Acker dazu, bleibt die Achse von 0 bis 100 %
+      // auf 0. 100 % sind alle Aecker von heute, auch rueckwirkend: kommt ein Acker dazu, rutscht die Zeit davor nach unten (1 Acker = 50 %)
       new BT.LineChart(box, {
-        view: chartView, allowMean: allowMean, title: big ? 'Äcker: Getreide und Fraßschaden (100 % = alle Äcker)' : 'Äcker: Getreide und Fraßschaden', percent: true,
+        view: chartView, allowMean: allowMean, title: big ? 'Äcker: Getreide und Fraßschaden (100 % = alle heutigen Äcker)' : 'Äcker: Getreide und Fraßschaden', percent: true,
         when: function (s) { return s.humans && s.humans.fields.length > 0; },
         series: [
-          { label: 'ohne Fressen', color: SERIES_COLOR.kornMoeglich, dash: [5, 4], get: function (r) { return r.crop ? r.crop.could : 0; } },
-          { label: 'real', color: SERIES_COLOR.korn, get: function (r) { return r.crop ? r.crop.ripe : 0; } },
-          { label: 'gefressen', color: SERIES_COLOR.gefressen, between: [0, 1], get: function (r) { return r.crop ? r.crop.could - r.crop.ripe : 0; } }
+          { label: 'ohne Fressen', color: SERIES_COLOR.kornMoeglich, dash: [5, 4], get: function (r) { return r.crop ? r.crop.could / cropCap() : 0; } },
+          { label: 'real', color: SERIES_COLOR.korn, get: function (r) { return r.crop ? r.crop.ripe / cropCap() : 0; } },
+          { label: 'gefressen', color: SERIES_COLOR.gefressen, between: [0, 1], get: function (r) { return r.crop ? (r.crop.could - r.crop.ripe) / cropCap() : 0; } }
         ]
       })
     ];

@@ -532,8 +532,10 @@ Rodung, Acker und Sammeln waren in Zahlen und Kurven kaum zu sehen. Jetzt:
   das Getreide, das wirklich steht, darüber gestrichelt, was ohne Fressen gestanden hätte, und die
   Fläche dazwischen ist das Gefressene. Das Modell rechnet dafür das Getreidewachstum ein zweites Mal
   ohne Tiere mit (`Fields.potential`, Schattenrechnung; die Tiere merken nichts davon). Beides als
-  Anteil aller Äcker zusammen, die Skala geht immer von 0 bis 100 % und springt nicht, wenn ein Acker
-  dazukommt (`row.crop` mit `ripe` und `could`, Bezug: Kapazität aller Äcker heute). Die
+  Anteil aller Äcker von heute, auch rückwirkend: Mit einem Acker ist seine Ernte 100 %, kommt der
+  zweite dazu, rutscht die ganze Zeit davor auf 50 % (dritter: 33 % …), so sieht man jede Stufe. Die
+  Historie speichert Mengen (`row.crop` mit `ripe`, `could`, `cap`), geteilt wird erst beim Zeichnen
+  durch `cap` des letzten Tages (`cropCap()` in `ui/app.js`). Die
   Chronik nennt jetzt dasselbe: „eingebracht“ = Ernte geteilt durch das, was ohne Fressen gestanden
   hätte (vorher Ernte geteilt durch Ernte plus alles je Gefressene; da Getreide nachwächst, konnte
   mehr gefressen als je gleichzeitig vorhanden sein). Reihen können eine Fläche statt einer Linie
