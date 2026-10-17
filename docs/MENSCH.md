@@ -362,13 +362,12 @@ Die Ratten kommen zuletzt (nach Jagd und Sammeln). Werte und Begründung: `data/
   Gegenden mit vielen Ratten. Gegen die Vermehrung kommen sie nicht an.
 - **Folgen** (Median über 8 Inseln mit Acker, letztes Drittel von 30 Jahren): Wölfe 120 %,
   Adler 100 % (stark schwankend), Laufvögel 72 %, Hirsche 78 % (mehr Wölfe).
-- **Chronik:** 🐀 Rattenplage (Folgekarte mit Marke, ab einem Viertel der Insel), 🐀 Rattenbilanz
-  jedes Jahr.
+- **Chronik:** 🐀 Rattenplage (Folgekarte mit Marke, ab einem Viertel der Insel).
 - **Anzeige:** gestreute Rattengruppen (`assets/ratten.png`), je 4 Ratten eine Gruppe, höchstens 6
   je Zelle, aus der Ferne eine. Kachel „Ratten“ im Bestand (gerundet, Anteil der Insel, gefressene
   Eier und Küken; anklicken hebt sie hervor). Im Diagramm der Pflanzenfresser ist die Linie der
-  Ratten durch 50 geteilt; Legende und Tooltip nennen die echte Zahl und in Klammern den Wert der
-  Linie, z. B. „6.370 (127 × 50)“. Eine Zeile in den Todesursachen, Spalte „Ratte“ (Küken). Der
+  Ratten durch 20 geteilt; Legende und Tooltip nennen die echte Zahl und in Klammern den Wert der
+  Linie, z. B. „6.370 (318 × 20)“. Eine Zeile in den Todesursachen, Spalte „Ratte“ (Küken). Der
   Tooltip über dem Gelände nennt die Ratten der Zelle.
 - **Ohne Karte läuft alles exakt wie vorher** (die Ratten haben einen eigenen Zufall und rechnen
   erst mit der Karte).

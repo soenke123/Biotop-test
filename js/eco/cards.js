@@ -144,7 +144,7 @@
       id: 'ratten', kind: 'aktiv', icon: '🐀', image: 'assets/ratten.png', needs: 'landung', repeat: true,
       name: 'Ratten an Bord',
       text: 'Ein Vorratsschiff legt am Dorf an. Mit ihm kommen Ratten an Land. Sie fressen Eier, Küken, Früchte und Insekten und vermehren sich rasend schnell.',
-      more: 'Mit den Vorräten kommen etwa vierzig Ratten an Land. Am Dorf finden sie Abfälle und Vorräte, auch im Winter, von dort breiten sie sich aus: Jede Ratte bleibt in ihrer Gegend, aber wird es zu eng, ziehen die Jungen weiter. So wandert eine Front über die Jahre über die Insel, nur ins kahle Gebirge kommen sie kaum. Am liebsten leben sie im Dorf, auf den Äckern und am Wasser, im Wald etwas weniger, auf offenem Grasland kaum. Ratten fressen dieselben Früchte, Samen und Insekten wie die Laufvögel, dazu Aas, und auf den Äckern fressen und verderben sie viel Getreide. Sie plündern die Nester der Laufvögel: Eier und junge Küken. In Mastjahren gibt es eine Rattenplage, harte Winter dezimieren sie stark. Wölfe, Hunde und Adler fangen Ratten, aber gegen so viele Junge kommen sie nicht an. Im Diagramm ist die Linie der Ratten durch 50 geteilt.',
+      more: 'Mit den Vorräten kommen etwa vierzig Ratten an Land. Am Dorf finden sie Abfälle und Vorräte, auch im Winter, von dort breiten sie sich aus: Jede Ratte bleibt in ihrer Gegend, aber wird es zu eng, ziehen die Jungen weiter. So wandert eine Front über die Jahre über die Insel, nur ins kahle Gebirge kommen sie kaum. Am liebsten leben sie im Dorf, auf den Äckern und am Wasser, im Wald etwas weniger, auf offenem Grasland kaum. Ratten fressen dieselben Früchte, Samen und Insekten wie die Laufvögel, dazu Aas, und auf den Äckern fressen und verderben sie viel Getreide. Sie plündern die Nester der Laufvögel: Eier und junge Küken. In Mastjahren gibt es eine Rattenplage, harte Winter dezimieren sie stark. Wölfe, Hunde und Adler fangen Ratten, aber gegen so viele Junge kommen sie nicht an. Im Diagramm ist die Linie der Ratten durch 20 geteilt.',
       fixed: 'Ratten lassen sich nicht wieder einfangen'
     },
     // Folgen der Ratten (eco/rats.js)
@@ -157,11 +157,6 @@
       id: 'rattenAcker', kind: 'folge', icon: '🐀',
       name: 'Ratten im Getreide',
       text: 'Mindestens ein Viertel des Getreides ist weg, das meiste haben Ratten gefressen und verdorben.'
-    },
-    rattenbilanz: {
-      id: 'rattenbilanz', kind: 'info', icon: '🐀',
-      name: 'Rattenbilanz',
-      text: 'Wie viele Ratten es gibt und was sie im letzten Jahr gefressen haben.'
     }
   };
 

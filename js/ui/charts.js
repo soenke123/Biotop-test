@@ -135,7 +135,7 @@
    * @param opts       { title, series: [{label, color, get(row), dash, between: [oben, unten], scale}], percent, view, allowMean }
    *                 between: statt einer Linie die Flaeche zwischen zwei anderen Reihen (Indizes)
    *                 scale:   die Linie ist durch scale geteilt (Ratten); Legende und Tooltip nennen die
-   *                          echte Zahl und dahinter den Wert der Linie, z. B. „17 810 (356 × 50)“
+   *                          echte Zahl und dahinter den Wert der Linie, z. B. „17 810 (890 × 20)“
    */
   function LineChart(container, opts) {
     this.opts = opts;

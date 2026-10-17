@@ -491,8 +491,7 @@ Werte in `BT.RATS` (`js/eco/rats.js`), Karte „Ratten an Bord“ (`docs/MENSCH.
   0,7) · d / (d + 2), mal (1 − Deckung · 0,3), beim Adler mal (1 − Deckung · 0,5). Eine Ratte bringt
   0,08 Energie (ein Laufvogel 0,6). Gegenden mit vielen Ratten ziehen hungrige Räuber an. Am Horst
   bringt der Adler jede Ratte heim.
-- **Chronik:** Folgekarte 🐀 **Rattenplage**, sobald Ratten auf einem Viertel der Insel leben; jedes
-  Jahr eine **Rattenbilanz** (wie viele, wo, Eier, Küken, gefangen).
+- **Chronik:** Folgekarte 🐀 **Rattenplage**, sobald Ratten auf einem Viertel der Insel leben.
 
 Gemessen (`invasion.js 8 30 --karten=acker@0,ratten@1`, mittlere Insel, Mittel im letzten Drittel
 gegenüber nur Landung, Median; mit Getreideschaden 0,05):

@@ -323,7 +323,7 @@
     }
   };
 
-  /** Folgekarte Rattenplage und die Rattenbilanz zu Beginn jedes Jahres (Chronik). */
+  /** Folgekarte Rattenplage (Chronik); zu Jahresbeginn wird die Jahreszaehlung zurueckgesetzt. */
   Rats.prototype.events = function () {
     var sim = this.sim;
     if (this.plagueDay == null && this.share >= BT.RATS.plague) {
@@ -332,13 +332,6 @@
         at: { text: 'Ratten leben schon auf ' + Math.round(this.share * 100) + ' % der Insel, etwa ' + roundRats(this.total) } });
     }
     if (sim.calendar.dayOfYear !== 0) return;
-    var Y = this.year, parts = [];
-    if (Y.eggs || Y.chicks) parts.push('gefressen: ' + Y.eggs + (Y.eggs === 1 ? ' Ei' : ' Eier') + ' und ' + Y.chicks + ' Küken der Laufvögel');
-    var by = [];
-    for (var id in BT.RATS.eatenBy) if (Y.caught[id]) by.push(BT.SPECIES[id].plural + ' ' + Y.caught[id]);
-    if (by.length) parts.push('gefangen von ' + by.join(', '));
-    sim.events.push({ day: sim.day, tick: sim.tick, card: 'rattenbilanz', params: {},
-      at: { text: 'Etwa ' + roundRats(this.total) + ' auf ' + Math.round(this.share * 100) + ' % der Insel' + (parts.length ? '; im letzten Jahr ' + parts.join('; ') : '') } });
     this.year = { eggs: 0, chicks: 0, caught: {} };
   };
 
