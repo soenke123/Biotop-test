@@ -172,7 +172,7 @@
     this.night = false;             // nachts weniger Stoerung (Siedler im Haus)
     this.fields = [];               // Aecker: { x, y, cells, day }
     this.cropMark = 0;              // Getreide, das die Tiere bis zur letzten Ernte gefressen hatten
-    this.harvests = [];             // je Ernte: { day, harvested, eaten }
+    this.harvests = [];             // je Ernte: { day, harvested, eaten, could (ohne Fressen), share (fehlender Anteil) }
     this.pastures = [];             // Weiden: { x, y, r, shape, sheep: [...], day }
     this.dogs = [];                 // Huetehunde: { x, y, ... }
     this.sheepDay = null;           // Tag der ersten Weide
@@ -591,17 +591,19 @@
     if (!this.fields.length) return;
     var cal = this.sim.calendar, cfg = BT.HUMANS.field;
     if (cal.season !== cfg.harvestSeason || cal.dayOfSeason !== 1) return;
-    var f = this.sim.fields, v = f.value.korn, cap = f.capacity.korn, got = 0;
+    var f = this.sim.fields, v = f.value.korn, cap = f.capacity.korn, pot = f.potential, got = 0, could = 0;
     for (var i = 0; i < v.length; i++) {
       if (cap[i] <= 0) continue;
       got += v[i];
+      could += pot[i];
       v[i] = 0;
+      pot[i] = 0;
     }
     var eaten = f.eaten.korn - this.cropMark;
     this.cropMark = f.eaten.korn;
-    var total = got + eaten;
-    var share = total > 0 ? eaten / total : 0;
-    var h = { day: this.sim.day, harvested: got, eaten: eaten, share: share };
+    // Anteil, der durch das Fressen fehlt: Ernte gemessen an dem, was ohne Fressen gestanden haette
+    var share = could > 0 ? Math.max(0, 1 - got / could) : 0;
+    var h = { day: this.sim.day, harvested: got, eaten: eaten, could: could, share: share };
     this.harvests.push(h);
     this.sim.events.push({
       day: this.sim.day, tick: this.sim.tick, card: share >= 0.25 ? 'wildschaden' : 'ernte', params: {},

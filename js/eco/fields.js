@@ -43,6 +43,7 @@
     this.bitten = {};     // heute gefressen (fuer die Ueberweidung)
     this.rest = {};       // Tage seit der letzten Ueberweidung
     this.eaten = {};      // insgesamt gefressen je Schicht (fuer die Ernte-Bilanz)
+    this.potential = new Float32Array(n);   // Getreide, das stuende, wenn nie gefressen wuerde (Schattenrechnung, nur korn)
     for (var k = 0; k < BT.FOOD_ORDER.length; k++) {
       var key = BT.FOOD_ORDER[k];
       this.capacity[key] = new Float32Array(n);
@@ -97,6 +98,7 @@
           this.capacity[key][i] = sums[key] / count;
           if (this.value[key][i] > this.capacity[key][i]) this.value[key][i] = this.capacity[key][i];
         }
+        if (this.potential[i] > this.capacity.korn[i]) this.potential[i] = this.capacity.korn[i];
       }
     }
     // Nahrung, die es zu Beginn nicht gab (Getreide): Bezugswert ist die erste Menge, die es gibt (der erste Acker)
@@ -223,6 +225,16 @@
         if (v[i] > K) v[i] -= (v[i] - K) * 0.1;
         else if (r > 0) v[i] += r * (v[i] + seed * K) * (1 - v[i] / K);
         if (decay > 0) v[i] -= v[i] * decay;
+      }
+      // Getreide: dasselbe Wachstum noch einmal, aber ohne dass Tiere fressen (was haette stehen koennen)
+      if (key === 'korn') {
+        var pv = this.potential;
+        for (i = 0; i < pv.length; i++) {
+          if (cap[i] <= 0) continue;
+          K = cap[i] * mult;
+          if (pv[i] > K) pv[i] -= (pv[i] - K) * 0.1;
+          else if (r > 0) pv[i] += r * (pv[i] + seed * K) * (1 - pv[i] / K);
+        }
       }
     }
   };

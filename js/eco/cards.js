@@ -55,7 +55,7 @@
       id: 'acker', kind: 'aktiv', icon: '🌾', needs: 'landung', repeat: true,
       name: 'Acker anlegen',
       text: 'Ein Getreidefeld nahe am Dorf. Geerntet wird im Herbst. Hirsche finden das Getreide auch lecker.',
-      more: 'Ein großer Acker entsteht nahe am Dorf, wenn nötig wird dafür Wald gerodet. Im Frühling und Sommer wächst Getreide und reift bis zum Spätsommer, im Herbst wird geerntet, danach ist der Acker kahl. Hirsche und Laufvögel fressen am Getreide, Hirsche vor allem nachts. Wie viel, steht nach jeder Ernte in der Chronik, und im Diagramm „Äcker“ sieht man Reife und Fraßschaden.',
+      more: 'Ein großer Acker entsteht nahe am Dorf, wenn nötig wird dafür Wald gerodet. Im Frühling und Sommer wächst Getreide und reift bis zum Spätsommer, im Herbst wird geerntet, danach ist der Acker kahl. Hirsche und Laufvögel fressen am Getreide, Hirsche vor allem nachts. Wie viel, steht nach jeder Ernte in der Chronik, und im Diagramm „Äcker“ sieht man, was auf den Feldern steht und was die Tiere davon gefressen haben.',
       undo: 'Der Acker wird aufgegeben. Erst ist dort nackte Erde, nach einigen Jahren wächst wieder, was vorher da war (aus Wald wird Wiese).'
     },
     // Meldungen, die von selbst entstehen (nur Chronik, keine Marke im Diagramm)

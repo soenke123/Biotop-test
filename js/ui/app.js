@@ -378,7 +378,7 @@
     zwerghirsch: '#d95926', laufvogel: '#3987e5', inselwolf: '#9085e9', inseladler: '#c98500',
     schaf: '#d03fc8', hund: '#e07b00',
     gras: '#199e70', frucht: '#e66767', laub: '#008300', insekten: '#d55181',
-    korn: '#c9a227', gefressen: '#d95926'
+    korn: '#c9a227', kornMoeglich: '#efe2a0', gefressen: '#d95926'
   };
   var charts = [], bigCharts = [], chartView = null;
   // Schichten mit Pflanzenzustand (Gras, Laub, ... - je nach Artentabelle)
@@ -410,15 +410,16 @@
           return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.health && r.health[k] != null ? r.health[k] : 1; } };
         })
       }),
-      // Erst mit dem ersten Acker sichtbar: das Getreide reift bis zum Spaetsommer, die Ernte setzt es auf 0;
-      // die zweite Linie zeigt den Schaden: wie viel davon Tiere seit der letzten Ernte gefressen haben.
-      // 100 % ist die Ernte des ersten Ackers; mit dem zweiten Acker waechst die Achse auf 200 %
+      // Erst mit dem ersten Acker sichtbar. Unten das Getreide, das wirklich steht, darueber (gestrichelt), was
+      // ohne Fressen gestanden haette; die Flaeche dazwischen haben Tiere gefressen. Mit der Ernte faellt alles
+      // auf 0. 100 % ist die Ernte des ersten Ackers; mit dem zweiten Acker waechst die Achse auf 200 %
       new BT.LineChart(box, {
-        view: chartView, allowMean: allowMean, title: big ? 'Äcker: Reife und Fraßschaden (100 % = Ernte des ersten Ackers)' : 'Äcker: Reife und Fraßschaden', percent: true,
+        view: chartView, allowMean: allowMean, title: big ? 'Äcker: Getreide und Fraßschaden (100 % = Ernte des ersten Ackers)' : 'Äcker: Getreide und Fraßschaden', percent: true,
         when: function (s) { return s.humans && s.humans.fields.length > 0; },
         series: [
-          { label: 'Getreide (Reife)', color: SERIES_COLOR.korn, get: function (r) { return r.crop ? r.crop.ripe : 0; } },
-          { label: 'von Tieren gefressen', color: SERIES_COLOR.gefressen, get: function (r) { return r.crop ? r.crop.eaten : 0; } }
+          { label: 'ohne Fressen', color: SERIES_COLOR.kornMoeglich, dash: [5, 4], get: function (r) { return r.crop ? r.crop.could : 0; } },
+          { label: 'real', color: SERIES_COLOR.korn, get: function (r) { return r.crop ? r.crop.ripe : 0; } },
+          { label: 'gefressen', color: SERIES_COLOR.gefressen, between: [0, 1], get: function (r) { return r.crop ? r.crop.could - r.crop.ripe : 0; } }
         ]
       })
     ];

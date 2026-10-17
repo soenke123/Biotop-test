@@ -132,7 +132,8 @@
 
   /**
    * @param container  Element, in das Titel, Legende und Canvas kommen
-   * @param opts       { title, series: [{label, color, get(row)}], percent, view, allowMean }
+   * @param opts       { title, series: [{label, color, get(row), dash, between: [oben, unten]}], percent, view, allowMean }
+   *                 between: statt einer Linie die Flaeche zwischen zwei anderen Reihen (Indizes)
    */
   function LineChart(container, opts) {
     this.opts = opts;
@@ -345,9 +346,24 @@
 
     // Linien: hoechstens ein Punkt je Pixel
     var stride = Math.max(1, Math.floor(n / pw));
+    // Flaeche zwischen zwei Reihen (series[].between = [oben, unten]); die Reihe selbst hat keine Linie
+    for (s = 0; s < series.length; s++) {
+      var bt = series[s].between;
+      if (!bt) continue;
+      ctx.fillStyle = series[s].color; ctx.globalAlpha = 0.4;
+      ctx.beginPath();
+      for (i = 0; i < n; i += stride) { if (i === 0) ctx.moveTo(x(i), y(this.val(bt[0], i))); else ctx.lineTo(x(i), y(this.val(bt[0], i))); }
+      ctx.lineTo(x(n - 1), y(this.val(bt[0], n - 1)));
+      ctx.lineTo(x(n - 1), y(this.val(bt[1], n - 1)));
+      for (i = n - 1 - ((n - 1) % stride); i >= 0; i -= stride) ctx.lineTo(x(i), y(this.val(bt[1], i)));
+      ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
     ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     for (s = 0; s < series.length; s++) {
+      if (series[s].between) continue;
       ctx.strokeStyle = series[s].color;
+      ctx.setLineDash(series[s].dash || []);
       ctx.beginPath();
       for (i = 0; i < n; i += stride) {
         var lx = x(i), ly = y(this.val(s, i));
@@ -355,6 +371,7 @@
       }
       ctx.lineTo(x(n - 1), y(this.val(s, n - 1)));
       ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     // Fadenkreuz: derselbe Tag in allen Diagrammen
@@ -368,6 +385,7 @@
     ctx.beginPath(); ctx.moveTo(cx, Tp); ctx.lineTo(cx, Tp + ph); ctx.stroke();
     ctx.setLineDash([]);
     for (s = 0; s < series.length; s++) {
+      if (series[s].between) continue;
       ctx.fillStyle = series[s].color;
       ctx.beginPath(); ctx.arc(x(idx), y(this.val(s, idx)), 3.5, 0, Math.PI * 2); ctx.fill();
     }
