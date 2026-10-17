@@ -99,6 +99,16 @@
         }
       }
     }
+    // Nahrung, die es zu Beginn nicht gab (Getreide): Bezugswert ist die erste Menge, die es gibt (der erste Acker)
+    if (this.startTotal) {
+      for (k = 0; k < BT.FOOD_ORDER.length; k++) {
+        key = BT.FOOD_ORDER[k];
+        if (this.startTotal[key] > 0) continue;
+        var t = 0, K = this.capacity[key];
+        for (i = 0; i < K.length; i++) t += K[i];
+        this.startTotal[key] = t;
+      }
+    }
   };
 
   Fields.prototype.index = function (x, y) {
@@ -259,8 +269,9 @@
   /**
    * Fuellstand je Nahrungsart (fuer die Statistik), gemessen an der Kapazitaet der
    * unberuehrten Insel: Wird Land gerodet, bebaut oder gepfluegt, sinkt der Wert
-   * dauerhaft (10 % der Gras-Flaeche weg = hoechstens 90 %). Nahrung, die es zu
-   * Beginn nicht gab (Getreide), wird an der heutigen Kapazitaet gemessen.
+   * dauerhaft (10 % der Gras-Flaeche weg = hoechstens 90 %), waechst die Flaeche
+   * (Wiese: mehr Gras, mehr Acker), steigt er ueber 100 %. Nahrung, die es zu Beginn
+   * nicht gab (Getreide), wird am ersten Acker gemessen (zwei Aecker = 200 %).
    */
   Fields.prototype.levels = function () {
     var out = {};
@@ -268,7 +279,6 @@
       var key = BT.FOOD_ORDER[k];
       var v = this.value[key], sv = 0, sk = this.startTotal[key];
       for (var i = 0; i < v.length; i++) sv += v[i];
-      if (!(sk > 0)) { var K = this.capacity[key]; for (i = 0; i < K.length; i++) sk += K[i]; }
       out[key] = sk > 0 ? sv / sk : 0;
     }
     return out;
@@ -277,14 +287,15 @@
   /**
    * Mittlerer Pflanzenzustand je Schicht mit Ueberweidung: was heute noch (gesund)
    * waechst, im Verhaeltnis zur unberuehrten Insel. Verlorene Flaeche zaehlt wie
-   * toter Bestand, der Wert sinkt also auch bei Rodung und Acker.
+   * toter Bestand, der Wert sinkt also auch bei Rodung und Acker; neue Flaeche
+   * (Wiese) hebt ihn ueber 100 %.
    */
   Fields.prototype.healthLevels = function () {
     var out = {};
     for (var key in this.health) {
       var h = this.health[key], K = this.capacity[key], sh = 0, sk = this.startTotal[key];
       for (var i = 0; i < h.length; i++) sh += h[i] * K[i];
-      out[key] = sk > 0 ? Math.min(1, sh / sk) : 1;
+      out[key] = sk > 0 ? sh / sk : 1;
     }
     return out;
   };

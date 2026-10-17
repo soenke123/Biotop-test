@@ -386,6 +386,8 @@
   var lastPanelUpdate = 0;
 
   function makeCharts(box, allowMean) {
+    // Die Erklaerung in Klammern steht nur in der Grossansicht (allowMean), die Seitenleiste bleibt knapp
+    var big = !!allowMean;
     function series(ids, get) {
       return ids.map(function (id) { return { label: (BT.SPECIES[id] || BT.FOOD[id]).plural || BT.FOOD[id].name, color: SERIES_COLOR[id], get: get(id) }; });
     }
@@ -394,21 +396,25 @@
       new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Pflanzenfresser', series: series(['zwerghirsch', 'laufvogel', 'schaf'], count) }),
       new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Räuber', series: series(['inselwolf', 'inseladler', 'hund'], count) }),
       new BT.LineChart(box, {
-        view: chartView, allowMean: allowMean, title: 'Nahrung (100 % = unberührte Insel)', percent: true,
+        view: chartView, allowMean: allowMean, title: big ? 'Nahrung (100 % = unberührte Insel)' : 'Nahrung', percent: true,
         series: ['gras', 'frucht', 'laub', 'insekten'].map(function (k) {
-          return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.food[k]; } };
+          // Mastjahre (Wetter, bis 2,4-fach) abschneiden: Rodung und Acker koennen Fruechte nur mindern,
+          // und die Achse waechst nur, wenn der Mensch Flaeche dazugibt (Wiese: mehr Gras)
+          var cap = BT.FOOD[k].mast ? 1 : Infinity;
+          return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return Math.min(cap, r.food[k]); } };
         })
       }),
       new BT.LineChart(box, {
-        view: chartView, allowMean: allowMean, title: 'Zustand der Pflanzen (100 % = unberührte Insel, sinkt bei Übernutzung, Rodung und Acker)', percent: true,
+        view: chartView, allowMean: allowMean, title: big ? 'Zustand der Pflanzen (100 % = unberührte Insel, sinkt bei Übernutzung, Rodung und Acker)' : 'Zustand der Pflanzen', percent: true,
         series: HEALTH_KEYS.map(function (k) {
           return { label: BT.FOOD[k].name, color: SERIES_COLOR[k], get: function (r) { return r.health && r.health[k] != null ? r.health[k] : 1; } };
         })
       }),
       // Erst mit dem ersten Acker sichtbar: das Getreide reift bis zum Spaetsommer, die Ernte setzt es auf 0;
-      // die zweite Linie zeigt den Schaden: wie viel davon Tiere seit der letzten Ernte gefressen haben
+      // die zweite Linie zeigt den Schaden: wie viel davon Tiere seit der letzten Ernte gefressen haben.
+      // 100 % ist die Ernte des ersten Ackers; mit dem zweiten Acker waechst die Achse auf 200 %
       new BT.LineChart(box, {
-        view: chartView, allowMean: false, title: 'Äcker: Reife und Fraßschaden', percent: true,
+        view: chartView, allowMean: allowMean, title: big ? 'Äcker: Reife und Fraßschaden (100 % = Ernte des ersten Ackers)' : 'Äcker: Reife und Fraßschaden', percent: true,
         when: function (s) { return s.humans && s.humans.fields.length > 0; },
         series: [
           { label: 'Getreide (Reife)', color: SERIES_COLOR.korn, get: function (r) { return r.crop ? r.crop.ripe : 0; } },
@@ -1045,6 +1051,8 @@
     /** Bereich der Seitenleiste auf-/zuklappen: fold('menschen', true) */
     fold: function (name, open) { setFold(doc.querySelector('.fold[data-fold="' + name + '"]'), open !== false); },
     wide: setWide,
+    /** Grossansicht der Diagramme oeffnen/schliessen */
+    big: setBig,
     /** Karte spielen, z. B. play('landung', { x: 400, y: 800 }); liefert null oder einen Fehlertext */
     play: function (id, params) { return playCard(id, params || {}); },
     /** Karte zuruecknehmen, z. B. unplay('acker'); mit { x, y } in dem Dorf, das dort am naechsten liegt */

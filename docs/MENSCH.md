@@ -507,9 +507,16 @@ Rodung, Acker und Sammeln waren in Zahlen und Kurven kaum zu sehen. Jetzt:
 - **Diagramme messen an der unberührten Insel** (`Fields.startTotal`): „Nahrung“ und „Zustand der
   Pflanzen“ haben 100 % = Kapazität zu Beginn. Gerodetes, gepflügtes oder bebautes Land senkt die
   Kurven dauerhaft (vorher: Anteil an der heutigen Kapazität, die Rodung selbst fiel heraus).
-  Getreide, das es zu Beginn nicht gab, wird an den heutigen Äckern gemessen. Auf der Wiese wächst
-  nach der Rodung viel Gras; deshalb sinkt die Gras-Kurve nach einer Rodung kaum, Laub und Früchte
-  dagegen schon.
+  Getreide, das es zu Beginn nicht gab, wird an der vollen Ernte des ersten Ackers gemessen. Auf
+  der Wiese wächst nach der Rodung viel Gras; deshalb sinkt die Gras-Kurve nach einer Rodung kaum,
+  Laub und Früchte dagegen schon.
+- **Die Achse wächst mit:** Was über 100 % kommt (mehr Gras durch Wiese, zwei Äcker = 200 %), hebt
+  die Prozentachse an (Gitter alle 25 %, 50 % …), sonst blieben die Kurven oben abgeschnitten.
+  Mastjahre (Früchte bis 2,4-fach, nur Wetter) werden in der Kurve bei 100 % abgeschnitten, damit sie
+  die Achse nicht dauerhaft auf 200 % ziehen; Rodung und Acker können Früchte nur mindern.
+- **Titel:** Die Erklärung in Klammern („100 % = unberührte Insel …“) steht nur in der Großansicht,
+  die Seitenleiste zeigt „Nahrung“ und „Zustand der Pflanzen“. Das Ackerdiagramm folgt dem Knopf
+  „Jahresmittel“ wie die anderen.
 - **Rodung** `clearRadius` 75 → 110: etwa 4–5 % des Waldes je Karte (vorher 2 %). **Acker** `radius`
   55 → 85: gut 600 Zellen je Acker (vorher 230).
 - **Sammeln:** 8 Sammler je Karte (vorher 6), 3 Früchte je Tick (2), Korb 80 (60). Wo sie sammeln,
@@ -519,7 +526,8 @@ Rodung, Acker und Sammeln waren in Zahlen und Kurven kaum zu sehen. Jetzt:
 - **Getreide als Futter:** Laufvögel fressen es jetzt auch (`korn: 0,1`), Hirsche und Schafe wie
   vorher. Es reift bis zum Spätsommer und wird am ersten Herbsttag geerntet (Kurve mit Sägezahn).
 - **Neues Diagramm „Äcker: Reife und Fraßschaden“** (erst mit dem ersten Acker sichtbar): Reife des
-  Getreides und der Anteil, den Tiere seit der letzten Ernte gefressen haben (`row.crop`).
+  Getreides und das, was Tiere seit der letzten Ernte gefressen haben, beides in Ernten des ersten
+  Ackers (`row.crop`, Bezug `Fields.startTotal.korn`).
 - **Neue Zahl bei den Menschen:** „der Insel regelmäßig von Menschen genutzt“ (`Humans.usedShare`,
   `row.used`): Anteil der Land-Weidezellen, in denen Siedler, Jäger, Sammler, Hunde oder Weideschafe
   in einem Jahr mindestens 3 Tage waren (`BT.HUMANS.use.regular`). Nicht die Dorffläche, sondern

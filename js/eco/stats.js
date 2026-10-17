@@ -60,16 +60,17 @@
   };
 
   /**
-   * Getreide auf den Aeckern: ripe = Anteil der Reife (1 = Ernte steht), eaten = Anteil, den die Tiere
-   * seit der letzten Ernte schon gefressen haben (sinkt auf 0 mit der Ernte). Ohne Acker null.
+   * Getreide auf den Aeckern, gemessen an der vollen Ernte des ersten Ackers (zwei reife Aecker = 2):
+   * ripe = was steht, eaten = was die Tiere seit der letzten Ernte schon gefressen haben (0 mit der
+   * Ernte). Ohne Acker null.
    */
   Stats.prototype.cropNow = function () {
     var sim = this.sim, H = sim.humans;
     if (!H || !H.fields.length) return null;
-    var f = sim.fields, v = f.value.korn, K = f.capacity.korn, sv = 0, sk = 0;
-    for (var i = 0; i < v.length; i++) { sv += v[i]; sk += K[i]; }
-    var eaten = f.eaten.korn - H.cropMark;
-    return { ripe: sk > 0 ? sv / sk : 0, eaten: sv + eaten > 0 ? eaten / (sv + eaten) : 0 };
+    var f = sim.fields, v = f.value.korn, sv = 0, ref = f.startTotal.korn;
+    for (var i = 0; i < v.length; i++) sv += v[i];
+    if (!(ref > 0)) return null;
+    return { ripe: sv / ref, eaten: (f.eaten.korn - H.cropMark) / ref };
   };
 
   Stats.prototype.latest = function () { return this.history[this.history.length - 1]; };

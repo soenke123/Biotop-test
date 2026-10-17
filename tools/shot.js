@@ -11,6 +11,7 @@
  *   --landung=fx,fy  vor dem Simulieren an dieser Stelle (Anteil der Welt) landen;
  *                    der Ausschnitt (cx, cy) kann dann z. B. auf das Dorf zeigen
  *   --karten=schafe,hunde  nach der Landung (10 Tage spaeter) diese Karten spielen, ohne Pause
+ *   --gross          die Grossansicht der Diagramme oeffnen (mit --mittel: Jahresmittel)
  *   --reiter=menschen  diesen Bereich der Seitenleiste aufklappen (bestand, menschen, verlauf, insel); --breit: Leiste zweispaltig
  */
 const path = require('path');
@@ -62,6 +63,7 @@ try {
   }
   if (flags.reiter) await page.evaluate((n) => BT.app.fold(n, true), flags.reiter);
   if ('breit' in flags) await page.evaluate(() => BT.app.wide(true));
+  if ('gross' in flags) await page.evaluate((mean) => { BT.app.big(true); if (mean) document.querySelector('.mean-toggle').click(); }, 'mittel' in flags);
   await page.evaluate(({ zoom, cx, cy }) => {
     const cam = BT.app.camera, w = BT.app.world;
     if (zoom !== 1) {

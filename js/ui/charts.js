@@ -248,7 +248,18 @@
 
     var max = 0;
     for (var i = 0; i < n; i++) for (var s = 0; s < series.length; s++) max = Math.max(max, this.val(s, i));
-    max = this.opts.percent ? 1 : niceMax(Math.max(2, max * 1.05));
+    var rows = ph > 140 ? 4 : 2;
+    if (this.opts.percent) {
+      // 100 % ist der Startwert. Waechst die Menge darueber (mehr Acker, mehr Wiese), waechst die Achse mit:
+      // Gitterlinien alle 25, 50, 100 ... %, so viele, wie in die Hoehe passen
+      if (max < 1.01) max = 1;
+      else {
+        var step = ph > 140 ? 0.25 : 0.5, fit = ph > 140 ? 6 : 4;
+        while (max / step > fit) step *= 2;
+        max = Math.ceil(max / step - 1e-9) * step;
+        rows = Math.round(max / step);
+      }
+    } else max = niceMax(Math.max(2, max * 1.05));
 
     var x = function (k) { return L + (k / (n - 1)) * pw; };
     var y = function (v) { return Tp + ph - (v / max) * ph; };
@@ -257,7 +268,6 @@
     ctx.font = '10px system-ui, sans-serif';
     ctx.fillStyle = INK.text;
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    var rows = ph > 140 ? 4 : 2;
     for (var t = 0; t <= rows; t++) {
       var v = max * t / rows;
       ctx.strokeStyle = t === 0 ? INK.axis : INK.grid;
