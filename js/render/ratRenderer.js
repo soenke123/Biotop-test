@@ -18,7 +18,7 @@
   var SIZE = 10;        // Breite einer Rattengruppe in Weltunits
   var MIN_PX = 6;       // Mindestbreite auf dem Bildschirm
   var PER = 4;          // so viele Ratten je gezeichneter Gruppe
-  var MAX = 4;          // hoechstens so viele Gruppen je Zelle
+  var MAX = 6;          // hoechstens so viele Gruppen je Zelle (Dorf: dort draengen sie sich)
   var FAR = 0.9;        // unter diesem Zoom (Pixel je Weltunit) nur eine Gruppe je Zelle
 
   var img = null, loading = false;

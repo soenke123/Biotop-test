@@ -347,26 +347,29 @@ Die Ratten kommen zuletzt (nach Jagd und Sammeln). Werte und Begründung: `data/
   steht „Ratten lassen sich nicht wieder einfangen“.
 - **Ratten sind ein Feld** (Zahl je Weidezelle), keine Tiere. Am Tag: fressen (Vorräte im Dorf,
   Aas, Früchte, Insekten, Getreide), Junge (Frühling bis Herbst, je nach Futter und Platz), sterben
-  (kurzes Leben, Hunger), abwandern in die Nachbarzellen. Eine Ratte bleibt in ihrer Gegend, die
-  Front wandert. Auf der mittleren Insel leben sie nach 9–13 Jahren auf einem Viertel, nach 15–17
-  auf der Hälfte und nach 30 Jahren auf fast allem außer dem kahlen Gebirge. Auf der großen Insel dauert es
-  etwa doppelt so lange (die Hälfte nach 20–22 Jahren, fast alles nach 35–40).
-- **Dorf:** Vorräte und Abfälle um jedes Haus, auch im Winter. Dort überwintern die Ratten.
+  (kurzes Leben, Hunger, Kälte), abwandern in die Nachbarzellen. Eine Ratte bleibt in ihrer Gegend,
+  die Front wandert.
+- **Ungleich verteilt:** Im Dorf drängen sie sich, auf Äckern und am Wasser viele, im Wald etwas
+  weniger, auf offenem Grasland kaum, im Gebirge keine. Auf der mittleren Insel leben sie nach 12–17
+  Jahren auf einem Viertel, nach 25–30 auf der Hälfte (das Grasland bleibt fast frei).
+- **Jahreszeiten:** Mastjahre bringen eine Rattenplage (fast doppelt so viele), harte Winter
+  halbieren sie draußen. Am Dorf überwintern sie.
+- **Acker:** Ratten fressen und verderben viel Getreide. Mit Ratten fehlen 74–93 % der Ernte (ohne
+  46–62 %). Folgekarte 🐀 „Ratten im Getreide“, wenn die Ratten den größten Teil gefressen haben.
 - **Nester:** Eier und Küken (bis 15 Tage) der Laufvögel, je mehr Ratten, desto öfter
   (Todesursache „Ratte“).
-- **Beute:** Hungrige Wölfe, Hunde und Adler fangen Ratten, wo sie welche finden, und ziehen in
+- **Beute:** Ratten sind leicht zu fangen: Wölfe, Hunde und Adler fangen sie oft und ziehen in
   Gegenden mit vielen Ratten. Gegen die Vermehrung kommen sie nicht an.
-- **Folgen** (Median über 8 Inseln, letztes Drittel von 30 Jahren): Laufvögel 44 %, Adler 104 %
-  (stark schwankend: mal ausgestorben, mal doppelt so viele), Wölfe 105 %, Hirsche 112 %. Die
-  Ratten schaden den Laufvögeln dreifach: Eier und Küken, Futter, und mehr Adler, die von Ratten
-  leben und dann auch mehr Laufvögel schlagen.
+- **Folgen** (Median über 8 Inseln mit Acker, letztes Drittel von 30 Jahren): Wölfe 120 %,
+  Adler 100 % (stark schwankend), Laufvögel 72 %, Hirsche 78 % (mehr Wölfe).
 - **Chronik:** 🐀 Rattenplage (Folgekarte mit Marke, ab einem Viertel der Insel), 🐀 Rattenbilanz
   jedes Jahr.
-- **Anzeige:** gestreute Rattengruppen (`assets/ratten.png`), je 4 Ratten eine Gruppe, höchstens 4
+- **Anzeige:** gestreute Rattengruppen (`assets/ratten.png`), je 4 Ratten eine Gruppe, höchstens 6
   je Zelle, aus der Ferne eine. Kachel „Ratten“ im Bestand (gerundet, Anteil der Insel, gefressene
-  Eier und Küken; anklicken hebt sie hervor), Linie „Ratten ×100“ im Diagramm der Pflanzenfresser
-  (100 Ratten = 1), eine Zeile in den Todesursachen, Spalte „Ratte“ (Küken). Der Tooltip über dem
-  Gelände nennt die Ratten der Zelle.
+  Eier und Küken; anklicken hebt sie hervor). Im Diagramm der Pflanzenfresser ist die Linie der
+  Ratten durch 50 geteilt; Legende und Tooltip nennen die echte Zahl und in Klammern den Wert der
+  Linie, z. B. „6.370 (127 × 50)“. Eine Zeile in den Todesursachen, Spalte „Ratte“ (Küken). Der
+  Tooltip über dem Gelände nennt die Ratten der Zelle.
 - **Ohne Karte läuft alles exakt wie vorher** (die Ratten haben einen eigenen Zufall und rechnen
   erst mit der Karte).
 

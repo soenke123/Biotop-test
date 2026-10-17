@@ -132,8 +132,10 @@
 
   /**
    * @param container  Element, in das Titel, Legende und Canvas kommen
-   * @param opts       { title, series: [{label, color, get(row), dash, between: [oben, unten]}], percent, view, allowMean }
+   * @param opts       { title, series: [{label, color, get(row), dash, between: [oben, unten], scale}], percent, view, allowMean }
    *                 between: statt einer Linie die Flaeche zwischen zwei anderen Reihen (Indizes)
+   *                 scale:   die Linie ist durch scale geteilt (Ratten); Legende und Tooltip nennen die
+   *                          echte Zahl und dahinter den Wert der Linie, z. B. „17 810 (356 × 50)“
    */
   function LineChart(container, opts) {
     this.opts = opts;
@@ -172,8 +174,11 @@
     this.values = this.legend.querySelectorAll('b');
   };
 
-  LineChart.prototype.fmt = function (v) {
-    return this.opts.percent ? Math.round(v * 100) + ' %' : String(Math.round(v));
+  LineChart.prototype.fmt = function (v, s) {
+    if (this.opts.percent) return Math.round(v * 100) + ' %';
+    var k = s && s.scale;
+    if (!k) return String(Math.round(v));
+    return Math.round(v * k).toLocaleString('de-DE') + ' (' + Math.round(v) + ' × ' + k + ')';
   };
 
   /** Tag unter einer x-Position im Canvas (oder null ausserhalb). */
@@ -217,7 +222,7 @@
   /** Legendenwerte: am Fadenkreuz der Wert dieses Tages, sonst der aktuelle. */
   LineChart.prototype.updateLegend = function (k, hovered) {
     if (k < 0) return;
-    for (var i = 0; i < this.opts.series.length; i++) this.values[i].textContent = this.fmt(this.val(i, k));
+    for (var i = 0; i < this.opts.series.length; i++) this.values[i].textContent = this.fmt(this.val(i, k), this.opts.series[i]);
     this.legend.classList.toggle('at-cursor', !!hovered);
   };
 
@@ -397,7 +402,7 @@
       (row.weather ? '<br>' + BT.Weather.describe(row.weather) : '') +
       (mean ? '<br>Mittel über ein Jahr' : '') + '</div>';
     for (s = 0; s < series.length; s++) {
-      html += '<div><i style="background:' + series[s].color + '"></i>' + series[s].label + ' <b>' + this.fmt(this.val(s, idx)) + '</b></div>';
+      html += '<div><i style="background:' + series[s].color + '"></i>' + series[s].label + ' <b>' + this.fmt(this.val(s, idx), series[s]) + '</b></div>';
     }
     this.tip.innerHTML = html;
     this.tip.hidden = false;

@@ -450,61 +450,71 @@ Werte in `BT.RATS` (`js/eco/rats.js`), Karte „Ratten an Bord“ (`docs/MENSCH.
   verschwunden. Nach Mastjahren gibt es Rattenplagen.
 - **Ein Feld statt Tieren:** Eine Zahl je Weidezelle (wie die Nahrung), sonst wären es
   Zehntausende Tiere. Auf der Karte sind es gestreute Rattengruppen (`assets/ratten.png`, je Gruppe
-  4 Ratten, höchstens 4 Gruppen je Zelle, aus der Ferne eine), sie wuseln etwas hin und her.
+  4 Ratten, höchstens 6 Gruppen je Zelle, aus der Ferne eine), sie wuseln etwas hin und her.
   Gerechnet wird ohne Zufall (außer bei Nestern und beim Fangen) und nur mit `+ - * /`.
 - **Kommen mit der Karte:** 40 Ratten an der Küste des Dorfs, wenn das Vorratsschiff anlegt. Jede
   weitere Karte bringt 40 mehr. Zurücknehmen geht nicht („Ratten lassen sich nicht wieder einfangen“).
-- **Lebensraum** (`habitat`, mal `max` 12 Ratten je Zelle): Buschland und Farnwald 1, Moosnebelwald
-  0,8, Sumpf 0,7, Wiese 0,6, Tussock und Strand 0,5, Erde 0,4, Thermalfeld 0,3, Bergland 0,1, Gipfel 0;
-  Acker 1, **Dorf 2** (Scheunen, Vorräte). Das kahle Gebirge bleibt fast rattenfrei (Rückzugsraum).
+- **Lebensraum** (`habitat`, mal `max` 14 Ratten je Zelle): **Dorf 3** (Scheunen, Vorräte; dazu
+  30 Plätze mehr je Zelle im Umkreis von 70 um jedes Haus: Dort drängen sie sich), **Acker 2**,
+  Sumpf 0,9, Buschland 0,7, Farnwald 0,6, Strand 0,6, Moosnebelwald 0,5, Thermalfeld und Erde 0,2,
+  **Wiese 0,15, Tussock 0,12** (offenes Grasland: keine Verstecke), Bergland 0,05, Gipfel 0. **Am
+  Süßwasser mehr:** bis 40 vom Ufer oder Fluss bis 1,6-fach (nach außen abnehmend). Das kahle Gebirge
+  bleibt rattenfrei, das Grasland fast (Rückzugsräume).
 - **Nahrung:** Früchte und Samen, Insekten, Getreide (wie der Laufvogel, 0,1 / 0,11 / 0,1 Energie je
   Einheit), dazu **Aas** (eine Ratte frisst daran bis zum Doppelten ihres Bedarfs) und im Umkreis von
   70 um jedes Haus **Vorräte und Abfälle** (0,03 Energie je Zelle und Tag, auch im Winter). Bedarf
   0,0003 je Ratte und Tag (Laufvogel 0,055), im Winter mal 1 + 0,5 · Winterhärte, nicht im Dorf.
+- **Acker:** Auf dem Acker frisst und verdirbt jede Ratte zusätzlich 0,08 Einheiten Getreide am
+  Tag (`crop`). Gemessen über 10 Ernten (4 Inseln): ohne Ratten fehlen 46–62 % der Ernte (Hirsche,
+  Laufvögel), mit Ratten 74–93 %. Ist mindestens ein Viertel weg und haben die Ratten den größten Teil
+  gefressen, erscheint die Folgekarte 🐀 **Ratten im Getreide** statt „Hirsche im Acker“; die Ernte in
+  der Chronik nennt den Anteil der Ratten. Mit 0,03 kaum zu spüren, mit 0,1 bis 100 % Verlust.
 - **Vermehrung:** Junge je Ratte und Tag 0,1 (Frühling, Sommer), 0,06 (Herbst), im Winter keine;
-  mal Futterlage, mal Platz in der Zelle (1 − Ratten / Kapazität). Grundsterblichkeit 1,2 % am Tag,
-  bei fehlendem Futter bis 12 % mehr. Im Winter verhungern draußen viele, am Dorf nicht: Dort
-  überwintern sie und ziehen im Frühling wieder los.
+  mal Futterlage, mal Platz in der Zelle (1 − Ratten / Kapazität). **Mastjahr** (Sommer und
+  Herbst): 1,8-mal so viel Platz und 1,5-mal so viele Junge – eine Rattenplage. Grundsterblichkeit
+  1,2 % am Tag, bei fehlendem Futter bis 12 % mehr. **Winter:** zusätzlich 2,5 % am Tag mal
+  Winterhärte² (milder Winter etwa 0,8 %, harter Winter etwa 5,6 % am Tag), im Dorf ein Viertel davon.
+  Ein harter Winter halbiert die Ratten draußen; am Dorf überwintern sie und ziehen im Frühling wieder
+  los. Ende des Winters leben etwa halb so viele wie an der Spitze im Herbst, im Mastjahr wird es fast
+  das Doppelte eines normalen Sommers.
 - **Ausbreitung:** Je Tag wandern 20 % in die 8 Nachbarzellen (nach deren Lebensraum gewichtet),
   solange die Zelle weniger als halb voll ist anteilig weniger: Wenige bleiben beisammen. Dazu 30 %
   je Anteil über 70 % der Kapazität und bis 10 % bei Hunger. Weniger als 0,05 Ratten in einer Zelle
   verlaufen sich. Eine einzelne Ratte bleibt also in ihrer Gegend, aber die Front schiebt sich jedes
-  Jahr einige Zellen weiter. Vorher (20 % fest, mit Mindestzahl für Junge) blieben die Ratten
-  jahrelang am Dorf oder starben aus.
+  Jahr einige Zellen weiter, über Grasland langsam. Vorher (20 % fest, mit Mindestzahl für Junge)
+  blieben die Ratten jahrelang am Dorf oder starben aus.
 - **Nester:** Je Tag frisst eine Ratte ein Ei mit 0,2 · d / (d + 6), ein Küken (bis 15 Tage alt) mit
   0,08 · d / (d + 6); d sind die Ratten in der Zelle. Ältere Laufvögel sind sicher. Todesursache der
   Küken „Ratte“. Adlerhorste bleiben verschont.
-- **Beute:** Hungrige Wölfe und Hunde (unter 80 % Energie) und Adler (unter 75 %) fangen beim
-  Streifen Ratten in ihrer Zelle: je Tick und Jäger mit 0,6 (Adler 0,5) · d / (d + 3), mal
-  (1 − Deckung · 0,4), beim Adler mal (1 − Deckung): Im Wald sieht er sie schlecht. Eine Ratte bringt
-  0,04 Energie (Adler 0,05; ein Laufvogel 0,6). Gegenden mit vielen Ratten ziehen hungrige Räuber an.
-  Am Horst bringt der Adler jede Ratte heim.
+- **Beute:** Ratten sind leicht zu fangen und überall. Wölfe und Hunde (unter 90 % Energie) und
+  Adler (unter 85 %) fangen beim Streifen Ratten in ihrer Zelle: je Tick und Jäger mit 0,8 (Adler
+  0,7) · d / (d + 2), mal (1 − Deckung · 0,3), beim Adler mal (1 − Deckung · 0,5). Eine Ratte bringt
+  0,08 Energie (ein Laufvogel 0,6). Gegenden mit vielen Ratten ziehen hungrige Räuber an. Am Horst
+  bringt der Adler jede Ratte heim.
 - **Chronik:** Folgekarte 🐀 **Rattenplage**, sobald Ratten auf einem Viertel der Insel leben; jedes
   Jahr eine **Rattenbilanz** (wie viele, wo, Eier, Küken, gefangen).
 
-Gemessen (`invasion.js 8 30 --karten=ratten@1`, mittlere Insel, Mittel im letzten Drittel gegenüber
-nur Landung, Median):
+Gemessen (`invasion.js 8 30 --karten=acker@0,ratten@1`, mittlere Insel, Mittel im letzten Drittel
+gegenüber nur Landung, Median; mit Getreideschaden 0,05):
 
-| | Ratten (Ende des Sommers) | Insel | Hirsch | Laufvogel | Wolf | Adler |
+| Ratten (Ende des Sommers) | Spitze | Insel mit Ratten | Hirsch | Laufvogel | Wolf | Adler |
 |---|---|---|---|---|---|---|
-| Jahr 5 / 10 / 15 / 20 / 25 / 30 | 1 400 / 5 300 / 9 700 / 14 900 / 18 000 / 19 500 | 25 % in Jahr 9–13, 50 % in Jahr 15–17, am Ende 86–90 % | 112 % | **44 %** | 105 % | 104 % |
+| Jahr 5: 1 200–2 200, Jahr 30: 9 000–14 000 | 11 000–22 000 (Mastjahr) | 25 % in Jahr 12–17, 50 % in Jahr 25–30 (auf 3 von 8 Inseln nie) | 78 % | 72 % | **120 %** | 100 % |
 
-Die Laufvögel fallen auf weniger als die Hälfte: Ratten fressen 500–900 Eier und 240–480 Küken in
-30 Jahren und nehmen ihnen Früchte und Insekten weg, und von den Ratten leben **mehr Adler**, die
-dann auch mehr Laufvögel jagen (scheinbare Konkurrenz, wie in Neuseeland mit Ratten, Hermelinen
-und Vögeln). Die Adler bekommen 9–31 % ihrer Energie aus Ratten, die Wölfe 7–13 %. Die Adler
-schwanken stark: auf 2 von 8 Inseln ausgestorben, auf anderen doppelt so viele wie ohne Ratten.
-Ausprobiert:
+Die Wölfe bekommen 7–15 % ihrer Energie aus Ratten, die Adler 7–38 %. Ratten fressen 350–640 Eier und
+300–420 Küken in 30 Jahren. Die Hirsche sinken, weil es mehr Wölfe gibt. Die Adler schwanken stark
+(auf einer Insel ausgestorben, auf anderen viel mehr als ohne Ratten).
+
+Vorherige Fassung (Lebensraum fast überall gleich, max 12, ohne Kälte und Mastjahr, Räuber
+unter 80 % mit 0,04 Energie je Ratte): 19 000 Ratten auf 90 % der Insel, Laufvögel 44 %, Wölfe 105 %,
+Adler 104 %; die Ratten waren gleichmäßig verteilt, der Winter kaum zu sehen. Ausprobiert:
 
 - Bedarf 0,0012 (statt 0,0003), Räuber fangen wenig: Die Ratten fraßen den Laufvögeln das Futter
   weg (Laufvögel 28 %), Eier kaum (90 in 30 Jahren, weil im Frühling nach dem Winter wenige Ratten
   leben). Die Adler starben auf 8 von 8 Inseln aus, Ratten waren nur 1–2 % ihrer Energie.
 - Adler fangen schon unter 80 % Energie mit 0,6: Adler 170 %, Laufvögel 34 % (zu viele Adler).
-
-Große Insel (`invasion.js 4 40 --karten=ratten@1 --size=gross`): 25 % der Insel in Jahr 12–17,
-50 % in Jahr 20–22, am Ende 87–92 % mit 29 000–37 000 Ratten (Ende des Sommers). Hirsch 106 %,
-Laufvogel 34 %, Wolf 82 %, Adler 101 %, keine Art ausgestorben. Adler 28–34 % ihrer Energie aus
-Ratten, Wölfe 9–12 %.
+- Getreideschaden 0,1 und Adler mit Deckung 0,8: Ernte fast immer ganz weg, Adler 73 % (3-mal
+  ausgestorben: Die Ratten leben jetzt vor allem im Wald, wo der Adler sie schlecht sieht).
 
 ## Scheu vor Menschen
 

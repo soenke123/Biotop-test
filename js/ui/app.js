@@ -411,10 +411,10 @@
     }
     var count = function (id) { return function (r) { return r.count[id]; }; };
     return [
-      // Ratten (eco/rats.js) sind viel zahlreicher: eine Einheit sind hundert Ratten
-      new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: big ? 'Pflanzenfresser (Ratten in Hundert)' : 'Pflanzenfresser',
+      // Ratten (eco/rats.js) sind viel zahlreicher: die Linie ist durch 50 geteilt, die Legende nennt die echte Zahl
+      new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: big ? 'Pflanzenfresser (Linie der Ratten durch 50 geteilt)' : 'Pflanzenfresser',
         series: series(['zwerghirsch', 'laufvogel', 'schaf'], count).concat([
-          { label: 'Ratten ×100', color: SERIES_COLOR.ratten, get: function (r) { return (r.ratten || 0) / 100; } }]) }),
+          { label: 'Ratten', color: SERIES_COLOR.ratten, scale: 50, get: function (r) { return (r.ratten || 0) / 50; } }]) }),
       new BT.LineChart(box, { view: chartView, allowMean: allowMean, title: 'Räuber', series: series(['inselwolf', 'inseladler', 'hund'], count) }),
       new BT.LineChart(box, {
         view: chartView, allowMean: allowMean, title: big ? 'Nahrung (100 % = unberührte Insel)' : 'Nahrung', percent: true,

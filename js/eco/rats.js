@@ -44,11 +44,16 @@
   BT.RATS = {
     name: 'Ratte', plural: 'Ratten',
     ship: 40,                       // so viele kommen mit einem Vorratsschiff an Land
-    max: 12,                        // Ratten je Weidezelle im besten Lebensraum (Platz fuer Nester)
-    // Lebensraum (Platz, Verstecke): Buschland und Wald am besten, im Dorf noch mehr
-    // (Scheunen, Vorraete), im Gebirge kaum, am Gipfel nicht
-    habitat: pref({ SCRUB: 1, FERN: 1, MOSS: 0.8, SWAMP: 0.7, TUSSOCK: 0.5, BEACH: 0.5, THERMAL: 0.3, ROCK: 0.1, PEAK: 0,
-      SOIL: 0.4, VILLAGE: 2, MEADOW: 0.6, FIELD: 1 }),
+    max: 14,                        // Ratten je Weidezelle bei Lebensraum 1 (Platz fuer Nester)
+    // Lebensraum (Platz, Verstecke): Im Dorf draengen sie sich (Scheunen, Vorraete), auf dem Acker
+    // viele, im Busch und Wald etwas weniger, auf offenem Grasland deutlich weniger (keine
+    // Verstecke), im Gebirge kaum, am Gipfel nicht
+    habitat: pref({ SCRUB: 0.7, FERN: 0.6, MOSS: 0.5, SWAMP: 0.9, TUSSOCK: 0.12, BEACH: 0.6, THERMAL: 0.2, ROCK: 0.05, PEAK: 0,
+      SOIL: 0.2, VILLAGE: 3, MEADOW: 0.15, FIELD: 2 }),
+    water: { dist: 40, bonus: 0.6 },  // am Suesswasser (Ufer, Fluss) mehr: Lebensraum mal 1 + bonus, nach aussen abnehmend
+    mast: { K: 1.8, birth: 1.5 },     // Mastjahr (Sommer, Herbst): so viel mehr Platz und Junge - Rattenplage
+    winter: 0.025,                    // zusaetzliche Sterblichkeit je Wintertag mal Winterhaerte² (im Dorf ein Viertel)
+    crop: 0.08,                       // Getreide, das eine Ratte am Tag frisst und verdirbt (Einheiten, zusaetzlich zum Bedarf)
     diet: { frucht: 0.1, insekten: 0.11, korn: 0.1 },   // Energie je Einheit (wie der Laufvogel)
     need: 0.0003,                   // Energie je Ratte und Tag (Laufvogel 0,055)
     winterNeed: 0.5,                // im Winter mehr (mal Winterhaerte), nicht im Dorf
@@ -58,8 +63,8 @@
     // Abwandern je Tag: base, sobald die Zelle halb voll ist (vorher anteilig: wenige bleiben
     // beisammen), crowd je Anteil ueber `at` der Kapazitaet, hungry bei fehlendem Futter
     disperse: { base: 0.2, crowd: 0.3, at: 0.7, hungry: 0.1 },
-    // Dorf: Vorraete und Abfaelle im Umkreis jedes Hauses, auch im Winter
-    village: { radius: 70, food: 0.03 },
+    // Dorf: Vorraete und Abfaelle im Umkreis jedes Hauses, auch im Winter; dort draengen sie sich (K: mehr Platz je Zelle)
+    village: { radius: 70, food: 0.03, K: 30 },
     // Gelege: Je Tag frisst eine Ratte ein Ei bzw. Kueken mit egg bzw. chick * d / (d + half)
     // (d: Ratten in der Zelle). Kueken nur bis maxAge Tage.
     prey: {
@@ -69,9 +74,9 @@
     // mit chance * d / (d + half), mal (1 - Deckung * cover); jede Ratte bringt `energy`.
     // lure: so stark zieht eine Gegend mit Ratten hungrige Raeuber an
     eatenBy: {
-      inselwolf: { chance: 0.6, half: 3, cover: 0.4, energy: 0.04, below: 0.8, lure: 3 },
-      hund: { chance: 0.6, half: 3, cover: 0.4, energy: 0.04, below: 0.8, lure: 3 },
-      inseladler: { chance: 0.5, half: 3, cover: 1, energy: 0.05, below: 0.75, lure: 4 }
+      inselwolf: { chance: 0.8, half: 2, cover: 0.3, energy: 0.08, below: 0.9, lure: 4 },
+      hund: { chance: 0.8, half: 2, cover: 0.3, energy: 0.08, below: 0.9, lure: 4 },
+      inseladler: { chance: 0.7, half: 2, cover: 0.5, energy: 0.08, below: 0.85, lure: 5 }
     },
     plague: 0.25                    // Rattenplage: Ratten auf diesem Anteil der Insel
   };
@@ -97,6 +102,7 @@
     this.plagueDay = null;
     this.deaths = {};                   // Ratten nach Todesursache (gerundet in der Anzeige)
     this.eaten = { eggs: 0, chicks: 0 };
+    this.cropEaten = 0;                 // Getreide, das Ratten gefressen haben (fuer die Ernte-Bilanz)
     this.year = { eggs: 0, chicks: 0, caught: {} };
   }
 
@@ -153,6 +159,9 @@
           for (var x = fx * s; x < Math.min(w.cols, fx * s + s); x++) { sum += H[g[y * w.cols + x]]; count++; }
         }
         var k = sum / count * BT.RATS.max;
+        // am Suesswasser mehr Ratten
+        var W = BT.RATS.water, wd = w.query.freshWaterDistance((fx + 0.5) * f.size, (fy + 0.5) * f.size);
+        if (k > 0 && wd < W.dist) k *= 1 + W.bonus * (1 - wd / W.dist);
         this.K[fy * f.cols + fx] = k;
         if (k > 0) land++;
       }
@@ -187,8 +196,12 @@
     this.eatCarrion();
     var n = this.n, next = this.next, K = this.K, cols = f.cols, rows = f.rows;
     var winter = cal.season === 3;
-    var birth = R.birth[cal.season], D = R.disperse;
-    var cold = winter ? 1 + R.winterNeed * sim.weatherNow.winter : 1;
+    var mast = sim.weatherNow.mast && (cal.season === 1 || cal.season === 2);
+    var birth = R.birth[cal.season] * (mast ? R.mast.birth : 1), D = R.disperse, mk = mast ? R.mast.K : 1;
+    var hard = sim.weatherNow.winter;
+    var cold = winter ? 1 + R.winterNeed * hard : 1;
+    var frost = winter ? R.winter * hard * hard : 0;
+    var korn = f.value.korn, crop = 0;
     next.fill(0);
     var total = 0, cells = 0;
     for (var i = 0; i < n.length; i++) {
@@ -202,15 +215,21 @@
       if (got < need) got += f.eat(i, R.diet, (need - got) / 0.1);
       var fed = need > 0 ? Math.min(1, got / need) : 1;
       this.fed[i] = fed;
-      // Geburten und Tod
-      var room = Math.max(0, 1 - r / K[i]);
+      // Getreide: Ratten fressen und verderben viel mehr, als sie brauchen
+      if (korn[i] > 0) {
+        var c = Math.min(korn[i], r * R.crop);
+        korn[i] -= c; f.eaten.korn += c; crop += c;
+      }
+      // Geburten und Tod; Kaelte im Winter (im Dorf geschuetzt)
+      var Ki = (K[i] + (village ? R.village.K : 0)) * mk;
+      var room = Math.max(0, 1 - r / Ki);
       var born = r * birth * fed * room;
-      var old = r * R.death, hunger = r * R.starve * (1 - fed);
+      var old = r * R.death, hunger = r * (R.starve * (1 - fed) + frost * (village ? 0.25 : 1));
       this.die(old, 'alter');
       this.die(hunger, 'hunger');
-      r = r + born - old - hunger;
+      r = Math.max(0, r + born - old - hunger);
       // Abwandern in die Nachbarzellen mit Lebensraum
-      var share = Math.min(0.5, D.base * Math.min(1, 2 * r / K[i]) + D.crowd * Math.max(0, r / K[i] - D.at) + D.hungry * (1 - fed));
+      var share = Math.min(0.5, D.base * Math.min(1, 2 * r / Ki) + D.crowd * Math.max(0, r / Ki - D.at) + D.hungry * (1 - fed));
       var cx = i % cols, cy = (i - cx) / cols, wsum = 0, k, j;
       for (k = 0; k < 8; k++) {
         j = nb(cx, cy, k, cols, rows);
@@ -235,6 +254,7 @@
     }
     this.total = total;
     this.cells = cells;
+    this.cropEaten += crop;
     this.share = cells / this.landCells;
     this.carrion = null;
     this.raidNests();

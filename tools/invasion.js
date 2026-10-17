@@ -84,6 +84,8 @@ if (flags.lauf) {
     rats.energy[id] = use > 0 ? rats.caught[id] * BT.RATS.eatenBy[id].energy / use : 0;
   }
   rats.deathsVogel = sim.stats.deaths.laufvogel;
+  // Ernten (mit Acker): Verlust und Anteil der Ratten daran
+  rats.harvests = sim.humans.harvests.map((h) => Math.round(h.share * 100) + (h.rats ? '/' + Math.round(h.rats * 100) : ''));
   const ids = BT.SPECIES_ORDER;
   const late = yearly.slice(Math.floor(YEARS * 2 / 3));
   const mean = {};
@@ -135,6 +137,7 @@ function ratLine(r) {
   const step = Math.max(1, Math.floor(r.summer.length / 6));
   return `Ratten Ende ${r.end} (Spitze ${r.peak}, Insel ${pct(r.share[r.share.length - 1])}), Sommer ${r.summer.filter((_, i) => i % step === step - 1).join(' ')}` +
     ` · Eier ${r.eaten.eggs}, Küken ${r.eaten.chicks}` +
+    (r.harvests.length ? ` · Ernteverlust % (davon Ratten %) ${r.harvests.slice(-8).join(' ')}` : '') +
     ` · gefangen ${Object.entries(r.caught).map(([id, n]) => short[id] + ' ' + n + ' (' + pct(r.energy[id]) + ' Energie)').join(', ')}`;
 }
 

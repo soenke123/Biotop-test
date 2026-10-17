@@ -635,13 +635,20 @@
     }
     var eaten = f.eaten.korn - this.cropMark;
     this.cropMark = f.eaten.korn;
+    // davon die Ratten (eco/rats.js)
+    var R = this.sim.rats, byRats = R.cropEaten - (this.ratCropMark || 0);
+    this.ratCropMark = R.cropEaten;
+    var ratShare = eaten > 0 ? byRats / eaten : 0;
     // Anteil, der durch das Fressen fehlt: Ernte gemessen an dem, was ohne Fressen gestanden haette
     var share = could > 0 ? Math.max(0, 1 - got / could) : 0;
-    var h = { day: this.sim.day, harvested: got, eaten: eaten, could: could, share: share };
+    var h = { day: this.sim.day, harvested: got, eaten: eaten, could: could, share: share, rats: ratShare };
     this.harvests.push(h);
+    // Ab einem Viertel Verlust eine Folgekarte: Ratten, wenn sie den groessten Teil gefressen haben, sonst Hirsche
+    var card = share < 0.25 ? 'ernte' : ratShare >= 0.5 ? 'rattenAcker' : 'wildschaden';
     this.sim.events.push({
-      day: this.sim.day, tick: this.sim.tick, card: share >= 0.25 ? 'wildschaden' : 'ernte', params: {},
-      at: { text: Math.round((1 - share) * 100) + ' % eingebracht, ' + Math.round(share * 100) + ' % von Tieren gefressen' }
+      day: this.sim.day, tick: this.sim.tick, card: card, params: {},
+      at: { text: Math.round((1 - share) * 100) + ' % eingebracht, ' + Math.round(share * 100) + ' % von Tieren gefressen' +
+        (byRats > 0 ? ' (davon Ratten ' + Math.round(ratShare * 100) + ' %)' : '') }
     });
   };
 
