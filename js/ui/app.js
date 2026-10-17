@@ -412,9 +412,9 @@
       }),
       // Erst mit dem ersten Acker sichtbar. Unten das Getreide, das wirklich steht, darueber (gestrichelt), was
       // ohne Fressen gestanden haette; die Flaeche dazwischen haben Tiere gefressen. Mit der Ernte faellt alles
-      // auf 0. 100 % ist die Ernte des ersten Ackers; mit dem zweiten Acker waechst die Achse auf 200 %
+      // auf 0. 100 % sind alle Aecker zusammen: kommt ein Acker dazu, bleibt die Achse von 0 bis 100 %
       new BT.LineChart(box, {
-        view: chartView, allowMean: allowMean, title: big ? 'Äcker: Getreide und Fraßschaden (100 % = Ernte des ersten Ackers)' : 'Äcker: Getreide und Fraßschaden', percent: true,
+        view: chartView, allowMean: allowMean, title: big ? 'Äcker: Getreide und Fraßschaden (100 % = alle Äcker)' : 'Äcker: Getreide und Fraßschaden', percent: true,
         when: function (s) { return s.humans && s.humans.fields.length > 0; },
         series: [
           { label: 'ohne Fressen', color: SERIES_COLOR.kornMoeglich, dash: [5, 4], get: function (r) { return r.crop ? r.crop.could : 0; } },

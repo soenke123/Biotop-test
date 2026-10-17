@@ -196,7 +196,10 @@ Screenshot, dem Eintrag in `data/arten.md` bzw. hier und einem Commit.
 
 ### Schritt 3: Acker
 
-- **Karte „Acker anlegen“:** Von 30 Orten 150 bis 270 Einheiten vom Dorf gewinnt der mit dem
+- **Karte „Acker anlegen“** (seit Oktober 2026 mit Ringen: ist es nahe am Dorf eng, wird in bis zu 5
+  Ringen à 150 Einheiten weiter draußen gesucht, bis etwa 1000 vom Dorf, sonst hieß es nach 5 bis 7
+  Äckern „kein Platz“; `field.rings`, `ringStep`, `good`; mit 20 Karten entstehen 20 Äcker zu je
+  400 bis 630 Zellen, rund ein Viertel der Insel): Von 30 Orten 150 bis 270 Einheiten vom Dorf gewinnt der mit dem
   meisten offenen Land. Wald zählt halb, weil er erst gerodet werden muss. Neben einem
   bestehenden Acker liegt man gut, deshalb wird ein Acker mit der nächsten Karte meist größer.
   Ein Acker hat etwa 55 Einheiten Radius (rund 230 Zellen). Nie Acker werden Wasser, Fels,
@@ -507,10 +510,10 @@ Rodung, Acker und Sammeln waren in Zahlen und Kurven kaum zu sehen. Jetzt:
 - **Diagramme messen an der unberührten Insel** (`Fields.startTotal`): „Nahrung“ und „Zustand der
   Pflanzen“ haben 100 % = Kapazität zu Beginn. Gerodetes, gepflügtes oder bebautes Land senkt die
   Kurven dauerhaft (vorher: Anteil an der heutigen Kapazität, die Rodung selbst fiel heraus).
-  Getreide, das es zu Beginn nicht gab, wird an der vollen Ernte des ersten Ackers gemessen. Auf
+  Getreide, das es zu Beginn nicht gab, wird an allen heutigen Äckern gemessen. Auf
   der Wiese wächst nach der Rodung viel Gras; deshalb sinkt die Gras-Kurve nach einer Rodung kaum,
   Laub und Früchte dagegen schon.
-- **Die Achse wächst mit:** Was über 100 % kommt (mehr Gras durch Wiese, zwei Äcker = 200 %), hebt
+- **Die Achse wächst mit:** Was über 100 % kommt (mehr Gras durch Wiese), hebt
   die Prozentachse an (Gitter alle 25 %, 50 % …), sonst blieben die Kurven oben abgeschnitten.
   Mastjahre (Früchte bis 2,4-fach, nur Wetter) werden in der Kurve bei 100 % abgeschnitten, damit sie
   die Achse nicht dauerhaft auf 200 % ziehen; Rodung und Acker können Früchte nur mindern.
@@ -528,8 +531,9 @@ Rodung, Acker und Sammeln waren in Zahlen und Kurven kaum zu sehen. Jetzt:
 - **Neues Diagramm „Äcker: Getreide und Fraßschaden“** (erst mit dem ersten Acker sichtbar): Unten
   das Getreide, das wirklich steht, darüber gestrichelt, was ohne Fressen gestanden hätte, und die
   Fläche dazwischen ist das Gefressene. Das Modell rechnet dafür das Getreidewachstum ein zweites Mal
-  ohne Tiere mit (`Fields.potential`, Schattenrechnung; die Tiere merken nichts davon). Beides in
-  Ernten des ersten Ackers (`row.crop` mit `ripe` und `could`, Bezug `Fields.startTotal.korn`). Die
+  ohne Tiere mit (`Fields.potential`, Schattenrechnung; die Tiere merken nichts davon). Beides als
+  Anteil aller Äcker zusammen, die Skala geht immer von 0 bis 100 % und springt nicht, wenn ein Acker
+  dazukommt (`row.crop` mit `ripe` und `could`, Bezug: Kapazität aller Äcker heute). Die
   Chronik nennt jetzt dasselbe: „eingebracht“ = Ernte geteilt durch das, was ohne Fressen gestanden
   hätte (vorher Ernte geteilt durch Ernte plus alles je Gefressene; da Getreide nachwächst, konnte
   mehr gefressen als je gleichzeitig vorhanden sein). Reihen können eine Fläche statt einer Linie

@@ -101,16 +101,6 @@
         if (this.potential[i] > this.capacity.korn[i]) this.potential[i] = this.capacity.korn[i];
       }
     }
-    // Nahrung, die es zu Beginn nicht gab (Getreide): Bezugswert ist die erste Menge, die es gibt (der erste Acker)
-    if (this.startTotal) {
-      for (k = 0; k < BT.FOOD_ORDER.length; k++) {
-        key = BT.FOOD_ORDER[k];
-        if (this.startTotal[key] > 0) continue;
-        var t = 0, K = this.capacity[key];
-        for (i = 0; i < K.length; i++) t += K[i];
-        this.startTotal[key] = t;
-      }
-    }
   };
 
   Fields.prototype.index = function (x, y) {
@@ -283,7 +273,7 @@
    * unberuehrten Insel: Wird Land gerodet, bebaut oder gepfluegt, sinkt der Wert
    * dauerhaft (10 % der Gras-Flaeche weg = hoechstens 90 %), waechst die Flaeche
    * (Wiese: mehr Gras, mehr Acker), steigt er ueber 100 %. Nahrung, die es zu Beginn
-   * nicht gab (Getreide), wird am ersten Acker gemessen (zwei Aecker = 200 %).
+   * nicht gab (Getreide), wird an allen heutigen Aeckern gemessen.
    */
   Fields.prototype.levels = function () {
     var out = {};
@@ -291,6 +281,8 @@
       var key = BT.FOOD_ORDER[k];
       var v = this.value[key], sv = 0, sk = this.startTotal[key];
       for (var i = 0; i < v.length; i++) sv += v[i];
+      // Getreide gab es zu Beginn nicht: gemessen an den heutigen Aeckern (100 % = alle Aecker reif)
+      if (!(sk > 0)) { var K = this.capacity[key]; for (i = 0; i < K.length; i++) sk += K[i]; }
       out[key] = sk > 0 ? sv / sk : 0;
     }
     return out;

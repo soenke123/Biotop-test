@@ -53,6 +53,9 @@
       radius: 85,             // Groesse eines Ackers (unregelmaessig; vorher 55)
       distMin: 150,           // Abstand der Ackermitte vom Dorf
       distMax: 270,
+      rings: 5,               // ist es nahe am Dorf eng, wird bis zu so viele Ringe weiter draussen gesucht ...
+      ringStep: 150,          // ... jeder so viel weiter weg (bis etwa 1000 vom Dorf)
+      good: 0.4,              // ein Ort mit mindestens so viel freiem Land (Anteil eines vollen Ackers) genuegt
       harvestSeason: 2,       // geerntet wird am ersten Tag des Herbstes
       workers: 0.5            // Anteil der Siedler, die tagsueber auf dem Acker arbeiten
     },
@@ -558,14 +561,19 @@
     var cfg = BT.HUMANS.field, lu = this.sim.landuse, w = this.world;
     var c = { x: v.x, y: v.y }, R = cfg.radius;
     var best = null, bestScore = 0;
-    for (var t = 0; t < 30; t++) {
-      var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(cfg.distMin, cfg.distMax);
-      var px = c.x + BT.M.cos(a) * r, py = c.y + BT.M.sin(a) * r;
-      if (BT.Move.blockedAt(w, null, px, py)) continue;
-      var f = lu.fieldAround(px, py, R);
-      // neben bestehenden Aeckern liegt man gut, auf ihnen nicht
-      var score = f.ok - f.woody * 0.5 - f.field * 2 + (f.field > 0 && f.field < f.ok ? 15 : 0);
-      if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
+    // So viele Zellen hat ein Acker, wenn alles frei ist; ein Ort, der mindestens `good` davon bietet, genuegt
+    var full = Math.PI * R * R / (w.cellSize * w.cellSize);
+    // Ist es nahe am Dorf eng, wird der Ring weiter draussen abgesucht (dort kommen die Tiere eher hin)
+    for (var ring = 0; ring <= cfg.rings && !(bestScore >= cfg.good * full); ring++) {
+      for (var t = 0; t < 30; t++) {
+        var a = this.rng.range(0, Math.PI * 2), r = this.rng.range(cfg.distMin, cfg.distMax) + ring * cfg.ringStep;
+        var px = c.x + BT.M.cos(a) * r, py = c.y + BT.M.sin(a) * r;
+        if (BT.Move.blockedAt(w, null, px, py)) continue;
+        var f = lu.fieldAround(px, py, R);
+        // neben bestehenden Aeckern liegt man gut, auf ihnen nicht
+        var score = f.ok - f.woody * 0.5 - f.field * 2 + (f.field > 0 && f.field < f.ok ? 15 : 0);
+        if (score > bestScore) { bestScore = score; best = { x: px, y: py }; }
+      }
     }
     if (!best) return null;
     var before = lu.counts.gerodet;
