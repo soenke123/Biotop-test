@@ -55,6 +55,12 @@
     winter: 0.025,                    // zusaetzliche Sterblichkeit je Wintertag mal Winterhaerte² (im Dorf ein Viertel)
     crop: 0.08,                       // Getreide, das eine Ratte am Tag frisst und verdirbt (Einheiten, zusaetzlich zum Bedarf)
     diet: { frucht: 0.1, insekten: 0.11, korn: 0.1 },   // Energie je Einheit (wie der Laufvogel)
+    // Anfressen und Verderben: Ratten benagen mehr, als sie brauchen (Einheiten je Ratte und Tag, zusaetzlich
+    // zum Bedarf, ohne Energie). Wie `crop` beim Getreide; es mindert die Nahrung der anderen Arten.
+    spoil: { frucht: 0.002, insekten: 0.003 },
+    // Huetehunde im Dorf: Im Umkreis `radius` jedes Hundes sterben je Tag `kill` der Ratten (mehrere Hunde
+    // addieren sich bis `max`). Die Ratten rücken von aussen nach, sind dort aber duenn.
+    guard: { radius: 70, kill: 0.015, max: 0.08 },
     need: 0.0003,                   // Energie je Ratte und Tag (Laufvogel 0,055)
     winterNeed: 0.5,                // im Winter mehr (mal Winterhaerte), nicht im Dorf
     birth: [0.1, 0.1, 0.06, 0],     // Junge je Ratte und Tag nach Jahreszeit, satt und mit Platz
@@ -93,6 +99,7 @@
     this.fed = new Float64Array(n);     // Futterlage gestern (fuer die Darstellung: 0..1)
     this.K = new Float64Array(n);       // Kapazitaet je Zelle
     this.scrap = new Float64Array(n);   // Futter aus dem Dorf je Zelle und Tag
+    this.guard = new Float64Array(n);   // Anteil der Ratten, den Huetehunde je Tag erwischen
     this.kVersion = -1;
     this.total = 0;                     // Ratten auf der Insel (gestern)
     this.cells = 0;                     // Zellen mit mindestens einer Ratte
@@ -187,12 +194,34 @@
     }
   };
 
+  /** Huetehunde: Zellen im Umkreis jedes Hundes, deren Ratten er jagt (summiert bis `max`). */
+  Rats.prototype.updateGuards = function () {
+    var f = this.sim.fields, dogs = this.sim.humans.dogs, G = BT.RATS.guard;
+    this.guard.fill(0);
+    var rc = Math.ceil(G.radius / f.size);
+    for (var h = 0; h < dogs.length; h++) {
+      var hx = Math.floor(dogs[h].x / f.size), hy = Math.floor(dogs[h].y / f.size);
+      for (var dy = -rc; dy <= rc; dy++) {
+        for (var dx = -rc; dx <= rc; dx++) {
+          var x = hx + dx, y = hy + dy;
+          if (x < 0 || y < 0 || x >= f.cols || y >= f.rows) continue;
+          var cx = (x + 0.5) * f.size - dogs[h].x, cy = (y + 0.5) * f.size - dogs[h].y;
+          if (cx * cx + cy * cy <= G.radius * G.radius) {
+            var j = y * f.cols + x;
+            this.guard[j] = Math.min(G.max, this.guard[j] + G.kill);
+          }
+        }
+      }
+    }
+  };
+
   /** Einmal am Tag (aus Simulation.newDay, nach dem Wachstum der Pflanzen). */
   Rats.prototype.newDay = function () {
     if (!this.total) return;
     var sim = this.sim, R = BT.RATS, f = sim.fields, cal = sim.calendar;
     this.updateK();
     this.updateScraps();
+    this.updateGuards();
     this.eatCarrion();
     var n = this.n, next = this.next, K = this.K, cols = f.cols, rows = f.rows;
     var winter = cal.season === 3;
@@ -201,7 +230,7 @@
     var hard = sim.weatherNow.winter;
     var cold = winter ? 1 + R.winterNeed * hard : 1;
     var frost = winter ? R.winter * hard * hard : 0;
-    var korn = f.value.korn, crop = 0;
+    var korn = f.value.korn, crop = 0, spoil = Object.keys(R.spoil);
     next.fill(0);
     var total = 0, cells = 0;
     for (var i = 0; i < n.length; i++) {
@@ -220,6 +249,12 @@
         var c = Math.min(korn[i], r * R.crop);
         korn[i] -= c; f.eaten.korn += c; crop += c;
       }
+      // Anfressen und Verderben von Fruechten und Insekten (ohne Energie)
+      for (var sk = 0; sk < spoil.length; sk++) {
+        var key = spoil[sk], sv = f.value[key];
+        var bit = Math.min(sv[i], r * R.spoil[key]);
+        if (bit > 0) { sv[i] -= bit; f.bitten[key][i] += bit; f.eaten[key] += bit; }
+      }
       // Geburten und Tod; Kaelte im Winter (im Dorf geschuetzt)
       var Ki = (K[i] + (village ? R.village.K : 0)) * mk;
       var room = Math.max(0, 1 - r / Ki);
@@ -227,7 +262,9 @@
       var old = r * R.death, hunger = r * (R.starve * (1 - fed) + frost * (village ? 0.25 : 1));
       this.die(old, 'alter');
       this.die(hunger, 'hunger');
-      r = Math.max(0, r + born - old - hunger);
+      var dogs = r * this.guard[i];
+      this.die(dogs, 'hofhund');
+      r = Math.max(0, r + born - old - hunger - dogs);
       // Abwandern in die Nachbarzellen mit Lebensraum
       var share = Math.min(0.5, D.base * Math.min(1, 2 * r / Ki) + D.crowd * Math.max(0, r / Ki - D.at) + D.hungry * (1 - fed));
       var cx = i % cols, cy = (i - cx) / cols, wsum = 0, k, j;

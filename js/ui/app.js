@@ -775,7 +775,7 @@
   }
 
   function updateDeaths() {
-    var causes = [['hunger', 'Hunger'], ['alter', 'Alter'], ['inselwolf', 'Wolf'], ['inseladler', 'Adler'], ['hund', 'Hund'], ['krankheit', 'Krankheit'], ['jagd', 'Jagd'], ['ratte', 'Ratte']];
+    var causes = [['hunger', 'Hunger'], ['alter', 'Alter'], ['inselwolf', 'Wolf'], ['inseladler', 'Adler'], ['hund', 'Hund'], ['krankheit', 'Krankheit'], ['jagd', 'Jagd'], ['ratte', 'Ratte'], ['hofhund', 'Dorfhund']];
     var html = '<tr><th></th>' + causes.map(function (c) { return '<th>' + c[1] + '</th>'; }).join('') + '</tr>';
     BT.SPECIES_ORDER.forEach(function (id) {
       if (BT.SPECIES[id].introduced && !sim.stats.seen[id]) return;

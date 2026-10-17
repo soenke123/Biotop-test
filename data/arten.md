@@ -469,6 +469,15 @@ Werte in `BT.RATS` (`js/eco/rats.js`), Karte „Ratten an Bord“ (`docs/MENSCH.
   Laufvögel), mit Ratten 74–93 %. Ist mindestens ein Viertel weg und haben die Ratten den größten Teil
   gefressen, erscheint die Folgekarte 🐀 **Ratten im Getreide** statt „Hirsche im Acker“; die Ernte in
   der Chronik nennt den Anteil der Ratten. Mit 0,03 kaum zu spüren, mit 0,1 bis 100 % Verlust.
+- **Anfressen und Verderben:** Zusätzlich zum Bedarf benagen Ratten Früchte (0,002) und Insekten
+  (0,003 Einheiten je Ratte und Tag, `spoil`), ohne Energie davon zu haben. Das Fressen zählt wie
+  anderes Fressen (Pflanzenzustand, Diagramm „Nahrung“). Vorher war der Anteil der Ratten an Früchten
+  und Insekten nur etwa 3 % und in den Kurven nicht zu sehen. Mit 0,006 fielen die Laufvögel auf 43 %
+  (gegenüber nur Landung), mit 0,003 auf 58 %, mit 0,002 auf 70 %.
+- **Hütehunde im Dorf:** Im Umkreis von 70 um jeden Hütehund (`guard`) sterben je Tag 1,5 % der Ratten
+  je Hund, bis höchstens 8 % (Todesursache „Dorfhund“). Ratten rücken von außen nach, sind dort aber
+  dünner. Gemessen (`hunde@0,ratten@1`): im ersten Jahr nur 130–1 500 statt 1 700 Ratten, am Ende
+  ähnlich viele; 50 % der Insel erreichen 3 von 8 Inseln statt 6 (mit 0,04 und höchstens 0,2 fast nie).
 - **Vermehrung:** Junge je Ratte und Tag 0,1 (Frühling, Sommer), 0,06 (Herbst), im Winter keine;
   mal Futterlage, mal Platz in der Zelle (1 − Ratten / Kapazität). **Mastjahr** (Sommer und
   Herbst): 1,8-mal so viel Platz und 1,5-mal so viele Junge – eine Rattenplage. Grundsterblichkeit
