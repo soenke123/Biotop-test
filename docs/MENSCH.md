@@ -525,9 +525,15 @@ Rodung, Acker und Sammeln waren in Zahlen und Kurven kaum zu sehen. Jetzt:
   `Humans.nestFactor`). Ohne Sammler ist der Faktor genau 1.
 - **Getreide als Futter:** Laufvögel fressen es jetzt auch (`korn: 0,1`), Hirsche und Schafe wie
   vorher. Es reift bis zum Spätsommer und wird am ersten Herbsttag geerntet (Kurve mit Sägezahn).
-- **Neues Diagramm „Äcker: Reife und Fraßschaden“** (erst mit dem ersten Acker sichtbar): Reife des
-  Getreides und das, was Tiere seit der letzten Ernte gefressen haben, beides in Ernten des ersten
-  Ackers (`row.crop`, Bezug `Fields.startTotal.korn`).
+- **Neues Diagramm „Äcker: Getreide und Fraßschaden“** (erst mit dem ersten Acker sichtbar): Unten
+  das Getreide, das wirklich steht, darüber gestrichelt, was ohne Fressen gestanden hätte, und die
+  Fläche dazwischen ist das Gefressene. Das Modell rechnet dafür das Getreidewachstum ein zweites Mal
+  ohne Tiere mit (`Fields.potential`, Schattenrechnung; die Tiere merken nichts davon). Beides in
+  Ernten des ersten Ackers (`row.crop` mit `ripe` und `could`, Bezug `Fields.startTotal.korn`). Die
+  Chronik nennt jetzt dasselbe: „eingebracht“ = Ernte geteilt durch das, was ohne Fressen gestanden
+  hätte (vorher Ernte geteilt durch Ernte plus alles je Gefressene; da Getreide nachwächst, konnte
+  mehr gefressen als je gleichzeitig vorhanden sein). Reihen können eine Fläche statt einer Linie
+  haben (`between` in `BT.LineChart`).
 - **Neue Zahl bei den Menschen:** „der Insel regelmäßig von Menschen genutzt“ (`Humans.usedShare`,
   `row.used`): Anteil der Land-Weidezellen, in denen Siedler, Jäger, Sammler, Hunde oder Weideschafe
   in einem Jahr mindestens 3 Tage waren (`BT.HUMANS.use.regular`). Nicht die Dorffläche, sondern
