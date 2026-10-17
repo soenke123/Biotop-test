@@ -352,7 +352,7 @@
     }
     if (dirty && world && camera && cache) {
       dirty = false;
-      var alpha = running && tickRate() <= 90 ? Math.min(1, tickAcc) : 1;
+      var alpha = lastAlpha = running && tickRate() <= 90 ? Math.min(1, tickAcc) : 1;
       trackFollow(alpha);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = BT.PALETTE.background;
@@ -825,6 +825,7 @@
   // ---------------------------------------------------------------- Eingabe Karte
   var pointers = new Map();
   var pinchDist = 0;
+  var lastAlpha = 0;
   var clickStart = null;   // Zeigerposition beim Druecken: kaum bewegt = Klick
 
   function localPos(e) {
@@ -875,6 +876,10 @@
         else {
           var a = BT.AgentRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale));
           if (a) setFollow(a);
+          else {
+            var rg = BT.RatRenderer.pick(sim, w.x, w.y, camera.scale, lastAlpha);
+            if (rg) showTooltip(pos);
+          }
         }
       }
     }
@@ -929,7 +934,7 @@
     var w = camera.screenToWorld(pos.x, pos.y);
     if (w.x < 0 || w.y < 0 || w.x >= world.width || w.y >= world.height) { tooltip.hidden = true; return; }
     var a = sim ? BT.AgentRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale)) : null;
-    var text;
+    var text, rg;
     var hp = !a && sim ? BT.HumanRenderer.pick(sim, w.x, w.y, Math.max(14, 12 / camera.scale)) : null;
     if (hp) {
       text = hp.kind === 'haus' ? 'Haus' + (sim.humans.villages.length > 1 ? ' · ' + sim.humans.villageName(hp.obj.village) : '') + ' · gebaut ' + BT.Time.label(hp.obj.day)
@@ -941,6 +946,8 @@
         : 'Siedler · ' + (hp.obj.working ? 'arbeitet' : 'unterwegs');
     } else if (a) {
       text = animalText(a);
+    } else if (sim && (rg = BT.RatRenderer.pick(sim, w.x, w.y, camera.scale, lastAlpha))) {
+      text = 'Ratten · dieses Bild steht für ' + (rg.count === 1 ? 'etwa 1 Ratte' : 'etwa ' + rg.count + ' Ratten') + ' (Zelle gesamt: etwa ' + Math.round(sim.rats.at(w.x, w.y)) + ')';
     } else {
       var b = sim ? sim.biomeAt(w.x, w.y) : world.query.biomeAt(w.x, w.y);
       text = BT.BIOME_INFO[b].name;

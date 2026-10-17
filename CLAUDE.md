@@ -67,7 +67,7 @@ js/ui/      app.js (Karte, Kamera folgt einem angeklickten Tier, Zeitregler, Sei
             Kartenausschnitt assets/karte_<id>.png),
             charts.js (LineChart; ChartView: gemeinsamer Zeitraum und Fadenkreuz)
 data/       arten.md (fachliche Wahrheit für species.js)
-assets/     Tierbilder, schaf/, hund/, doerfler/ (Menschen), ratten.png, Schiff, Häuser, karte_<id>.png (Infofenster)
+assets/     Tierbilder, schaf/, hund/, doerfler/ (Menschen), ratten.png (Kachel), Ratten/Ratte_1..10.png (Karte, zufällig verteilt), Schiff, Häuser, karte_<id>.png (Infofenster)
 tools/      load.js (Skripte in Node laden), smoketest.js, balance.js (Abstimmung),
             invasion.js (fassen Schafe und Hunde Fuß? was erlegen Jäger? wie breiten sich Ratten aus?
             Vergleich mit/ohne Karten, parallel),
