@@ -355,7 +355,7 @@
     introduced: true,
     sprites: { name: 'hund/hund', facing: 'right', poses: { move: 'gehend', stand: 'stehend', eat: 'essend', rest: 'sitzend' } },
     size: 19,                         // Wolf 22, das Bild fuellt den Rahmen mehr aus
-    color: '#ff8c1a',
+    color: '#c4163f',
     start: 0,
     scheu: 0.3,                       // kennt die Menschen
     // Abfaelle: Bis 800 von einem Dorf finden sie jeden Tag etwas (Energie 0,015; Verbrauch 0,052).

@@ -379,7 +379,7 @@
   // ---------------------------------------------------------------- Seitenleiste
   var SERIES_COLOR = {
     zwerghirsch: '#d95926', laufvogel: '#3987e5', inselwolf: '#9085e9', inseladler: '#c98500',
-    schaf: '#d03fc8', hund: '#e07b00', ratten: '#b59c7a',
+    schaf: '#d03fc8', hund: '#c4163f', ratten: '#8ccf1f',
     gras: '#199e70', frucht: '#e66767', laub: '#008300', insekten: '#d55181',
     korn: '#c9a227', kornMoeglich: '#efe2a0', gefressen: '#d95926'
   };
