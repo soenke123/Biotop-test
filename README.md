@@ -1,4 +1,4 @@
-# Biotop – Inselökosystem
+# Balance of Nature – Inselökosystem
 
 Simulation für den Biologieunterricht: Auf einer fiktiven, abgelegenen Insel lebt ein eigenes
 Ökosystem. Erst beobachtet man es ungestört, dann kommen Siedler und bringen fremde Arten mit.

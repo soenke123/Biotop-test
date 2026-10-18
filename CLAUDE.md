@@ -2,7 +2,7 @@
 
 ## Projekt
 
-**Biotop**: Ökosystem-Simulation für den Biologieunterricht auf einer fiktiven Insel
+**Balance of Nature** (früher „Biotop“): Ökosystem-Simulation für den Biologieunterricht auf einer fiktiven Insel
 (Neuseeland als Vorbild, mit fantasievollen Elementen). Die Lernenden programmieren nicht, sie
 beobachten und greifen ein. Das Konzept mit den Ausbaustufen und der Begründung der
 Architektur steht in `docs/KONZEPT.md`. **Vor größeren Änderungen lesen.**

@@ -1057,7 +1057,7 @@
     var blob = new global.Blob(['﻿' + sim.stats.toCSV()], { type: 'text/csv;charset=utf-8' });
     var a = doc.createElement('a');
     a.href = global.URL.createObjectURL(blob);
-    a.download = 'biotop-seed' + world.seed + '-jahr' + BT.Time.calendar(sim.day).year + '.csv';
+    a.download = 'balance-of-nature-seed' + world.seed + '-jahr' + BT.Time.calendar(sim.day).year + '.csv';
     a.click();
     global.setTimeout(function () { global.URL.revokeObjectURL(a.href); }, 1000);
   });
